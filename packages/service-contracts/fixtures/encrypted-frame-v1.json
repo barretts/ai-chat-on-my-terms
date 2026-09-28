@@ -1,0 +1,10 @@
+{
+  "protocol": { "major": 1, "minor": 0 },
+  "routeId": "018f1f1e-7b4a-7c12-8a10-000000000010",
+  "requestId": "018f1f1e-7b4a-7c12-8a10-000000000011",
+  "sequence": 0,
+  "nonceBase64Url": "AAECAwQFBgcICQoL",
+  "contentTag": "health",
+  "declaredSize": 16,
+  "ciphertextBase64Url": "AAAAAAAAAAAAAAAAAAAAAA"
+}

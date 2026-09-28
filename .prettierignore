@@ -1,0 +1,7 @@
+plans/**
+docs/**
+apps/desktop/.next/**
+apps/desktop/out/**
+apps/desktop/next-env.d.ts
+apps/mobile/expo-env.d.ts
+pnpm-lock.yaml

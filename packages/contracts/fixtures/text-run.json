@@ -1,0 +1,22 @@
+[
+  {
+    "type": "RunStarted",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000001",
+    "sequence": 0,
+    "timestamp": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "type": "TextDelta",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000001",
+    "sequence": 1,
+    "timestamp": "2025-01-01T00:00:00.010Z",
+    "text": "Hello from a deterministic fixture."
+  },
+  {
+    "type": "RunCompleted",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000001",
+    "sequence": 2,
+    "timestamp": "2025-01-01T00:00:00.020Z",
+    "finishReason": "stop"
+  }
+]

@@ -1,0 +1,376 @@
+import { test, expect, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { mobileArchiveZip } from "../../apps/mobile/composition/chat/archives/zip";
+
+const decoder = new TextDecoder();
+const apiBase = process.env.LOCALLAB_LIVE_API_BASE;
+const model = process.env.LOCALLAB_LIVE_MODEL ?? "local-coder";
+const attachmentText =
+  "The flower in this note is marigold.\nUTF-8 survives: café, 日本語, 🌻.";
+const importText = "Archive browser verification: café, 日本語, 🌻.";
+const longImport = `${importText}\n${Array.from({ length: 110 }, (_, index) => `Archive line ${index + 1}: this line must remain in the complete PDF and text downloads.`).join("\n")}`;
+const lmStudioFile = {
+  name: "lmstudio-browser.json",
+  mimeType: "application/json",
+  buffer: Buffer.from(
+    JSON.stringify({
+      version: 1,
+      conversations: [
+        {
+          id: "browser-source",
+          title: "Browser archive verification",
+          messages: [
+            { id: "browser-message", role: "user", content: longImport },
+          ],
+        },
+      ],
+    }),
+  ),
+};
+
+async function choose(
+  page: Page,
+  button: string,
+  file: { name: string; mimeType: string; buffer: Buffer },
+) {
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: button, exact: true }).click();
+  await (await chooser).setFiles(file);
+}
+
+async function download(
+  page: Page,
+  button: string,
+  path: string,
+): Promise<Buffer> {
+  const pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: button, exact: true }).click();
+  const result = await pending;
+  await result.saveAs(path);
+  expect(await result.failure()).toBeNull();
+  return readFile(path);
+}
+
+async function startChat(page: Page) {
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Choose power user setup/ }).click();
+  await page.getByRole("button", { name: /^Choose light theme/ }).click();
+  await page
+    .getByRole("button", { name: "Continue without a model", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+  ).toBeVisible();
+}
+
+test("real browser file intake and archive downloads round trip persistent bytes", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !apiBase,
+    "Set LOCALLAB_LIVE_API_BASE to exercise real generation with an attachment.",
+  );
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await startChat(page);
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await choose(page, "Import LM Studio export", lmStudioFile);
+  await expect(
+    page.getByText(importText, { exact: false }).first(),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const txt = await download(
+    page,
+    "Export chat as TXT",
+    testInfo.outputPath("imported-chat.txt"),
+  );
+  expect(decoder.decode(txt)).toContain(longImport);
+  const pdf = await download(
+    page,
+    "Export chat as PDF",
+    testInfo.outputPath("imported-chat.pdf"),
+  );
+  expect(pdf.subarray(0, 8).toString()).toBe("%PDF-1.4");
+  expect(pdf.toString("latin1")).toMatch(/\/Type \/Pages \/Count [3-9]/);
+  await page.screenshot({
+    path: testInfo.outputPath("archive-downloads.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
+  await page.getByRole("button", { name: "New chat", exact: true }).click();
+  await expect(page.getByText(importText, { exact: false })).toHaveCount(0);
+
+  // This is the running local server, without intercepted or fabricated responses.
+  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("tab", { name: "compatible", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Provider name", exact: true })
+    .fill("Attachment local server");
+  await page
+    .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
+    .fill(apiBase!);
+  await page
+    .getByRole("textbox", { name: "Exact chat model ID", exact: true })
+    .fill(model);
+  await page
+    .getByRole("switch", { name: "Authorize local HTTP origin", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Save and use provider", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Message", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("tab", { name: "Global", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "System prompt", exact: true })
+    .fill("<|think_off|>\nReply with one brief sentence.");
+  const outputLimit = page.getByRole("textbox", {
+    name: "Maximum output tokens",
+    exact: true,
+  });
+  await expect(outputLimit).toBeEditable();
+  await outputLimit.fill("768");
+  await outputLimit.press("Tab");
+  await expect(
+    page.getByText("Saving settings...", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await choose(page, "Attach", {
+    name: "verification.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(attachmentText),
+  });
+  await expect(
+    page.getByRole("button", { name: "Remove verification.txt", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("attachment-selected.png"),
+    fullPage: true,
+  });
+  const request = page.waitForRequest(
+    (value) =>
+      value.method() === "POST" &&
+      decodeURIComponent(value.url()).endsWith("/chat/completions"),
+  );
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .fill(
+      "Name the flower in the attached note. Answer in one brief sentence.",
+    );
+  await page.getByTestId("advanced-composer-send").click();
+  const sent = await request;
+  expect(sent.postData()).toContain(attachmentText.replaceAll("\n", "\\n"));
+  expect(sent.postDataJSON().max_tokens).toBe(768);
+  await expect(
+    page.getByText("Response complete", { exact: true }),
+  ).toBeVisible({ timeout: 90_000 });
+  await expect(
+    page.getByTestId("assistant-response-text").last(),
+  ).toContainText(/marigold/i);
+  await expect(
+    page.getByTestId("assistant-response-text").last(),
+  ).toBeInViewport({ ratio: 0.9 });
+  await expect(
+    page.getByRole("button", { name: "Remove verification.txt", exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath("attachment-live-response.png"),
+    fullPage: true,
+  });
+
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const zip = await download(
+    page,
+    "Export all chats as ZIP",
+    testInfo.outputPath("chats-with-attachment.zip"),
+  );
+  const entries = await mobileArchiveZip.decode(zip);
+  const manifest = JSON.parse(
+    decoder.decode(
+      entries.find((entry) => entry.path === "manifest.json")!.bytes,
+    ),
+  );
+  expect(manifest.schema).toBe("locallab-chat-archive");
+  expect(
+    entries.some(
+      (entry) =>
+        entry.path.startsWith("assets/blobs/") &&
+        decoder.decode(entry.bytes) === attachmentText,
+    ),
+  ).toBe(true);
+  expect(
+    entries.some(
+      (entry) =>
+        entry.path.startsWith("assets/attachments/") &&
+        decoder.decode(entry.bytes).includes("verification.txt"),
+    ),
+  ).toBe(true);
+  await choose(page, "Import ZIP archive", {
+    name: "saved-chats.zip",
+    mimeType: "application/zip",
+    buffer: zip,
+  });
+  await expect(
+    page.getByRole("textbox", { name: "Message", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const reopened = await download(
+    page,
+    "Export all chats as ZIP",
+    testInfo.outputPath("reopened-chats.zip"),
+  );
+  const reopenedEntries = await mobileArchiveZip.decode(reopened);
+  const reopenedManifest = JSON.parse(
+    decoder.decode(
+      reopenedEntries.find((entry) => entry.path === "manifest.json")!.bytes,
+    ),
+  );
+  expect(reopenedManifest.conversations.length).toBeGreaterThan(
+    manifest.conversations.length,
+  );
+  expect(
+    reopenedEntries.some(
+      (entry) =>
+        entry.path.startsWith("assets/blobs/") &&
+        decoder.decode(entry.bytes) === attachmentText,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("archive-reopened.png"),
+    fullPage: true,
+  });
+  expect(errors).toEqual([]);
+});
+
+test("browser rejects malformed archives and retains an invalid UTF-8 original", async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await startChat(page);
+  await choose(page, "Attach", {
+    name: "invalid-utf8.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from([0xc3, 0x28]),
+  });
+  await expect(
+    page.getByRole("button", { name: "Remove invalid-utf8.txt", exact: true }),
+  ).toBeVisible();
+  const managedFileCount = () =>
+    page.evaluate(
+      () =>
+        new Promise<number>((resolve, reject) => {
+          const request = indexedDB.open("locallab-managed-blobs");
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const database = request.result;
+            const count = database
+              .transaction("files", "readonly")
+              .objectStore("files")
+              .count();
+            count.onsuccess = () => {
+              database.close();
+              resolve(count.result);
+            };
+            count.onerror = () => {
+              database.close();
+              reject(count.error);
+            };
+          };
+        }),
+    );
+  await expect.poll(managedFileCount).toBe(1);
+  await expect(
+    page.getByText(/original file is saved|original file is retained/i).first(),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("invalid-utf8-retained.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Remove invalid-utf8.txt", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Remove invalid-utf8.txt", exact: true }),
+  ).toHaveCount(0);
+  await expect.poll(managedFileCount).toBe(0);
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const originalPdf = await download(
+    page,
+    "Export chat as PDF",
+    testInfo.outputPath("document-original.pdf"),
+  );
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
+  await choose(page, "Attach", {
+    name: "document-original.pdf",
+    mimeType: "application/pdf",
+    buffer: originalPdf,
+  });
+  await expect(
+    page.getByRole("button", {
+      name: "Remove document-original.pdf",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByText(/PDF text extraction is unavailable in this browser build/i)
+      .first(),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("pdf-extraction-unavailable.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Remove document-original.pdf", exact: true })
+    .click();
+  await expect.poll(managedFileCount).toBe(0);
+  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await choose(page, "Import LM Studio export", {
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("not valid JSON"),
+  });
+  await expect(
+    page.getByText("Selected LM Studio export is not valid JSON", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await choose(page, "Import ZIP archive", {
+    name: "invalid.zip",
+    mimeType: "application/zip",
+    buffer: Buffer.from("not a ZIP file"),
+  });
+  await expect(
+    page.getByText("ZIP is malformed or unreadable", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("invalid-archive-error.png"),
+    fullPage: true,
+  });
+  await expect(
+    page.getByRole("button", { name: "Export all chats as ZIP", exact: true }),
+  ).toBeEnabled();
+  const zip = await download(
+    page,
+    "Export all chats as ZIP",
+    testInfo.outputPath("after-rejected-import.zip"),
+  );
+  const entries = await mobileArchiveZip.decode(zip);
+  const manifest = JSON.parse(
+    decoder.decode(
+      entries.find((entry) => entry.path === "manifest.json")!.bytes,
+    ),
+  );
+  expect(manifest.conversations).toHaveLength(1);
+  expect(manifest.conversations[0].messages).toEqual([]);
+  expect(errors).toEqual([]);
+});

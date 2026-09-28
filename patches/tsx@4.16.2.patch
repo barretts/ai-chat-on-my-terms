@@ -1,0 +1,56 @@
+diff --git a/dist/temporary-directory-B83uKxJF.cjs b/dist/temporary-directory-B83uKxJF.cjs
+--- a/dist/temporary-directory-B83uKxJF.cjs
++++ b/dist/temporary-directory-B83uKxJF.cjs
+@@ -1 +1,23 @@
+-"use strict";var s=require("node:path"),r=require("node:os");const{geteuid:e}=process,t=e?e():r.userInfo().username,i=s.join(r.tmpdir(),`tsx-${t}`);exports.tmpdir=i;
++"use strict";
++const path = require("node:path");
++const os = require("node:os");
++const { mkdtempSync } = require("node:fs");
++function temporaryDirectory() {
++  try {
++    const { geteuid } = process;
++    const userId = geteuid ? geteuid() : os.userInfo().username;
++    return path.join(os.tmpdir(), `tsx-${userId}`);
++  } catch (error) {
++    if (
++      process.platform !== "win32" ||
++      error?.code !== "ERR_SYSTEM_ERROR" ||
++      error?.syscall !== "uv_os_get_passwd"
++    ) {
++      throw error;
++    }
++    // Share the private fallback with tsx child processes and loader workers.
++    return process.env.TSX_PRIVATE_TMPDIR ||
++      (process.env.TSX_PRIVATE_TMPDIR = mkdtempSync(path.join(os.tmpdir(), "tsx-private-")));
++  }
++}
++exports.tmpdir = temporaryDirectory();
+diff --git a/dist/temporary-directory-CwHp0_NW.mjs b/dist/temporary-directory-CwHp0_NW.mjs
+--- a/dist/temporary-directory-CwHp0_NW.mjs
++++ b/dist/temporary-directory-CwHp0_NW.mjs
+@@ -1 +1,23 @@
+-import r from"node:path";import o from"node:os";const{geteuid:t}=process,s=t?t():o.userInfo().username,e=r.join(o.tmpdir(),`tsx-${s}`);export{e as t};
++import path from "node:path";
++import os from "node:os";
++import { mkdtempSync } from "node:fs";
++function temporaryDirectory() {
++  try {
++    const { geteuid } = process;
++    const userId = geteuid ? geteuid() : os.userInfo().username;
++    return path.join(os.tmpdir(), `tsx-${userId}`);
++  } catch (error) {
++    if (
++      process.platform !== "win32" ||
++      error?.code !== "ERR_SYSTEM_ERROR" ||
++      error?.syscall !== "uv_os_get_passwd"
++    ) {
++      throw error;
++    }
++    // Share the private fallback with tsx child processes and loader workers.
++    return process.env.TSX_PRIVATE_TMPDIR ||
++      (process.env.TSX_PRIVATE_TMPDIR = mkdtempSync(path.join(os.tmpdir(), "tsx-private-")));
++  }
++}
++const tmpdir = temporaryDirectory();
++export { tmpdir as t };

@@ -1,0 +1,26 @@
+{
+  "name": "@locallab/compat-apple-ml",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./expo": "./src/expo.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/capability.test.ts"
+  },
+  "dependencies": {
+    "@locallab/contracts": "workspace:*"
+  },
+  "peerDependencies": {
+    "expo": ">=57 <58"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "expo-modules-core": "57.0.19",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

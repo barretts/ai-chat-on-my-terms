@@ -1,0 +1,8 @@
+{
+  "protocol": { "major": 1, "minor": 0 },
+  "companionRouteId": "018f1f1e-7b4a-7c12-8a10-000000000010",
+  "relayUrl": "wss://relay.example.invalid/v1/connect",
+  "mobileRouteTicket": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "pairingSecret": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+  "serverIdentityFingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

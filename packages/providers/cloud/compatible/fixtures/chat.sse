@@ -1,0 +1,6 @@
+data: {"choices":[{"delta":{"content":"cloud reply"}}]}
+
+data: {"choices":[],"usage":{"prompt_tokens":5,"completion_tokens":2}}
+
+data: [DONE]
+

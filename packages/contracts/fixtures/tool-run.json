@@ -1,0 +1,31 @@
+[
+  {
+    "type": "RunStarted",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000002",
+    "sequence": 0,
+    "timestamp": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "type": "ToolCall",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000002",
+    "sequence": 1,
+    "timestamp": "2025-01-01T00:00:00.010Z",
+    "invocationId": "018f1f1e-7b4a-7c12-8a10-000000000003",
+    "name": "calculator",
+    "input": { "expression": "1 + 1" }
+  },
+  {
+    "type": "ToolResult",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000002",
+    "sequence": 2,
+    "timestamp": "2025-01-01T00:00:00.020Z",
+    "invocationId": "018f1f1e-7b4a-7c12-8a10-000000000003",
+    "output": { "value": 2 }
+  },
+  {
+    "type": "RunCompleted",
+    "runId": "018f1f1e-7b4a-7c12-8a10-000000000002",
+    "sequence": 3,
+    "timestamp": "2025-01-01T00:00:00.030Z"
+  }
+]

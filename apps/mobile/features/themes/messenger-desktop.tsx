@@ -1,0 +1,313 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  AccessibilityInfo,
+  Animated,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
+import { usePathname, useRouter } from "expo-router";
+import { Text, useTheme } from "react-native-paper";
+import { useWorkspaceLayout } from "@locallab/ui-native-primitives";
+import { useAppTheme } from "./provider";
+
+export function MessengerDesktop({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  const settings = useAppTheme();
+  const layout = useWorkspaceLayout();
+  const opacity = useRef(new Animated.Value(0)).current;
+  const [clock, setClock] = useState(new Date());
+  const [menu, setMenu] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (!mounted) return;
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: reduce ? 0 : 220,
+          useNativeDriver: Platform.OS !== "web",
+        }).start();
+      })
+      .catch(() => opacity.setValue(1));
+    const timer = setInterval(() => setClock(new Date()), 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [opacity]);
+  const destination = pathname.includes("models")
+    ? "Model downloads"
+    : pathname.includes("speech")
+      ? "Voice studio"
+      : pathname.includes("connections")
+        ? "Connections"
+        : pathname.includes("onboarding")
+          ? "Welcome"
+          : "Messenger";
+  const desktop = theme.dark ? "#123638" : "#267a7c";
+  return (
+    <View
+      style={[
+        styles.desktop,
+        layout.compact && Platform.OS === "web"
+          ? { padding: 6, paddingBottom: 0 }
+          : undefined,
+        { backgroundColor: desktop },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.window,
+          {
+            opacity,
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.dark ? "#756880" : "#f9f6ea",
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.titlebar,
+            layout.compact && { minHeight: 44, padding: 6 },
+          ]}
+        >
+          <View style={styles.appIcon}>
+            <Text style={{ color: "#59328b", fontWeight: "900", fontSize: 17 }}>
+              L
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text numberOfLines={1} style={styles.title}>
+              LocalLab Messenger
+            </Text>
+            {!layout.compact ? (
+              <Text style={styles.subtitle}>
+                {destination} · A little nostalgia. A lot of possibility.
+              </Text>
+            ) : null}
+          </View>
+          {layout.keyboardVisible ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Hide keyboard"
+              onPress={() => Keyboard.dismiss()}
+              style={{
+                minHeight: 44,
+                minWidth: 44,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 20 }}>▾</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.decoration} accessibilityElementsHidden>
+              <Text style={{ color: "#fff", fontSize: 18 }}>▰</Text>
+            </View>
+          )}
+        </View>
+        {!layout.keyboardVisible ? (
+          <View
+            style={[
+              styles.menuBar,
+              { borderColor: theme.colors.outlineVariant },
+            ]}
+          >
+            <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+              ✦ YOUR LOCAL AI DESKTOP
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Change messenger appearance"
+              onPress={() => setMenu(!menu)}
+              style={{ minHeight: 36, justifyContent: "center" }}
+            >
+              <Text variant="labelMedium">Appearance ▾</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {menu && !layout.keyboardVisible ? (
+          <View
+            style={{
+              padding: 10,
+              flexDirection: "row",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            {(["light", "dark", "system"] as const).map((value) => (
+              <Pressable
+                key={value}
+                accessibilityRole="button"
+                accessibilityLabel={`Use ${value} messenger appearance`}
+                accessibilityState={{
+                  selected: settings.themePreference === value,
+                }}
+                onPress={() => {
+                  void settings.setThemePreference(value);
+                  setMenu(false);
+                }}
+                style={{
+                  padding: 10,
+                  borderWidth: 1,
+                  borderColor: theme.colors.outline,
+                  backgroundColor:
+                    settings.themePreference === value
+                      ? theme.colors.primaryContainer
+                      : theme.colors.surface,
+                }}
+              >
+                <Text>{value[0]!.toUpperCase() + value.slice(1)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
+        {!layout.compact ? (
+          <View
+            style={[
+              styles.status,
+              { borderColor: theme.colors.outlineVariant },
+            ]}
+          >
+            <Text variant="labelSmall">⌁ Conversations stay with you</Text>
+            <Text variant="labelSmall">{destination}</Text>
+          </View>
+        ) : null}
+      </Animated.View>
+      {!layout.keyboardVisible ? (
+        <View
+          style={[styles.taskbar, { backgroundColor: theme.colors.surface }]}
+        >
+          {(
+            [
+              { label: "Chat", icon: "✉", path: "/chat" },
+              { label: "Models", icon: "▣", path: "/models" },
+              { label: "Voices", icon: "♫", path: "/speech" },
+            ] as const
+          ).map((item) => (
+            <Pressable
+              key={item.path}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.label.toLowerCase()}`}
+              accessibilityState={{ selected: pathname === item.path }}
+              onPress={() => router.navigate(item.path)}
+              style={[
+                styles.task,
+                {
+                  borderColor: theme.colors.outline,
+                  backgroundColor:
+                    pathname === item.path
+                      ? theme.colors.primaryContainer
+                      : theme.colors.surface,
+                },
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={{ color: theme.colors.primary, fontWeight: "700" }}
+              >
+                {item.icon} {item.label}
+              </Text>
+            </Pressable>
+          ))}
+          {layout.showClock ? (
+            <Text
+              variant="labelSmall"
+              style={{ marginLeft: "auto", paddingHorizontal: 6 }}
+            >
+              {clock.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  desktop: {
+    flex: 1,
+    padding: Platform.OS === "web" ? 12 : 0,
+    paddingBottom: 0,
+  },
+  window: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+    maxWidth: 1060,
+    alignSelf: "center",
+    borderWidth: 2,
+  },
+  titlebar: {
+    backgroundColor: "#59328b",
+    padding: 10,
+    minHeight: 60,
+    gap: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  appIcon: {
+    width: 30,
+    height: 30,
+    backgroundColor: "#ffe56e",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderTopColor: "white",
+    borderLeftColor: "white",
+    borderRightColor: "#927634",
+    borderBottomColor: "#927634",
+  },
+  title: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: 16,
+    letterSpacing: 0.2,
+  },
+  subtitle: { color: "#e5d8f8", fontSize: 10, marginTop: 3 },
+  decoration: { padding: 5, borderWidth: 1, borderColor: "#a489c5" },
+  menuBar: {
+    paddingHorizontal: 12,
+    minHeight: 36,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  status: {
+    minHeight: 27,
+    borderTopWidth: 1,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  taskbar: {
+    width: "100%",
+    maxWidth: 1084,
+    alignSelf: "center",
+    minHeight: 53,
+    padding: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderTopWidth: 2,
+    borderTopColor: "#f9f6ea",
+  },
+  task: {
+    flexShrink: 1,
+    minWidth: 0,
+    minHeight: 44,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    justifyContent: "center",
+  },
+});

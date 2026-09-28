@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "LocalLab",
+    "slug": "locallab",
+    "scheme": "locallab",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "web": { "bundler": "metro", "output": "single" },
+    "ios": {
+      "supportsTablet": true,
+      "buildNumber": "3",
+      "deploymentTarget": "17.0",
+      "bundleIdentifier": "app.locallab.mobile",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "LocalLab connects to model servers on your local network when you choose a host.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "headers": {
+            "Cross-Origin-Embedder-Policy": "credentialless",
+            "Cross-Origin-Opener-Policy": "same-origin"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
+      [
+        "llama.rn",
+        {
+          "forceCxx20": true,
+          "enableOpenCLAndHexagon": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "15eddc95-17b4-4c17-9371-c26c8db770cf"
+      }
+    },
+    "owner": "barrett"
+  }
+}

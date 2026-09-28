@@ -1,0 +1,23 @@
+{
+  "name": "@locallab/storage-blobs",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@locallab/storage-sqlite-core": "workspace:*"
+  },
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/blob-store.test.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

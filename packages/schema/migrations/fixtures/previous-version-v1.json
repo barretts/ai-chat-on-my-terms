@@ -1,0 +1,12 @@
+{
+  "fixture": "schema-before-t003a",
+  "databaseEngine": "sqlite",
+  "schemaVersion": 1,
+  "appliedMigrations": [
+    {
+      "version": 1,
+      "name": "0001-core"
+    }
+  ],
+  "expectedCoreFixture": "core-v1-schema.json"
+}

@@ -1,0 +1,130 @@
+diff --git a/ios/handlers/SherpaOnnxTtsHandler.swift b/ios/handlers/SherpaOnnxTtsHandler.swift
+--- a/ios/handlers/SherpaOnnxTtsHandler.swift
++++ b/ios/handlers/SherpaOnnxTtsHandler.swift
+@@ -51,12 +51,17 @@ import CSherpaOnnx
+             }
+             let modelDir = modelDirRaw // file:// stripping handled in JS layer (cleanFilePath)
+             
+-            let modelType = config["ttsModelType"] as? String ?? "vits"
++            // SherpaOnnxRnModule.mm forwards the codegen spec keys (modelType,
++            // voices, lexicon, vocoder, lang). The old *File/ttsModelType names
++            // are still accepted. Reading only the old names made every engine
++            // VITS, and sherpa-onnx calls exit(-1) for a Kokoro model as VITS.
++            let modelType = config["modelType"] as? String ?? config["ttsModelType"] as? String ?? "vits"
+             let modelFile = config["modelFile"] as? String // Read 'modelFile'
+             let tokensFile = config["tokensFile"] as? String ?? "tokens.txt" // Read 'tokensFile' or default
+-            let voicesFile = config["voicesFile"] as? String
+-            let lexiconFile = config["lexiconFile"] as? String
+-            let vocoderFile = config["vocoderFile"] as? String
++            let voicesFile = config["voices"] as? String ?? config["voicesFile"] as? String
++            let lexiconFile = config["lexicon"] as? String ?? config["lexiconFile"] as? String
++            let vocoderFile = config["vocoder"] as? String ?? config["vocoderFile"] as? String
++            let lang = config["lang"] as? String ?? ""
+             let dataDirInput = config["dataDir"] as? String
+             let numThreads = config["numThreads"] as? Int ?? 1
+             let debug = config["debug"] as? Bool ?? false
+@@ -218,13 +223,18 @@ import CSherpaOnnx
+                 )
+             } else if modelType == "kokoro" {
+                  NSLog("Configuring Kokoro model")
++                 // sherpa-onnx exits the process on a missing voices file instead of returning nil.
++                 if voicesAbsPath.isEmpty || !FileManager.default.fileExists(atPath: voicesAbsPath) {
++                     throw NSError(domain: "SherpaOnnx", code: 107, userInfo: [NSLocalizedDescriptionKey: "Kokoro voices file not found at: \(voicesAbsPath)"])
++                 }
+                  let kokoroConfig = sherpaOnnxOfflineTtsKokoroModelConfig(
+                     model: modelAbsPath,
+                     voices: voicesAbsPath, 
+                     tokens: tokensAbsPath,
+                     dataDir: dataDirAbsPath,
+                     lengthScale: lengthScale,
+-                    lexicon: lexiconAbsPath // Pass lexicon if available
++                    lexicon: lexiconAbsPath, // Pass lexicon if available
++                    lang: lang
+                  )
+                  cModelConfig = sherpaOnnxOfflineTtsModelConfig(
+                     kokoro: kokoroConfig,
+@@ -344,7 +354,6 @@ import CSherpaOnnx
+                 throw NSError(domain: "SherpaOnnx", code: 3, userInfo: [NSLocalizedDescriptionKey: "Text cannot be empty"])
+             }
+             
+-            NSLog("Generating TTS for text: '\(text)' with speakerId: \(speakerId), speed: \(speakingRate)")
+             
+             // Generate speech
+             let result = SherpaOnnxOfflineTtsGenerate(tts, toCPointer(text), Int32(speakerId), speakingRate)
+diff --git a/lib/commonjs/services/TtsService.js b/lib/commonjs/services/TtsService.js
+--- a/lib/commonjs/services/TtsService.js
++++ b/lib/commonjs/services/TtsService.js
+@@ -132,7 +132,19 @@ class TtsService {
+       }
+ 
+       // Call the native API to initialize TTS
+-      const result = await this.api.initTts(nativeConfig);
++      // NativeSherpaOnnxSpec.initTts names these fields modelType, voices,
++      // lexicon and vocoder, while TtsModelConfig uses ttsModelType,
++      // voicesFile, lexiconFile and vocoderFile. iOS codegen only forwards
++      // spec-named keys, so without this mapping every engine was built as
++      // VITS and sherpa-onnx called exit(-1) when handed a Kokoro model.
++      const specConfig = {
++        ...nativeConfig,
++        modelType: nativeConfig.ttsModelType
++      };
++      if (nativeConfig.voicesFile) specConfig.voices = nativeConfig.voicesFile;
++      if (nativeConfig.lexiconFile) specConfig.lexicon = nativeConfig.lexiconFile;
++      if (nativeConfig.vocoderFile) specConfig.vocoder = nativeConfig.vocoderFile;
++      const result = await this.api.initTts(specConfig);
+ 
+       // Store initialization results
+       this.initialized = result.success;
+diff --git a/lib/module/services/TtsService.js b/lib/module/services/TtsService.js
+--- a/lib/module/services/TtsService.js
++++ b/lib/module/services/TtsService.js
+@@ -129,7 +129,19 @@ export class TtsService {
+       }
+ 
+       // Call the native API to initialize TTS
+-      const result = await this.api.initTts(nativeConfig);
++      // NativeSherpaOnnxSpec.initTts names these fields modelType, voices,
++      // lexicon and vocoder, while TtsModelConfig uses ttsModelType,
++      // voicesFile, lexiconFile and vocoderFile. iOS codegen only forwards
++      // spec-named keys, so without this mapping every engine was built as
++      // VITS and sherpa-onnx called exit(-1) when handed a Kokoro model.
++      const specConfig = {
++        ...nativeConfig,
++        modelType: nativeConfig.ttsModelType
++      };
++      if (nativeConfig.voicesFile) specConfig.voices = nativeConfig.voicesFile;
++      if (nativeConfig.lexiconFile) specConfig.lexicon = nativeConfig.lexiconFile;
++      if (nativeConfig.vocoderFile) specConfig.vocoder = nativeConfig.vocoderFile;
++      const result = await this.api.initTts(specConfig);
+ 
+       // Store initialization results
+       this.initialized = result.success;
+diff --git a/src/services/TtsService.ts b/src/services/TtsService.ts
+--- a/src/services/TtsService.ts
++++ b/src/services/TtsService.ts
+@@ -139,7 +139,24 @@ export class TtsService {
+       }
+ 
+       // Call the native API to initialize TTS
+-      const result = await this.api.initTts(nativeConfig);
++      // NativeSherpaOnnxSpec.initTts names these fields modelType, voices,
++      // lexicon and vocoder, while TtsModelConfig uses ttsModelType,
++      // voicesFile, lexiconFile and vocoderFile. iOS codegen only forwards
++      // spec-named keys, so without this mapping every engine was built as
++      // VITS and sherpa-onnx called exit(-1) when handed a Kokoro model.
++      const specConfig: TtsModelConfig & {
++        modelType?: string;
++        voices?: string;
++        lexicon?: string;
++        vocoder?: string;
++      } = {
++        ...nativeConfig,
++        modelType: nativeConfig.ttsModelType,
++      };
++      if (nativeConfig.voicesFile) specConfig.voices = nativeConfig.voicesFile;
++      if (nativeConfig.lexiconFile) specConfig.lexicon = nativeConfig.lexiconFile;
++      if (nativeConfig.vocoderFile) specConfig.vocoder = nativeConfig.vocoderFile;
++      const result = await this.api.initTts(specConfig);
+ 
+       // Store initialization results
+       this.initialized = result.success;

@@ -1,0 +1,40 @@
+{
+  "name": "@locallab/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "typesVersions": {
+    "*": {
+      "identity": [
+        "src/identity.ts"
+      ],
+      "run-events": [
+        "src/run-events.ts"
+      ],
+      "entities": [
+        "src/entities.ts"
+      ],
+      "ports": [
+        "src/ports.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/schema.test.ts"
+  },
+  "exports": {
+    "./identity": "./src/identity.ts",
+    "./run-events": "./src/run-events.ts",
+    "./entities": "./src/entities.ts",
+    "./ports": "./src/ports.ts"
+  },
+  "dependencies": {
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

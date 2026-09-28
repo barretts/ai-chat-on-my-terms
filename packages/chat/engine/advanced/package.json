@@ -1,0 +1,27 @@
+{
+  "name": "@locallab/chat-engine-advanced",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@locallab/chat-engine-core": "workspace:*",
+    "@locallab/chat-history": "workspace:*",
+    "@locallab/context": "workspace:*",
+    "@locallab/contracts": "workspace:*",
+    "@locallab/storage-sqlite-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

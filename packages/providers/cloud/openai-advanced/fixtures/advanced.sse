@@ -1,0 +1,18 @@
+event: response.created
+data: {"type":"response.created","response":{"id":"resp_advanced"}}
+
+event: response.reasoning_summary_text.delta
+data: {"type":"response.reasoning_summary_text.delta","delta":"Checking the image."}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"The picture shows a cat."}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"lookup","arguments":"{\"q\":\"cats\"}"}}
+
+event: response.output_text.annotation.added
+data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","url":"https://example.test/cats","title":"Cat facts"}}
+
+event: response.completed
+data: {"type":"response.completed","response":{"usage":{"input_tokens":12,"output_tokens":5}}}
+

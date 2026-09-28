@@ -1,0 +1,226 @@
+openapi: 3.1.0
+info:
+  title: LocalLab Optional Services API
+  version: 1.0.0
+  description: >-
+    Opt-in service contracts. Chat history, provider credentials, pairing
+    secrets, PINs, and model weights are never accepted by these endpoints.
+servers:
+  - url: https://api.locallab.invalid/v1
+security:
+  - bearerAuth: []
+paths:
+  /search:
+    post:
+      operationId: search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SearchRequest" }
+      responses:
+        "200":
+          description: Search results for an explicit user initiated request.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 20
+                items: { $ref: "#/components/schemas/SearchResult" }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /sandbox/jobs:
+    post:
+      operationId: createSandboxJob
+      security:
+        - bearerAuth: []
+      x-required-entitlement: sandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SandboxJobRequest" }
+      responses:
+        "202":
+          {
+            description: Job accepted; execution is isolated and resource limited.,
+          }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /catalog/themes:
+    get:
+      operationId: listThemes
+      security: []
+      responses:
+        "200":
+          description: Public theme metadata. Assets are fetched directly from the listed URL.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ThemeCatalogEntry" }
+  /support/tickets:
+    post:
+      operationId: createSupportTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportTicket" }
+      responses:
+        "201": { description: Ticket created after explicit user submission. }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+  /backup/objects:
+    put:
+      operationId: putEncryptedBackupObject
+      security:
+        - bearerAuth: []
+      x-required-entitlement: backup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EncryptedBackupObject" }
+      responses:
+        "200": { description: Opaque encrypted object accepted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /entitlements:
+    get:
+      operationId: getEntitlements
+      responses:
+        "200":
+          description: Current optional service entitlements.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Entitlement" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /metrics:
+    post:
+      operationId: submitMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MetricsBatch" }
+      responses:
+        "202": { description: Consent backed aggregate metrics accepted. }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+  /release/version:
+    get:
+      operationId: getReleaseVersion
+      security: []
+      responses:
+        "200":
+          description: Latest available app version metadata.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReleaseVersion" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      required: [query]
+      properties:
+        query: { type: string, minLength: 1, maxLength: 512 }
+        limit: { type: integer, minimum: 1, maximum: 20, default: 10 }
+    SearchResult:
+      type: object
+      additionalProperties: false
+      required: [title, url, snippet, source]
+      properties:
+        title: { type: string, maxLength: 512 }
+        url: { type: string, format: uri }
+        snippet: { type: string, maxLength: 4096 }
+        source: { type: string, maxLength: 128 }
+    SandboxJobRequest:
+      type: object
+      additionalProperties: false
+      required: [jobId, language, source, limits]
+      properties:
+        jobId: { type: string, format: uuid }
+        language: { type: string, enum: [javascript, python] }
+        source: { type: string, minLength: 1, maxLength: 128000 }
+        limits:
+          type: object
+          additionalProperties: false
+          required: [cpuMs, memoryMiB]
+          properties:
+            cpuMs: { type: integer, minimum: 1, maximum: 60000 }
+            memoryMiB: { type: integer, minimum: 16, maximum: 1024 }
+    ThemeCatalogEntry:
+      type: object
+      additionalProperties: false
+      required: [id, name, previewUrl, downloadUrl, sha256]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 128 }
+        previewUrl: { type: [string, "null"], format: uri }
+        downloadUrl: { type: string, format: uri }
+        sha256: { type: string, pattern: "^[0-9a-fA-F]{64}$" }
+    SupportTicket:
+      type: object
+      additionalProperties: false
+      required: [subject, message, includeDiagnostics, attachmentIds]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 200 }
+        message: { type: string, minLength: 1, maxLength: 16000 }
+        includeDiagnostics: { type: boolean }
+        attachmentIds:
+          { type: array, maxItems: 5, items: { type: string, format: uuid } }
+    EncryptedBackupObject:
+      type: object
+      additionalProperties: false
+      required: [objectId, sha256, ciphertextBase64Url]
+      properties:
+        objectId: { type: string, format: uuid }
+        sha256: { type: string, pattern: "^[0-9a-fA-F]{64}$" }
+        ciphertextBase64Url: { type: string, minLength: 1, maxLength: 20000000 }
+    Entitlement:
+      type: object
+      additionalProperties: false
+      required: [productId, state, expiresAt]
+      properties:
+        productId: { type: string, minLength: 1, maxLength: 128 }
+        state: { type: string, enum: [active, inactive, grace-period, unknown] }
+        expiresAt: { type: [string, "null"], format: date-time }
+    MetricsBatch:
+      type: object
+      additionalProperties: false
+      required: [consentId, events]
+      properties:
+        consentId: { type: string, format: uuid }
+        events:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, count]
+            properties:
+              name: { type: string, minLength: 1, maxLength: 128 }
+              count: { type: integer, minimum: 0 }
+    ReleaseVersion:
+      type: object
+      additionalProperties: false
+      required: [version, publishedAt, minimumSupportedVersion, updateUrl]
+      properties:
+        version: { type: string, pattern: '^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$' }
+        publishedAt: { type: string, format: date-time }
+        minimumSupportedVersion: { type: string, minLength: 1 }
+        updateUrl: { type: [string, "null"], format: uri }
+  responses:
+    InvalidRequest:
+      description: Request failed validation.
+    Unauthorized:
+      description: Authentication is missing or invalid.
+    Forbidden:
+      description: The account lacks the required entitlement.

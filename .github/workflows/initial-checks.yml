@@ -1,0 +1,51 @@
+name: Initial fixture checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  fast-fixture-smoke:
+    name: Fast fixture and contract smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: React Native and shared contract typecheck
+        run: pnpm typecheck
+      - name: Contract schema smoke
+        run: pnpm test:contracts
+      - name: SQLite migration smoke
+        run: pnpm test:schema
+      - name: Pairing, relay, and service contract smoke
+        run: pnpm test:service-contracts
+      - name: Fragmented streams, fake native ports, and redacted recordings
+        run: pnpm --filter @locallab/testkit test
+      - name: Expo transport and SQLite adapter fixtures
+        run: pnpm test:compat
+      - name: Core SQLite repository transactions and reopen
+        run: pnpm test:storage
+      - name: Parameter precedence and capability filtering
+        run: pnpm test:parameters
+      - name: Context packing and compaction
+        run: pnpm test:context
+      - name: Secret host isolation and redaction
+        run: pnpm test:security
+      - name: Job idempotency and recovery
+        run: pnpm test:jobs
+      - name: Run event projection and replay
+        run: pnpm test:projection
+# This workflow provides fast fixture evidence only. Playwright/Maestro and real
+# device, OS, backend, and service evidence belong to T159A-H and T160-T169.
+# A green fixture job must never be reported as device or live-backend proof.

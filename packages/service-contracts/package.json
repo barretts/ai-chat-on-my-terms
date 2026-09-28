@@ -1,0 +1,24 @@
+{
+  "name": "@locallab/service-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./pairing": "./src/pairing.ts",
+    "./relay": "./src/relay.ts",
+    "./services": "./src/services.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/contracts.test.ts"
+  },
+  "dependencies": {
+    "@locallab/contracts": "workspace:*",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

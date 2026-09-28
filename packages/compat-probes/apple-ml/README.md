@@ -1,0 +1,13 @@
+# Apple MLX and Core ML compatibility probe
+
+This package defines the device capability decision, an Expo native module scaffold, and an evidence receipt for the Apple probe. The Swift package pins `mlx-swift-lm` **2.30.6** and Apple `ml-stable-diffusion` **1.1.1** exactly. The pins and product names come from the upstream [`mlx-swift-lm` manifest](https://raw.githubusercontent.com/ml-explore/mlx-swift-lm/2.30.6/Package.swift) and [`ml-stable-diffusion` manifest](https://raw.githubusercontent.com/apple/ml-stable-diffusion/1.1.1/Package.swift). The MLX package requires Swift tools 5.12 and declares iOS 17 as its minimum; the app target is iOS 17. These sources establish package metadata, not successful app integration or device compatibility.
+
+The Expo bridge is registered as `AppleMLProbe`. `src/expo.ts` obtains it with `requireNativeModule`. `ios/AppleMLProbeModule.swift` reports basic OS/architecture facts but keeps accelerator, Core ML model, and memory capability unknown. Until inference adapters are linked, calls return a typed `ENGINE_NOT_LINKED` result; the TypeScript adapter turns that into an error carrying the GGUF or remote-image fallback. The Swift package depends on the pinned upstream products as the native adapter integration point.
+
+`assessAppleML` deliberately distinguishes `yes`, `no`, and `unknown`. Unknown facts never count as a supported engine. A successful run receipt must include the app build, model, and output SHA-256 hashes plus device and OS identity. Do not put model contents or prompts in the receipt.
+
+## Verification boundary
+
+The TS tests/typecheck exercise the decision and evidence format on any host. They do not compile MLX, Core ML, or Expo native code. Apple MLX depends on Apple GPU/Metal capability and Core ML Stable Diffusion requires compatible model assets and device resources. This workspace host is Windows and has no Swift/Xcode toolchain, so Swift package resolution/build, CocoaPods autolinking, Expo development-client install, real inference, generated-image hash, thermal behavior, and entitlement/device limits remain **pending Xcode and physical Apple hardware proof**. Do not mark either engine verified from fixture tests.
+
+Before enabling a runtime, connect the Swift package products to the Expo iOS target, implement the actual small-model MLX inference and Core ML image-generation adapters, compile with the target iOS deployment version, and record receipts from supported physical devices. Unsupported hardware must return capability `no` with the fallback above; unmeasured or unavailable facts must return `unknown`.

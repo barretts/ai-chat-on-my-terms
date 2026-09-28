@@ -1,0 +1,49 @@
+{
+  "fixture": "core-v1-schema",
+  "migrationVersion": 1,
+  "immutable": true,
+  "tables": {
+    "providers": ["id", "kind", "name", "config_json", "created_at"],
+    "models": [
+      "id",
+      "provider_id",
+      "name",
+      "runtime",
+      "format",
+      "capabilities_json",
+      "created_at"
+    ],
+    "conversations": ["id", "title", "created_at", "updated_at"],
+    "messages": [
+      "id",
+      "conversation_id",
+      "role",
+      "parts_json",
+      "sequence",
+      "run_id",
+      "participant_id",
+      "created_at"
+    ],
+    "runs": [
+      "id",
+      "conversation_id",
+      "model_id",
+      "status",
+      "parameters_json",
+      "started_at",
+      "finished_at",
+      "created_at"
+    ],
+    "jobs": [
+      "id",
+      "run_id",
+      "kind",
+      "status",
+      "attempts",
+      "available_at",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "extensionRule": "Future schema capabilities append migrations and preserve these core tables and columns."
+}

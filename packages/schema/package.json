@@ -1,0 +1,21 @@
+{
+  "name": "@locallab/schema",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./migrations": "./migrations/full.ts",
+    "./embedded": "./migrations/embedded.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test migrations/test/*.test.ts",
+    "generate:embedded": "tsx migrations/generate-embedded.ts",
+    "check:embedded": "tsx migrations/generate-embedded.ts --check"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

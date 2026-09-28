@@ -1,0 +1,22 @@
+[package]
+name = "locallab-companion"
+version = "0.1.0"
+edition = "2021"
+description = "Local companion process for the LocalLab desktop application"
+license = "UNLICENSED"
+
+[[bin]]
+name = "locallab-companion"
+path = "src/main.rs"
+
+[dependencies]
+locallab-gguf-worker = { path = "../../workers/gguf" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "=3.6.3", default-features = false, features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "=3.6.3", default-features = false, features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "=3.6.3", default-features = false, features = ["sync-secret-service", "crypto-rust", "vendored"] }

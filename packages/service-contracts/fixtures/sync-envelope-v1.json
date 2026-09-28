@@ -1,0 +1,19 @@
+{
+  "tag": "sync-batch",
+  "records": [
+    {
+      "entityType": "folder",
+      "entityId": "018f1f1e-7b4a-7c12-8a10-000000000012",
+      "id": "018f1f1e-7b4a-7c12-8a10-000000000014",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "revision": {
+        "wallMs": 1735689600000,
+        "counter": 1,
+        "deviceId": "018f1f1e-7b4a-7c12-8a10-000000000013"
+      },
+      "payload": { "name": "Research", "parentId": null },
+      "acknowledgedAt": null
+    }
+  ]
+}

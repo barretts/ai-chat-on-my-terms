@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - modules/*
+  - modules/*/*
+  - packages/*
+  - packages/*/*
+  - packages/chat/engine/*
+  - packages/providers/*/*
+  - packages/compat-probes/*
+  - packages/storage/*/*
+  - services/*

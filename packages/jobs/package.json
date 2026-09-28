@@ -1,0 +1,25 @@
+{
+  "name": "@locallab/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/scheduler.test.ts test/sqlite-store.test.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@locallab/contracts": "workspace:*",
+    "@locallab/storage-sqlite-core": "workspace:*",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "locallab-gguf-worker"
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+description = "Local process supervisor and control channel for the pinned llama.cpp sidecar"
+
+[[bin]]
+name = "locallab-gguf-worker"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
