@@ -5,8 +5,9 @@ import {
   type AudioPlayer,
 } from "expo-audio";
 import { File, Paths } from "expo-file-system";
+import { errorDetails } from "@locallab/network-http";
 import { speechModel, speechModels, speechText, speechVoice } from "./catalog";
-import { SpeechStateStore, speechRate } from "./state";
+import { SpeechStateStore, speechFailureDetails, speechRate } from "./state";
 import type { OfflineSpeech } from "./types";
 export { speechModels, speechVoices } from "./catalog";
 export type { OfflineSpeech, SpeechState } from "./types";
@@ -32,15 +33,16 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
     if (!this.sherpa) {
       try {
         this.sherpa = (await import("@siteed/sherpa-onnx.rn")).default;
-      } catch {
+      } catch (cause) {
         throw new Error(
           "Offline speech requires an iPhone app build containing the Sherpa speech module. It is not included in older installed builds or Expo Go.",
+          { cause },
         );
       }
       const result = await this.sherpa.validateLibraryLoaded();
       if (!result.loaded)
         throw new Error(
-          "The offline speech module is unavailable in this app build.",
+          `The offline speech module is unavailable in this app build.\nNative response:\n${errorDetails(result)}`,
         );
     }
     return this.sherpa;
@@ -144,6 +146,7 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
     archive: string,
   ) {
     const model = speechModel(id);
+    let installationFailure: unknown;
     this.update({
       phase: "downloading",
       message: `Downloading ${model.name} for offline use…`,
@@ -175,8 +178,24 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
       this.download = download;
       const result = await download.downloadAsync();
       if (generation !== this.generation) return;
-      if (!result || result.status !== 200)
-        throw new Error("Voice model download failed.");
+      if (!result)
+        throw new Error(
+          "The voice archive download returned no response or saved file.",
+        );
+      if (result.status !== 200) {
+        let body: string;
+        try {
+          const errorFile = new File(result.uri);
+          body = errorFile.exists
+            ? await errorFile.text()
+            : "[Response body was not saved by the native downloader.]";
+        } catch (cause) {
+          body = `[Could not read the saved response body: ${errorDetails(cause)}]`;
+        }
+        throw new Error(
+          `The voice archive download returned HTTP ${result.status}.\nResponse body:\n${body || "[empty]"}`,
+        );
+      }
       this.download = null;
       this.update({
         phase: "loading",
@@ -184,8 +203,11 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
         progress: null,
       });
       controller.signal.throwIfAborted();
-      if (new File(archive).size !== model.archiveBytes)
-        throw new Error("The voice download is incomplete. Download it again.");
+      const downloadedBytes = new File(archive).size;
+      if (downloadedBytes !== model.archiveBytes)
+        throw new Error(
+          `The voice archive has ${downloadedBytes} bytes; expected ${model.archiveBytes}. The download is incomplete or has changed.`,
+        );
       this.update({
         phase: "loading",
         message: "Unpacking your voice. Keep the app open for this final step…",
@@ -193,7 +215,9 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
       });
       const extracted = await sherpa.Archive.extractTarBz2(archive, root);
       if (!extracted.success)
-        throw new Error(extracted.message || "Voice model extraction failed.");
+        throw new Error(
+          `The native archive extractor reported failure.\nNative response:\n${errorDetails(extracted)}`,
+        );
       const directory = `${root}${model.directory}/`;
       const files = [
         model.modelFile,
@@ -224,12 +248,24 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
       });
     } catch (error) {
       if (generation !== this.generation) return;
+      installationFailure = error;
       this.fail(error);
       throw error;
     } finally {
       this.download = null;
       if (this.controller === controller) this.controller = null;
-      await FileSystem.deleteAsync(archive, { idempotent: true });
+      try {
+        await FileSystem.deleteAsync(archive, { idempotent: true });
+      } catch (cleanup) {
+        const failure = new Error(
+          `Temporary voice archive cleanup failed: ${speechFailureDetails(cleanup)}`,
+          {
+            cause: installationFailure ?? cleanup,
+          },
+        );
+        if (generation === this.generation) this.fail(failure);
+        throw failure;
+      }
     }
   }
   async remove(id: string) {
@@ -287,8 +323,14 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
                 }
               : {}),
           });
-          if (!result.success || result.numSpeakers <= voice.speakerId)
-            throw new Error(result.error || "Offline voice failed to load.");
+          if (!result.success)
+            throw new Error(
+              `The native speech engine could not initialize the voice model.\nNative response:\n${errorDetails(result)}`,
+            );
+          if (result.numSpeakers <= voice.speakerId)
+            throw new Error(
+              `The selected speaker index ${voice.speakerId} is unavailable. The voice model reported ${result.numSpeakers} speakers.`,
+            );
           this.loadedModel = model.id;
         }
         if (generation !== this.generation) return;
@@ -296,7 +338,10 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
           phase: "generating",
           message: `Generating ${voice.name} audio offline…`,
         });
-        const result = await sherpa.TTS.generateSpeech(clean, {
+        // The high-level TTS helper discards native errors and returns success:false.
+        // The public native API preserves the rejection while using the initialized model.
+        const result = await sherpa.generateTts({
+          text: clean,
           speakerId: voice.speakerId,
           speakingRate: rate,
           playAudio: false,
@@ -312,11 +357,37 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
             );
           return;
         }
+        const nativeResult = result as typeof result & {
+          saved?: boolean;
+          error?: string;
+          message?: string;
+        };
+        if (nativeResult.saved === false)
+          throw new Error(
+            `The native speech engine could not save the generated WAV (saved=false).\nNative response:\n${errorDetails(nativeResult)}\nCheck free device storage, then try Read aloud again.`,
+          );
         if (!result.success || !result.filePath)
-          throw new Error("Offline voice did not produce an audio file.");
+          throw new Error(
+            `The native speech engine returned no usable audio file.\nNative response:\n${errorDetails(nativeResult)}`,
+          );
         const audioUri = result.filePath.startsWith("file:")
           ? result.filePath
           : `file://${result.filePath}`;
+        const audioInfo = await FileSystem.getInfoAsync(audioUri);
+        if (
+          !audioInfo.exists ||
+          audioInfo.isDirectory ||
+          audioInfo.size <= 44
+        ) {
+          const reason = !audioInfo.exists
+            ? "the file does not exist"
+            : audioInfo.isDirectory
+              ? "the saved path is a directory"
+              : `the file contains only ${audioInfo.size} bytes, with no usable WAV audio`;
+          throw new Error(
+            `The generated voice WAV cannot be played because ${reason}. Native generation reported success=${result.success}${nativeResult.saved === undefined ? "" : `, saved=${nativeResult.saved}`}. Check free device storage, then try Read aloud again.`,
+          );
+        }
         if (this.state.audioUri)
           await FileSystem.deleteAsync(this.state.audioUri, {
             idempotent: true,
@@ -373,11 +444,19 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
           this.playbackListener?.remove();
           this.playbackListener = null;
           this.finishPlayback = null;
-          this.player?.pause();
-          this.player?.release();
+          let failure = error;
+          try {
+            this.player?.pause();
+            this.player?.release();
+          } catch (cleanup) {
+            failure = new Error(
+              `Playback cleanup also failed: ${speechFailureDetails(cleanup)}`,
+              { cause: error },
+            );
+          }
           this.player = null;
-          this.fail(error);
-          throw error;
+          this.fail(failure);
+          throw failure;
         }
       }
     };
@@ -393,35 +472,41 @@ class NativeSpeech extends SpeechStateStore implements OfflineSpeech {
     const wasBusy = !!this.active || !!this.download || !!this.player;
     if (cancelAdmission) ++this.admission;
     const generation = ++this.generation;
-    if (this.active || this.download)
-      this.update({ message: "Stopping offline speech…" });
-    this.controller?.abort();
-    this.playbackListener?.remove();
-    this.playbackListener = null;
-    this.player?.pause();
-    this.player?.release();
-    this.player = null;
-    this.finishPlayback?.();
-    this.finishPlayback = null;
-    const download = this.download;
-    this.download = null;
-    const active = this.active;
-    const cancelDownload = download?.cancelAsync().catch(() => undefined);
-    const stopSpeech = this.sherpa?.TTS.stopSpeech();
-    // Native inference must drain before a second model can replace its resources.
-    await Promise.all([
-      cancelDownload,
-      stopSpeech,
-      active?.catch(() => undefined),
-    ]);
-    if (generation === this.generation)
-      this.update({
-        phase: "idle",
-        progress: null,
-        ...(cancelAdmission && wasBusy
-          ? { message: "Offline speech stopped." }
-          : {}),
-      });
+    try {
+      if (this.active || this.download)
+        this.update({ message: "Stopping offline speech…" });
+      this.controller?.abort();
+      this.playbackListener?.remove();
+      this.playbackListener = null;
+      this.player?.pause();
+      this.player?.release();
+      this.player = null;
+      this.finishPlayback?.();
+      this.finishPlayback = null;
+      const download = this.download;
+      this.download = null;
+      const active = this.active;
+      const cancelDownload = download?.cancelAsync();
+      // The public native API keeps native stop errors intact.
+      const stopSpeech = this.sherpa?.stopTts();
+      // Native inference must drain before a second model can replace its resources.
+      await Promise.all([
+        cancelDownload,
+        stopSpeech,
+        active?.catch(() => undefined),
+      ]);
+      if (generation === this.generation)
+        this.update({
+          phase: "idle",
+          progress: null,
+          ...(cancelAdmission && wasBusy
+            ? { message: "Offline speech stopped." }
+            : {}),
+        });
+    } catch (cause) {
+      if (generation === this.generation) this.fail(cause);
+      throw cause;
+    }
   }
 }
 

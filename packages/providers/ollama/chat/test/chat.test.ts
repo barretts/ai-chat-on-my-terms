@@ -61,6 +61,61 @@ async function collect(iterable: AsyncIterable<unknown>) {
   return result as Array<Record<string, any>>;
 }
 
+test("preserves complete HTTP error bodies and their status while retaining Ollama classification", async () => {
+  for (const status of [401, 400]) {
+    const raw =
+      "input length exceeds context window: " +
+      "x".repeat(20_000) +
+      "http-tail";
+    const { port } = provider(
+      async () =>
+        new Response(raw, {
+          status,
+          statusText: "Fixture failure",
+          headers: { "content-type": "text/plain" },
+        }),
+    );
+    const events = await collect(
+      port.startRun(request, new AbortController().signal),
+    );
+    assert.equal(events.at(-1)?.type, "RunFailed");
+    const failure = events.at(-1)?.error;
+    assert.equal(
+      failure.code,
+      status === 401 ? "unauthorized" : "context-full",
+    );
+    assert.ok(failure.message.includes(raw));
+    assert.ok(failure.message.includes(`HTTP ${status} Fixture failure`));
+    assert.ok(failure.message.includes("text/plain"));
+    assert.equal(RunEventBatchSchema.safeParse(events).success, true);
+  }
+});
+
+test("preserves structured NDJSON errors without a message and malformed raw events", async () => {
+  const payload = JSON.stringify({
+    error: { detail: "input length exceeds context window", expected: 8192 },
+    request_id: "fixture-request",
+    cause: { policy: "server explanation" },
+    details: "x".repeat(9_000) + "stream-tail",
+  });
+  for (const raw of [
+    payload,
+    "null",
+    "broken-json" + "x".repeat(9_000) + "malformed-tail",
+  ]) {
+    const { port } = provider(async () => new Response(raw + "\n"));
+    const events = await collect(
+      port.startRun(request, new AbortController().signal),
+    );
+    assert.equal(events.at(-1)?.type, "RunFailed");
+    assert.equal(
+      events.at(-1)?.error.code,
+      raw === payload ? "context-full" : "malformed",
+    );
+    assert.ok(events.at(-1)?.error.message.includes(raw));
+  }
+});
+
 test("parses fragmented native NDJSON, reasoning, tools and usage while preserving the explicit binding", async () => {
   let posted: Record<string, any> | undefined;
   const chunks = [
@@ -173,11 +228,16 @@ test("normalizes Ollama context errors and disconnects before done", async () =>
   const contextEvents = await collect(
     contextPort.startRun(request, new AbortController().signal),
   );
-  assert.deepEqual(contextEvents.at(-1)?.error, {
-    code: "context-full",
-    message: "Ollama context limit exceeded",
-    recoverable: false,
-  });
+  assert.equal(contextEvents.at(-1)?.error.code, "context-full");
+  assert.equal(contextEvents.at(-1)?.error.recoverable, false);
+  assert.match(
+    contextEvents.at(-1)?.error.message,
+    /Ollama context limit exceeded/,
+  );
+  assert.match(
+    contextEvents.at(-1)?.error.message,
+    /input length exceeds context window/,
+  );
   const brokenPort = provider(
     async () => new Response(enc.encode('{"message":{"content":"partial"}}\n')),
   ).port;

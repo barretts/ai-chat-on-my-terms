@@ -1,5 +1,9 @@
 import type { CapabilityMap, ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent } from "@locallab/contracts/run-events";
+import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
 import { EntityIdSchema } from "@locallab/contracts/identity";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
 import type { SecretRef, SecretStore } from "@locallab/security-secrets";
@@ -178,6 +182,9 @@ export class SQLiteChatProviderRegistry {
 export interface ChatProviderFactoryOptions {
   fetch: FetchLike;
   secrets: SecretStore;
+  /** Only enabled after the selected server/model confirms function tools. */
+  toolsEnabled?: boolean;
+  ninferThinkingControl?: boolean;
   nativePort?: (
     registration: ChatProviderRegistration,
   ) => ProviderPort | undefined;
@@ -272,6 +279,8 @@ export function createRegisteredChatProvider(
       ...(r.headerRefs?.length ? { headerRefs: r.headerRefs } : {}),
     } as const;
     const compatible = createCompatibleLocalProvider({
+      ...(options.toolsEnabled ? { toolsEnabled: true } : {}),
+      ...(options.ninferThinkingControl ? { ninferThinkingControl: true } : {}),
       transport,
       secretStore: options.secrets,
       resolveConnection: async (id) => {
@@ -408,6 +417,10 @@ export function createRegisteredChatProvider(
     };
     port = bindConnection(
       createCloudCompatibleProvider({
+        ...(options.toolsEnabled ? { toolsEnabled: true } : {}),
+        ...(options.ninferThinkingControl
+          ? { ninferThinkingControl: true }
+          : {}),
         fetch: options.fetch,
         secrets: options.secrets,
         resolveConnection: async (id) => {
@@ -469,9 +482,18 @@ export function safeChatProvider(port: ProviderPort): ProviderPort {
               code: event.error.code,
             }),
           );
+          const publicFailure = {
+            ...event.error,
+            code: safe.code,
+            message: safe.message,
+          };
+          retainLocalFailureCause(
+            publicFailure,
+            localFailureCause(event.error),
+          );
           yield {
             ...event,
-            error: { ...event.error, code: safe.code, message: safe.message },
+            error: publicFailure,
           };
         }
       } catch (error) {

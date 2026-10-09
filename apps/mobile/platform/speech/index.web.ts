@@ -1,6 +1,7 @@
 import { unzipSync } from "fflate";
+import { httpResponseError } from "@locallab/network-http";
 import { speechModel, speechModels, speechText, speechVoice } from "./catalog";
-import { SpeechStateStore, speechRate } from "./state";
+import { SpeechStateStore, speechFailureDetails, speechRate } from "./state";
 import type { OfflineSpeech } from "./types";
 export { speechModels, speechVoices } from "./catalog";
 export type { OfflineSpeech, SpeechState } from "./types";
@@ -30,7 +31,7 @@ async function verify(
 ) {
   if (bytes.byteLength !== file.bytes)
     throw new Error(
-      `Incomplete offline speech file: ${file.name}. Remove and download the model again.`,
+      `Incomplete offline speech file: ${file.name}. Received ${bytes.byteLength} bytes; expected ${file.bytes}. Remove and download the model again.`,
     );
   if (!runtime) return;
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
@@ -123,9 +124,11 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
         { signal: controller.signal },
       );
       if (!manifestResponse.ok)
-        throw new Error(
-          "The local speech model assets are not prepared. Run tools/prepare-offline-speech.ps1 on this preview host.",
-        );
+        throw await httpResponseError(manifestResponse, {
+          summary:
+            "The voice-pack manifest request failed. Ask the preview host owner to prepare offline speech assets, then retry.",
+          signal: controller.signal,
+        });
       const manifest = (await manifestResponse.clone().json()) as Manifest;
       if (
         !manifest.files?.length ||
@@ -136,10 +139,14 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
             file.bytes > 400_000_000,
         )
       )
-        throw new Error("Invalid offline model manifest.");
+        throw new Error(
+          "The offline voice-pack manifest contains no usable files or invalid file names/sizes.",
+        );
       const total = manifest.files.reduce((sum, file) => sum + file.bytes, 0);
       if (total > 500_000_000)
-        throw new Error("Offline speech model exceeds the download limit.");
+        throw new Error(
+          `The offline voice pack contains ${total} bytes, exceeding this browser's 500000000-byte download limit.`,
+        );
       let completed = 0;
       await this.cacheRuntime(cache, controller.signal);
       for (const file of manifest.files) {
@@ -148,7 +155,10 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
         if (!existing) {
           const response = await fetch(url, { signal: controller.signal });
           if (!response.ok)
-            throw new Error(`Voice download failed: ${file.name}`);
+            throw await httpResponseError(response, {
+              summary: `Voice file ${file.name} could not download.`,
+              signal: controller.signal,
+            });
           if (!response.body)
             throw new Error("The browser cannot stream this voice download.");
           const reader = response.body.getReader();
@@ -161,14 +171,16 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
                 const chunk = await reader.read();
                 if (chunk.done) {
                   if (received !== file.bytes)
-                    throw new Error(`Incomplete voice download: ${file.name}`);
+                    throw new Error(
+                      `Incomplete voice file ${file.name}: received ${received} bytes; expected ${file.bytes}.`,
+                    );
                   target.close();
                   return;
                 }
                 received += chunk.value.byteLength;
                 if (received > file.bytes)
                   throw new Error(
-                    `Voice download exceeded its expected size: ${file.name}`,
+                    `Voice file ${file.name} received ${received} bytes, exceeding its expected ${file.bytes} bytes.`,
                   );
                 const now = performance.now();
                 if (
@@ -189,7 +201,14 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
           try {
             await cache.put(url, new Response(stream));
           } catch (error) {
-            await cache.delete(url);
+            try {
+              await cache.delete(url);
+            } catch (cleanup) {
+              throw new Error(
+                `Removing the incomplete voice file from browser storage also failed: ${speechFailureDetails(cleanup)}`,
+                { cause: error },
+              );
+            }
             throw error;
           }
         } else await verify(await existing.arrayBuffer(), file);
@@ -233,9 +252,11 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
       signal: signal ?? null,
     });
     if (!response.ok)
-      throw new Error(
-        "Offline voice tools are not available on this preview host.",
-      );
+      throw await httpResponseError(response, {
+        summary:
+          "The offline voice runtime manifest request failed. The voice tools are unavailable on this preview host.",
+        ...(signal ? { signal } : {}),
+      });
     const manifest = (await response.clone().json()) as Manifest & {
       version: string;
       sherpaOnnxVersion: string;
@@ -256,21 +277,28 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
           !/^[\da-f]{64}$/i.test(file.sha256 ?? ""),
       )
     )
-      throw new Error("Invalid offline voice tools manifest.");
+      throw new Error(
+        "The offline voice runtime manifest has an unsupported version, missing files, or invalid file sizes/checksums.",
+      );
     for (const file of manifest.files) {
       const url = `/speech/${file.name}`;
       let saved = await cache.match(url);
+      let cachedFailure: unknown;
       if (saved) {
         try {
           await verify(await saved.clone().arrayBuffer(), file, true);
-        } catch {
+        } catch (cause) {
+          cachedFailure = cause;
           saved = undefined;
         }
       }
       if (!saved) {
         const downloaded = await fetch(url, { signal: signal ?? null });
         if (!downloaded.ok)
-          throw new Error(`Offline voice tool unavailable: ${file.name}`);
+          throw new Error(
+            `Offline voice runtime file ${file.name} could not download.\n${(await httpResponseError(downloaded, signal ? { signal } : {})).message}`,
+            { cause: cachedFailure },
+          );
         const bytes = await downloaded.arrayBuffer();
         await verify(bytes, file, true);
         signal?.throwIfAborted();
@@ -515,13 +543,21 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
       }
     } catch (error) {
       if (generation !== this.generation) return;
-      this.fail(error);
-      await this.releaseWorker();
-      if (this.context) {
-        await this.context.close();
+      let failure = error;
+      try {
+        await this.releaseWorker();
+        if (this.context) await this.context.close();
+      } catch (cleanup) {
+        failure = new Error(
+          `Browser playback cleanup also failed: ${speechFailureDetails(cleanup)}`,
+          { cause: error },
+        );
+      } finally {
         this.context = null;
+        this.source = null;
       }
-      throw error;
+      this.fail(failure);
+      throw failure;
     }
   }
   private async releaseWorker() {
@@ -538,34 +574,39 @@ class BrowserSpeech extends SpeechStateStore implements OfflineSpeech {
     const wasBusy = !["idle", "error"].includes(this.state.phase);
     if (cancelAdmission) ++this.admission;
     const generation = ++this.generation;
-    this.controller?.abort();
-    if (this.source) {
-      try {
-        this.source.stop();
-      } catch {
-        /* Already ended. */
+    try {
+      this.controller?.abort();
+      if (this.source) {
+        try {
+          this.source.stop();
+        } catch {
+          /* Already ended. */
+        }
+        this.source = null;
       }
-      this.source = null;
+      this.finishPlayback?.();
+      this.finishPlayback = null;
+      const context = this.context;
+      this.context = null;
+      const release = this.releaseWorker();
+      await Promise.all([
+        context && context.state !== "closed"
+          ? context.close()
+          : Promise.resolve(),
+        release,
+      ]);
+      if (generation === this.generation)
+        this.update({
+          phase: "idle",
+          progress: null,
+          ...(cancelAdmission && wasBusy
+            ? { message: "Offline speech stopped." }
+            : {}),
+        });
+    } catch (cause) {
+      if (generation === this.generation) this.fail(cause);
+      throw cause;
     }
-    this.finishPlayback?.();
-    this.finishPlayback = null;
-    const context = this.context;
-    this.context = null;
-    const release = this.releaseWorker();
-    await Promise.all([
-      context && context.state !== "closed"
-        ? context.close().catch(() => undefined)
-        : Promise.resolve(),
-      release,
-    ]);
-    if (generation === this.generation)
-      this.update({
-        phase: "idle",
-        progress: null,
-        ...(cancelAdmission && wasBusy
-          ? { message: "Offline speech stopped." }
-          : {}),
-      });
   }
 }
 

@@ -1,12 +1,14 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { SQLiteOnboardingRepository } from "../features/onboarding";
 import { openMobileDatabase } from "../platform/database-open";
 import { retryMobileDatabaseOpen } from "../platform/database-retry";
 import { NativeButton } from "@locallab/ui-native-primitives";
 import { chatStartupError } from "../composition/chat/startup-errors";
+import { ErrorNotice } from "../features/diagnostics/error-notice";
+import { describeError } from "../features/diagnostics/errors";
 
 export default function IndexRoute() {
   const [destination, setDestination] = useState<
@@ -23,7 +25,13 @@ export default function IndexRoute() {
         if (mounted) setDestination(state.completed ? "/chat" : "/onboarding");
       })
       .catch((cause: unknown) => {
-        if (mounted) setError(chatStartupError(cause, Platform.OS));
+        if (mounted)
+          setError(
+            describeError(cause, {
+              operation: "Open LocalLab storage",
+              recovery: chatStartupError(cause, Platform.OS),
+            }),
+          );
       });
     return () => {
       mounted = false;
@@ -31,9 +39,11 @@ export default function IndexRoute() {
   }, [attempt]);
   if (destination) return <Redirect href={destination} />;
   return (
-    <View
-      style={{
-        flex: 1,
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        padding: 24,
         alignItems: "center",
         justifyContent: "center",
         gap: 12,
@@ -41,7 +51,7 @@ export default function IndexRoute() {
     >
       {error ? (
         <>
-          <Text accessibilityRole="alert">{error}</Text>
+          <ErrorNotice message={error} />
           <NativeButton
             accessibilityLabel="Retry opening LocalLab"
             onPress={() =>
@@ -57,6 +67,6 @@ export default function IndexRoute() {
           <Text>Preparing LocalLab…</Text>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }

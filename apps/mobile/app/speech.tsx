@@ -1,6 +1,5 @@
-import { router } from "expo-router";
-import { SpeechPanel } from "../features/speech/screen";
+import { Redirect } from "expo-router";
 
 export default function SpeechRoute() {
-  return <SpeechPanel onClose={() => router.replace("/chat")} />;
+  return <Redirect href={{ pathname: "/chat", params: { panel: "voices" } }} />;
 }

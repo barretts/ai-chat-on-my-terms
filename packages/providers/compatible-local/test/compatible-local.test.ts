@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { HttpTransport, SseMessage } from "@locallab/network-http";
+import {
+  createHttpTransport,
+  type HttpTransport,
+  type SseMessage,
+} from "@locallab/network-http";
 import type { RunRequest } from "@locallab/contracts/run-events";
 import {
   COMPATIBLE_LOCAL_PRESETS,
@@ -185,5 +189,110 @@ describe("compatible local presets", () => {
     expect(new Headers(fake.calls[0]?.init?.headers).get("authorization")).toBe(
       "Bearer resolved",
     );
+  });
+});
+
+describe("complete compatible server failures", () => {
+  const connection = createCustomCompatiblePreset(
+    "https://models.example.test",
+  );
+  const fullText =
+    "upstream fixture explanation\n" +
+    "detail ".repeat(1800) +
+    "last-response-line";
+  for (const body of [
+    fullText,
+    JSON.stringify({
+      error: { detail: fullText },
+      request_id: "model-fixture-request",
+    }),
+  ]) {
+    it(`retains a complete ${body.startsWith("{") ? "structured" : "text"} HTTP failure for model discovery and generation`, async () => {
+      const transport = createHttpTransport({
+        fetch: async () =>
+          new Response(body, {
+            status: 503,
+            statusText: "Service Unavailable",
+            headers: { "content-type": "text/plain" },
+          }),
+        policy: { authorizedOrigins: [connection.origin] },
+      });
+      const provider = createCompatibleLocalProvider({
+        transport,
+        resolveConnection: async () => connection,
+      });
+      const models = await provider.listModels(connection);
+      expect(models.ok).toBe(false);
+      if (!models.ok) {
+        expect(models.error.message).toContain(body);
+        expect(models.error.message).toContain("503 Service Unavailable");
+      }
+      const events = [];
+      for await (const event of provider.startRun(
+        request,
+        new AbortController().signal,
+      ))
+        events.push(event);
+      const failure = events.at(-1);
+      expect(failure?.type).toBe("RunFailed");
+      if (failure?.type === "RunFailed")
+        expect(failure.error.message).toContain(body);
+    });
+  }
+  it("retains non-ok model responses from a supplied transport and full malformed HTTP200 catalogs", async () => {
+    for (const status of [200, 502]) {
+      const transport: HttpTransport = {
+        request: async () =>
+          new Response(fullText, {
+            status,
+            statusText: status === 200 ? "OK" : "Bad Gateway",
+          }),
+        streamSse: async function* () {},
+      };
+      const provider = createCompatibleLocalProvider({
+        transport,
+        resolveConnection: async () => connection,
+      });
+      const models = await provider.listModels(connection);
+      expect(models.ok).toBe(false);
+      if (!models.ok) {
+        expect(models.error.message).toContain(fullText);
+        expect(models.error.message).toContain(String(status));
+      }
+    }
+  });
+  it("does not skip streamed error envelopes or malformed data and retains every response field", async () => {
+    const errorFrame = JSON.stringify({
+      error: { code: 429, details: fullText },
+      request_id: "stream-fixture-request",
+    });
+    for (const body of [
+      errorFrame,
+      fullText,
+      JSON.stringify({
+        detail: fullText,
+        request_id: "unrecognized-frame-fixture",
+      }),
+    ]) {
+      const { transport } = mockTransport({}, [body]);
+      const provider = createCompatibleLocalProvider({
+        transport,
+        resolveConnection: async () => connection,
+      });
+      const events = [];
+      for await (const event of provider.startRun(
+        request,
+        new AbortController().signal,
+      ))
+        events.push(event);
+      const failure = events.at(-1);
+      expect(failure?.type).toBe("RunFailed");
+      if (failure?.type === "RunFailed") {
+        expect(failure.error.message).toContain(body);
+        expect(failure.error.code).toBe(
+          body === errorFrame ? "quota" : "malformed",
+        );
+      }
+    }
   });
 });

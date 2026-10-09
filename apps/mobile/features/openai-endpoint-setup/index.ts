@@ -110,6 +110,11 @@ export async function saveOpenAIEndpointSetup(input: {
   readonly apiKey: string;
   readonly repository: OpenAIEndpointSetupRepository;
   readonly secrets: SecretStore;
+  readonly onCleanupFailure?: (
+    cause: unknown,
+    ref: SecretRef,
+    committed: boolean,
+  ) => void;
 }): Promise<OpenAIEndpointSetup> {
   const endpoint = validateEndpoint(input.endpointUrl);
   const modelId = input.modelId.trim();
@@ -141,12 +146,34 @@ export async function saveOpenAIEndpointSetup(input: {
   try {
     await input.repository.save(setup);
   } catch (error) {
-    if (createdRef)
-      await input.secrets.remove(createdRef).catch(() => undefined);
+    if (createdRef) {
+      try {
+        await input.secrets.remove(createdRef);
+      } catch (cleanupCause) {
+        if (input.onCleanupFailure)
+          input.onCleanupFailure(cleanupCause, createdRef, false);
+        else
+          throw new Error(
+            `Saving the endpoint failed: ${error instanceof Error ? error.message : "no save details returned"}. Removing the unsaved API key also failed.`,
+            { cause: cleanupCause },
+          );
+      }
+    }
     throw error;
   }
-  if (previous?.apiKeyRef && previous.apiKeyRef !== ref)
-    await input.secrets.remove(previous.apiKeyRef).catch(() => undefined);
+  if (previous?.apiKeyRef && previous.apiKeyRef !== ref) {
+    try {
+      await input.secrets.remove(previous.apiKeyRef);
+    } catch (cause) {
+      if (input.onCleanupFailure)
+        input.onCleanupFailure(cause, previous.apiKeyRef, true);
+      else
+        throw new Error(
+          "The endpoint was saved, but removing its previous API key failed.",
+          { cause },
+        );
+    }
+  }
   return setup;
 }
 

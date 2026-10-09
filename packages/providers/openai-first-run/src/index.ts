@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   createHttpTransport,
+  errorDetails,
   HttpTransportError,
   type FetchLike,
   type HttpTransport,
@@ -81,13 +82,19 @@ export function createOpenAIResponsesProvider(
           { headers, ...(signal ? { signal } : {}) },
           signal ? { signal } : {},
         );
+        const raw = await response.text();
         let body: unknown;
         try {
-          body = await response.json();
-        } catch {
-          throw malformed();
+          body = JSON.parse(raw);
+        } catch (cause) {
+          throw malformed(
+            `OpenAI model list contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+          );
         }
-        if (!isRecord(body) || !Array.isArray(body.data)) throw malformed();
+        if (!isRecord(body) || !Array.isArray(body.data))
+          throw malformed(
+            `OpenAI model list was malformed.\nServer response:\n${raw}`,
+          );
         const ids = body.data.flatMap((item) =>
           isRecord(item) && typeof item.id === "string" ? [item.id] : [],
         );
@@ -160,20 +167,27 @@ export function createOpenAIResponsesProvider(
           const data = parseFrame(frame.data);
           if (!data) continue;
           const type = typeof data.type === "string" ? data.type : frame.event;
+          if (data.error != null) throw apiFailure(data);
           if (type === "response.output_text.delta") {
             if (typeof data.delta !== "string")
-              throw malformed("Responses text delta was malformed");
+              throw malformed(
+                `Responses text delta was malformed.\nServer response:\n${frame.data}`,
+              );
             yield emit({ type: "TextDelta", text: data.delta });
           } else if (
             type === "response.reasoning_text.delta" ||
             type === "response.reasoning_summary_text.delta"
           ) {
             if (typeof data.delta !== "string")
-              throw malformed("Responses reasoning delta was malformed");
+              throw malformed(
+                `Responses reasoning delta was malformed.\nServer response:\n${frame.data}`,
+              );
             yield emit({ type: "ReasoningDelta", text: data.delta });
           } else if (type === "response.completed") {
             if (!isRecord(data.response))
-              throw malformed("Responses completion event was malformed");
+              throw malformed(
+                `Responses completion event was malformed.\nServer response:\n${frame.data}`,
+              );
             const response = data.response;
             const usage = isRecord(response.usage) ? response.usage : undefined;
             const inputTokens = safeNonnegativeInt(usage?.input_tokens);
@@ -188,7 +202,9 @@ export function createOpenAIResponsesProvider(
             break;
           } else if (type === "response.incomplete") {
             if (!isRecord(data.response))
-              throw malformed("Responses incomplete event was malformed");
+              throw malformed(
+                `Responses incomplete event was malformed.\nServer response:\n${frame.data}`,
+              );
             const response = data.response;
             const usage = isRecord(response.usage) ? response.usage : undefined;
             const inputTokens = safeNonnegativeInt(usage?.input_tokens);
@@ -311,10 +327,10 @@ async function authHeaders(
     const value = resolved.authorization;
     if (!value || /[\r\n]/.test(value)) throw new Error();
     return { authorization: `Bearer ${value}` };
-  } catch {
+  } catch (cause) {
     throw new OpenAIResponsesError(
       "unauthorized",
-      "The saved API key is unavailable for this endpoint",
+      `The saved API key is unavailable for this endpoint.\n${errorDetails(cause)}`,
       true,
     );
   }
@@ -366,15 +382,29 @@ function parseFrame(raw: string): Record<string, unknown> | undefined {
   let value: unknown;
   try {
     value = JSON.parse(raw);
-  } catch {
-    throw malformed("Responses stream contained malformed JSON");
+  } catch (cause) {
+    throw malformed(
+      `Responses stream contained malformed JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+    );
   }
   if (!isRecord(value))
-    throw malformed("Responses stream contained a malformed event");
+    throw malformed(
+      `Responses stream contained a malformed event.\nServer response:\n${raw}`,
+    );
   return value;
 }
 
 function apiFailure(event: Record<string, unknown>): OpenAIResponsesError {
+  const classified = classifyApiFailure(event);
+  return new OpenAIResponsesError(
+    classified.code,
+    `${classified.message}\nServer response:\n${JSON.stringify(event, null, 2)}`,
+    classified.recoverable,
+  );
+}
+function classifyApiFailure(
+  event: Record<string, unknown>,
+): OpenAIResponsesError {
   const root = isRecord(event.response) ? event.response : event;
   const error = isRecord(root.error)
     ? root.error
@@ -420,6 +450,17 @@ function canceled(): OpenAIResponsesError {
   return new OpenAIResponsesError("canceled", "OpenAI request canceled", true);
 }
 function normalizeError(error: unknown): OpenAIResponsesError {
+  const classified = classifyError(error);
+  const detail = errorDetails(error);
+  return classified.message.includes(detail)
+    ? classified
+    : new OpenAIResponsesError(
+        classified.code,
+        `${classified.message}\n${detail}`,
+        classified.recoverable,
+      );
+}
+function classifyError(error: unknown): OpenAIResponsesError {
   if (error instanceof OpenAIResponsesError) return error;
   if (error instanceof HttpTransportError) {
     if (error.code === "unauthorized" || error.code === "forbidden")

@@ -16,7 +16,13 @@ Same-origin redirects are followed with a bounded count.
 `streamSse` incrementally decodes UTF-8, handles split lines and multi-line data,
 ignores heartbeat comments, bounds event size, and continues to observe timeout
 and caller cancellation until the body ends. Transport failures use
-`HttpTransportError` codes and contain no URL, header, or credential values.
+`HttpTransportError` codes. Failed HTTP responses retain the full status, content
+type and body in the error message; `error.response` also exposes these details.
+Interrupted reads retain the received text and label it incomplete. Native Fetch
+implementations without a readable stream fall back to `response.text()`.
+Applications must redact credentials before displaying or copying these details,
+and keep raw response bodies out of persistent logs. No request headers are added
+to transport errors.
 
 ## Host integration
 

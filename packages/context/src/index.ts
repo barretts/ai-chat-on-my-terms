@@ -36,6 +36,8 @@ export interface PackedContext {
 
 export interface PackContextOptions {
   messages: readonly ContextMessage[];
+  /** Messages that must survive trimming or compaction, together with instructions. */
+  requiredMessageIds?: readonly string[];
   tokenBudget: number;
   reservedOutputTokens: number;
   policy: ContextPolicy;
@@ -67,6 +69,16 @@ export async function packContext(
   const capacity = options.tokenBudget - options.reservedOutputTokens;
   const countTokens = options.countTokens ?? conservativeTokenCount;
   const groups = atomicMessageGroups(options.messages);
+  const requiredIds = new Set(options.requiredMessageIds);
+  const mandatory = mandatoryGroupIndexes(groups, requiredIds);
+  const requiredTokens = countTokens(
+    mandatory.flatMap((index) => groups[index]!),
+  );
+  if (requiredTokens > capacity) {
+    throw new ContextBudgetError(
+      `Required instructions${requiredIds.size ? " and the current message" : ""} need ${requiredTokens} input tokens, but the input budget is ${capacity} (${options.tokenBudget} context tokens minus ${options.reservedOutputTokens} reserved for the response). Shorten the persona/instructions or message, increase the context window to match your model, or lower the output token limit.`,
+    );
+  }
   const originalTokens = countTokens(options.messages);
   if (originalTokens <= capacity) {
     return result(options.messages, originalTokens, options, [], []);
@@ -84,8 +96,8 @@ export async function packContext(
 
   const selected =
     options.policy === "roll"
-      ? chooseNewest(groups, capacity, countTokens)
-      : chooseCutMiddle(groups, capacity, countTokens);
+      ? chooseNewest(groups, capacity, countTokens, groups.length, requiredIds)
+      : chooseCutMiddle(groups, capacity, countTokens, requiredIds);
   const selectedIds = new Set(selected.flat().map((message) => message.id));
   const messages = selected.flat();
   const omitted = options.messages
@@ -118,6 +130,7 @@ async function summarizeContext(
       Infinity,
       countTokens,
       retainedGroups,
+      new Set(options.requiredMessageIds),
     );
     const retainedIds = new Set(retained.flat().map((message) => message.id));
     const omitted = options.messages.filter(
@@ -164,17 +177,14 @@ function chooseNewest(
   capacity: number,
   countTokens: (messages: readonly ContextMessage[]) => number,
   maxGroups = groups.length,
+  requiredIds: ReadonlySet<string> = new Set(),
 ): (readonly ContextMessage[])[] {
-  const mandatory = groups.flatMap((group, index) =>
-    group.some(
-      (message) => message.role === "system" || message.role === "developer",
-    )
-      ? [index]
-      : [],
-  );
+  const mandatory = mandatoryGroupIndexes(groups, requiredIds);
   const selected = new Set(mandatory);
   if (countTokens(mandatory.flatMap((index) => groups[index]!)) > capacity) {
-    return [];
+    throw new ContextBudgetError(
+      "Required instructions and messages exceed the input token budget",
+    );
   }
   const targetCount = Math.max(maxGroups, mandatory.length);
   for (
@@ -197,23 +207,31 @@ function chooseCutMiddle(
   groups: readonly (readonly ContextMessage[])[],
   capacity: number,
   countTokens: (messages: readonly ContextMessage[]) => number,
+  requiredIds: ReadonlySet<string>,
 ): (readonly ContextMessage[])[] {
-  if (groups.length <= 2) return chooseNewest(groups, capacity, countTokens);
+  if (groups.length <= 2)
+    return chooseNewest(
+      groups,
+      capacity,
+      countTokens,
+      groups.length,
+      requiredIds,
+    );
   const selected = new Set<number>([
-    ...groups.flatMap((group, index) =>
-      group.some(
-        (message) => message.role === "system" || message.role === "developer",
-      )
-        ? [index]
-        : [],
-    ),
+    ...mandatoryGroupIndexes(groups, requiredIds),
     0,
     groups.length - 1,
   ]);
   if (
     countTokens([...selected].flatMap((index) => groups[index]!)) > capacity
   ) {
-    return chooseNewest(groups, capacity, countTokens);
+    return chooseNewest(
+      groups,
+      capacity,
+      countTokens,
+      groups.length,
+      requiredIds,
+    );
   }
   for (let distance = 1; distance < groups.length; distance++) {
     for (const index of [distance, groups.length - 1 - distance]) {
@@ -229,6 +247,22 @@ function chooseCutMiddle(
     }
   }
   return [...selected].sort((a, b) => a - b).map((index) => groups[index]!);
+}
+
+function mandatoryGroupIndexes(
+  groups: readonly (readonly ContextMessage[])[],
+  requiredIds: ReadonlySet<string>,
+): number[] {
+  return groups.flatMap((group, index) =>
+    group.some(
+      (message) =>
+        message.role === "system" ||
+        message.role === "developer" ||
+        requiredIds.has(message.id),
+    )
+      ? [index]
+      : [],
+  );
 }
 
 function atomicMessageGroups(

@@ -9,6 +9,10 @@ import type {
 } from "@locallab/storage-sqlite-core";
 import type { ProviderPort } from "@locallab/contracts/ports";
 import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
+import {
   RunEventBatchSchema,
   type RunEvent,
   type RunRequest,
@@ -186,6 +190,193 @@ function terminal(events: RunEvent[]) {
     ["RunCompleted", "RunFailed", "RunCanceled"].includes(event.type),
   );
 }
+
+test("provider failure fields and complete local diagnostics survive tool-loop schema projection", async () => {
+  const cause = new Error(
+    `HTTP 400\nResponse body:\n${"x".repeat(12000)}\nCOMPLETE-END`,
+  );
+  const error = {
+    code: "offline",
+    message: "HTTP 400 bad request",
+    recoverable: false,
+  };
+  retainLocalFailureCause(error, cause);
+  const provider = fakeProvider(() => [
+    { type: "RunStarted" },
+    { type: "RunFailed", error },
+  ]);
+  const events = await collect(
+    engine(registry()).startRun(
+      request,
+      provider.port,
+      policy,
+      new AbortController().signal,
+    ),
+  );
+  const failure = events.at(-1);
+  expect(failure).toMatchObject({ type: "RunFailed", error });
+  if (!failure || failure.type !== "RunFailed")
+    throw new Error("Missing failure");
+  expect(localFailureCause(failure.error)).toBe(cause);
+  expect(JSON.stringify(events)).not.toContain("COMPLETE-END");
+  expect(RunEventBatchSchema.safeParse(events).success).toBe(true);
+});
+
+test("tool failures preserve explicit message, recovery fields, and local diagnostics in events and replay", async () => {
+  const disk = await durable();
+  const cause = new Error(
+    "Revision 2 changed to revision 3. Retry after reading the current file.",
+  );
+  const error = {
+    code: "malformed" as const,
+    message:
+      "note.md changed: expected revision 2, current revision 3. Read it again before updating.",
+    recoverable: false,
+    backend: "chat-workspace",
+    retryAfterMs: 250,
+  };
+  retainLocalFailureCause(error, cause);
+  const provider = fakeProvider((child, round) =>
+    round === 1 ? calls(child) : [{ type: "RunCompleted" }],
+  );
+  const events = await collect(
+    engine(
+      registry(async () => ({ ok: false, error })),
+      { store: disk.store },
+    ).startRun(request, provider.port, policy, new AbortController().signal),
+  );
+  const result = events.find((event) => event.type === "ToolResult");
+  expect(result).toMatchObject({ output: { error } });
+  if (!result || result.type !== "ToolResult")
+    throw new Error("Missing tool result");
+  expect(localFailureCause((result.output as { error: object }).error)).toBe(
+    cause,
+  );
+  const replay = provider.seen[1]?.context.find((item) => item.kind === "tool");
+  expect((replay?.value as { content: string }).content).toBe(
+    JSON.stringify({ error }),
+  );
+  expect((await disk.store.list())[0]).toMatchObject({
+    state: "failed",
+    output: { error },
+  });
+  expect(RunEventBatchSchema.safeParse(events).success).toBe(true);
+});
+
+test("tool schema rejection retains the precise local path diagnostic before execution", async () => {
+  const cause = new Error(
+    "path must be a relative .md or .txt file; content must be a string, received number.",
+  );
+  let executions = 0;
+  const tools = new ToolRegistry();
+  tools.register({
+    name: "weather",
+    serverId: id(10),
+    description: "Fixture validation",
+    enabled: true,
+    parameters: { type: "object" },
+    parseInput: () => {
+      throw cause;
+    },
+    execute: async () => {
+      executions++;
+      return { ok: true, value: null };
+    },
+  });
+  const provider = fakeProvider(calls);
+  const events = await collect(
+    engine(tools).startRun(
+      request,
+      provider.port,
+      policy,
+      new AbortController().signal,
+    ),
+  );
+  const failure = events.at(-1);
+  expect(failure).toMatchObject({
+    type: "RunFailed",
+    error: { code: "malformed", message: expect.stringContaining("weather") },
+  });
+  if (!failure || failure.type !== "RunFailed")
+    throw new Error("Missing failure");
+  expect(localFailureCause(failure.error)).toBe(cause);
+  expect(executions).toBe(0);
+  expect(JSON.stringify(events)).not.toContain(cause.message);
+  expect(RunEventBatchSchema.safeParse(events).success).toBe(true);
+});
+
+test("tool context budget includes function definitions before dispatch", async () => {
+  const provider = fakeProvider(() => [
+    { type: "RunStarted" },
+    { type: "RunCompleted" },
+  ]);
+  const events = await collect(
+    engine(registry()).startRun(
+      {
+        ...request,
+        context: [
+          { kind: "system", value: "🌙".repeat(3000) },
+          ...request.context,
+        ],
+      },
+      provider.port,
+      { ...policy, tokenBudget: 4096, reservedOutputTokens: 2048 },
+      new AbortController().signal,
+    ),
+  );
+  expect(provider.seen).toHaveLength(0);
+  expect(events.at(-1)).toMatchObject({
+    type: "RunFailed",
+    error: {
+      code: "context-full",
+      message: expect.stringContaining("input budget is 2048"),
+    },
+  });
+});
+
+test("tool results cannot overflow active context on a continuation request", async () => {
+  const provider = fakeProvider((child) => calls(child));
+  const events = await collect(
+    engine(
+      registry(async () => ({ ok: true, value: { text: "x".repeat(8000) } })),
+    ).startRun(
+      request,
+      provider.port,
+      { ...policy, tokenBudget: 400, reservedOutputTokens: 64 },
+      new AbortController().signal,
+    ),
+  );
+  expect(provider.seen).toHaveLength(1);
+  expect(events.some((event) => event.type === "ToolResult")).toBe(true);
+  expect(events.at(-1)).toMatchObject({
+    type: "RunFailed",
+    error: {
+      code: "context-full",
+      message: expect.stringContaining("input budget is 336"),
+    },
+  });
+  expect(terminal(events)).toHaveLength(1);
+});
+
+test("provider output-limit finish survives an aggregate tool run", async () => {
+  const provider = fakeProvider(() => [
+    { type: "RunStarted" },
+    { type: "TextDelta", text: "Partial answer" },
+    { type: "RunCompleted", finishReason: "length" },
+  ]);
+  const events = await collect(
+    engine(registry()).startRun(
+      request,
+      provider.port,
+      policy,
+      new AbortController().signal,
+    ),
+  );
+  expect(events.at(-1)).toMatchObject({
+    type: "RunCompleted",
+    finishReason: "length",
+  });
+});
 
 test("real Ollama HTTP adapter executes and durably replays a registered tool with exact binding", async () => {
   const disk = await durable();

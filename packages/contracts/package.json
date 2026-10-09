@@ -16,6 +16,9 @@
       ],
       "ports": [
         "src/ports.ts"
+      ],
+      "local-failure-details": [
+        "src/local-failure-details.ts"
       ]
     }
   },
@@ -27,7 +30,8 @@
     "./identity": "./src/identity.ts",
     "./run-events": "./src/run-events.ts",
     "./entities": "./src/entities.ts",
-    "./ports": "./src/ports.ts"
+    "./ports": "./src/ports.ts",
+    "./local-failure-details": "./src/local-failure-details.ts"
   },
   "dependencies": {
     "zod": "4.1.12"

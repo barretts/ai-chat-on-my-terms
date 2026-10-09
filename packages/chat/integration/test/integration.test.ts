@@ -16,6 +16,7 @@ import {
   ChatIntegration,
   ChatIntegrationError,
   toRecoverableChatError,
+  chatFailureCause,
   type IntegratedRunHandle,
 } from "../src/index.js";
 
@@ -145,6 +146,13 @@ describe("chat integration facade", () => {
     const auth = toRecoverableChatError(new Error("401 secret-value"));
     assert.equal(auth.code, "unauthorized");
     assert.equal(auth.message.includes("secret-value"), false);
+    const server = toRecoverableChatError({
+      code: "offline",
+      message: "HTTP 422 Unprocessable Entity\nserver-private-response",
+    });
+    assert.match(server.message, /server returned HTTP 422/);
+    assert.equal(server.message.includes("could not be reached"), false);
+    assert.equal(server.message.includes("server-private-response"), false);
     assert.equal(
       toRecoverableChatError({ code: "forbidden", message: "secret-value" })
         .code,
@@ -228,6 +236,11 @@ describe("chat integration facade", () => {
       assert.fail("Expected a terminal failure");
     assert.equal(failure.error.code, "unauthorized");
     assert.equal(failure.error.recoverable, false);
+    assert.match(
+      String((chatFailureCause(failure.error) as { message: string }).message),
+      /secret-value/,
+    );
+    assert.equal(JSON.stringify(failure).includes("secret-value"), false);
   });
 
   it("sanitizes exceptions thrown during stream iteration", async () => {

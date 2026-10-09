@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Keyboard, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SecretStoreError } from "@locallab/security-secrets";
 import { Switch, Text } from "react-native-paper";
 import type { SecretRef } from "@locallab/security-secrets";
@@ -17,6 +17,8 @@ import {
   modelConnectionKind,
   testConnection,
 } from "./index";
+import { describeError } from "../diagnostics/errors";
+import { ErrorNotice } from "../diagnostics/error-notice";
 
 /** Settings screen; caller supplies the migrated database, secure store and platform permission adapter. */
 export function ConnectionsScreen({
@@ -40,6 +42,40 @@ export function ConnectionsScreen({
     Array<{ status: string; host: string; provider?: string }>
   >([]);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const scroll = useRef<ScrollView>(null);
+  const pendingCleanup = useRef(new Map<SecretRef, string>());
+  const reportFailure = (
+    cause: unknown,
+    operation: string,
+    recovery: string,
+  ) => {
+    const notice = describeError(cause, { operation, recovery });
+    setError((current) => (current ? `${current}\n\n${notice}` : notice));
+  };
+  const reportCleanup = (
+    results: PromiseSettledResult<unknown>[],
+    refs: readonly string[],
+    operation: string,
+  ) => {
+    for (const [index, result] of results.entries())
+      if (result.status === "rejected") {
+        const ref = refs[index];
+        if (ref) pendingCleanup.current.set(ref as SecretRef, operation);
+        reportFailure(
+          result.reason,
+          operation,
+          "The connection change was saved. Use Retry secure cleanup to remove the pending value.",
+        );
+      }
+  };
+  useEffect(() => {
+    if (!error) return;
+    Keyboard.dismiss();
+    requestAnimationFrame(() =>
+      scroll.current?.scrollTo({ y: 0, animated: true }),
+    );
+  }, [error]);
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(
@@ -47,7 +83,13 @@ export function ConnectionsScreen({
     [repository],
   );
   useEffect(() => {
-    void reload().catch((error: unknown) => setMessage(errorText(error)));
+    void reload().catch((cause: unknown) =>
+      reportFailure(
+        cause,
+        "Load saved connections",
+        "Reopen Connections and try again.",
+      ),
+    );
   }, [reload]);
 
   const selected = items.find((item) => item.id === selectedId) ?? null;
@@ -73,6 +115,7 @@ export function ConnectionsScreen({
   const save = async () => {
     setBusy(true);
     setMessage("");
+    setError("");
     let addedRef: SecretRef | null = null;
     const replacedRefs: SecretRef[] = [];
     let saved = false;
@@ -128,23 +171,40 @@ export function ConnectionsScreen({
       const cleanup = await Promise.allSettled(
         replacedRefs.map((ref) => secrets.remove(ref)),
       );
+      reportCleanup(
+        cleanup,
+        replacedRefs,
+        "Remove replaced connection credentials",
+      );
       await reload();
       setMessage(
-        cleanup.some((result) => result.status === "rejected")
-          ? "Connection saved. Some replaced secure values could not be removed."
+        selected &&
+          modelConnectionKind(selected.kind) !== modelConnectionKind(kind)
+          ? "Connection saved on this device. Choose a model again in Models for the changed provider type."
           : selected &&
-              modelConnectionKind(selected.kind) !== modelConnectionKind(kind)
-            ? "Connection saved on this device. Choose a model again in Models for the changed provider type."
-            : selected &&
-                selected.host !== connection.host &&
-                connection.host.startsWith("http://")
-              ? "Connection saved. Use the selected model in Models to authorize the new local HTTP origin for chat."
-              : "Connection saved on this device.",
+              selected.host !== connection.host &&
+              connection.host.startsWith("http://")
+            ? "Connection saved. Use the selected model in Models to authorize the new local HTTP origin for chat."
+            : "Connection saved on this device.",
       );
-    } catch (error) {
+    } catch (cause) {
       if (addedRef && !saved)
-        await secrets.remove(addedRef).catch(() => undefined);
-      setMessage(errorText(error));
+        await secrets.remove(addedRef).catch((cleanupCause: unknown) => {
+          pendingCleanup.current.set(
+            addedRef!,
+            "Remove unsaved connection credential",
+          );
+          reportFailure(
+            cleanupCause,
+            "Remove unsaved connection credential",
+            "The connection was not saved. Use Retry secure cleanup to remove the pending value.",
+          );
+        });
+      reportFailure(
+        cause,
+        "Save connection",
+        "Check the server address, provider and secure header values, then save again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -152,6 +212,8 @@ export function ConnectionsScreen({
 
   const remove = async (item: SavedConnection) => {
     setBusy(true);
+    setError("");
+    setMessage("");
     try {
       await repository.delete(item.id);
       if (selectedId === item.id) beginNew();
@@ -162,14 +224,15 @@ export function ConnectionsScreen({
       const cleanup = await Promise.allSettled(
         refs.map((ref) => secrets.remove(ref as SecretRef)),
       );
+      reportCleanup(cleanup, refs, "Remove deleted connection credentials");
       await reload();
-      setMessage(
-        cleanup.some((result) => result.status === "rejected")
-          ? `${item.name} deleted. Some secure values could not be removed from system storage.`
-          : `${item.name} deleted.`,
+      setMessage(`${item.name} deleted.`);
+    } catch (cause) {
+      reportFailure(
+        cause,
+        "Delete connection",
+        "Check the saved connection list before retrying. Conversations are kept.",
       );
-    } catch (error) {
-      setMessage(errorText(error));
     } finally {
       setBusy(false);
     }
@@ -177,6 +240,8 @@ export function ConnectionsScreen({
 
   const clearHeaders = async (item: SavedConnection) => {
     setBusy(true);
+    setError("");
+    setMessage("");
     try {
       await repository.save({
         id: item.id,
@@ -190,15 +255,20 @@ export function ConnectionsScreen({
       const cleanup = await Promise.allSettled(
         item.headerRefs.map((ref) => secrets.remove(ref as SecretRef)),
       );
+      reportCleanup(
+        cleanup,
+        item.headerRefs,
+        "Remove saved custom header values",
+      );
       await reload();
       setHeadersEnabled(false);
-      setMessage(
-        cleanup.some((result) => result.status === "rejected")
-          ? "Header references removed. Some secure values could not be cleared from system storage."
-          : "Custom headers removed from this connection and secure storage.",
+      setMessage("Custom header references removed from this connection.");
+    } catch (cause) {
+      reportFailure(
+        cause,
+        "Remove connection custom headers",
+        "Try removing the saved headers again, then enter any replacement values.",
       );
-    } catch (error) {
-      setMessage(errorText(error));
     } finally {
       setBusy(false);
     }
@@ -211,11 +281,17 @@ export function ConnectionsScreen({
     const ids = items.map((candidate) => candidate.id);
     [ids[index], ids[index + delta]] = [ids[index + delta]!, ids[index]!];
     setBusy(true);
+    setError("");
+    setMessage("");
     try {
       await repository.reorder(ids);
       await reload();
-    } catch (error) {
-      setMessage(errorText(error));
+    } catch (cause) {
+      reportFailure(
+        cause,
+        "Reorder saved connections",
+        "Try moving the connection again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -224,6 +300,7 @@ export function ConnectionsScreen({
   const discover = async () => {
     setBusy(true);
     setMessage("");
+    setError("");
     setResults([]);
     try {
       const hosts = discoveryHosts
@@ -232,13 +309,27 @@ export function ConnectionsScreen({
         .filter(Boolean);
       const found = await discoverConnections(hosts, permission, probe);
       setResults(found);
+      if (found.every((result) => result.status === "not-found")) {
+        reportFailure(
+          new Error(
+            `No compatible server responded at ${found.map((result) => result.host).join(", ")}.`,
+          ),
+          "Discover entered local servers",
+          "Check the host addresses, server LAN access and Local Network permission, then try again.",
+        );
+        return;
+      }
       setMessage(
         found.some((result) => result.status === "auth-required")
           ? "Some servers require authentication. They are discoverable; add them manually and configure credentials after saving."
           : `${found.length} host(s) checked. No credentials were sent during discovery.`,
       );
-    } catch (error) {
-      setMessage(errorText(error));
+    } catch (cause) {
+      reportFailure(
+        cause,
+        "Discover entered local servers",
+        "Check the entered addresses and Local Network permission, then try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -246,35 +337,83 @@ export function ConnectionsScreen({
 
   const check = async (item: SavedConnection) => {
     setBusy(true);
+    setError("");
     setMessage("Testing connection…");
     try {
+      let observed: { status: number; finalUrl: string } | undefined;
       const result = await testConnection({
         connection: item,
         secrets,
-        request: connectivity,
+        request: {
+          request: async (url, headers, signal) => {
+            observed = await connectivity.request(url, headers, signal);
+            return observed;
+          },
+        },
       });
-      setMessage(
-        result === "connected"
-          ? "Connection succeeded."
-          : result === "auth-required"
-            ? "Server found; authentication is required. Check secure credentials and the custom-header switch."
-            : "Connection failed. Check the host, server status and network permissions.",
-      );
-    } catch {
-      setMessage(
-        "Could not test this connection. Check the host and secure credential setup.",
+      if (result === "connected") setMessage("Connection succeeded.");
+      else {
+        setMessage("");
+        reportFailure(
+          new Error(
+            `The request to ${item.host}/v1/models ${observed ? `returned HTTP ${observed.status} (final URL: ${observed.finalUrl})` : "returned no response details"}. ${result === "auth-required" ? "Authentication is required." : "The connection or redirect check failed."}`,
+          ),
+          "Test saved connection",
+          "Check the host, server status, credentials, custom-header switch and network permissions, then test again.",
+        );
+      }
+    } catch (cause) {
+      setMessage("");
+      reportFailure(
+        cause,
+        "Test saved connection",
+        "Check the host, secure credentials and network permission, then test again.",
       );
     } finally {
       setBusy(false);
     }
   };
 
+  const retryCleanup = async () => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      for (const [ref, operation] of pendingCleanup.current) {
+        try {
+          await secrets.remove(ref);
+          pendingCleanup.current.delete(ref);
+        } catch (cause) {
+          reportFailure(
+            cause,
+            operation,
+            "Use Retry secure cleanup again. Inspect the trace log if secure storage remains unavailable.",
+          );
+        }
+      }
+      if (!pendingCleanup.current.size)
+        setMessage("Pending secure values removed.");
+    } finally {
+      setBusy(false);
+    }
+  };
   const help = getProviderHelp(kind);
   return (
     <ScrollView
+      ref={scroll}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.page}
     >
+      {error ? <ErrorNotice message={error} /> : null}
+      {pendingCleanup.current.size ? (
+        <NativeButton
+          accessibilityLabel="Retry secure cleanup"
+          disabled={busy}
+          onPress={() => void retryCleanup()}
+        >
+          Retry secure cleanup
+        </NativeButton>
+      ) : null}
       <Text accessibilityRole="header" variant="headlineMedium">
         Connections
       </Text>
@@ -508,15 +647,9 @@ export function ConnectionsScreen({
           </View>
         ))}
       </NativeSurface>
-      {message ? <Text accessibilityRole="alert">{message}</Text> : null}
+      {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
     </ScrollView>
   );
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : "Connection settings could not be saved.";
 }
 
 const styles = StyleSheet.create({

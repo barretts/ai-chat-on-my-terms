@@ -2,6 +2,7 @@ import {
   HostScopedSecretStore,
   type SecureValuePort,
 } from "@locallab/security-secrets";
+import { registerDiagnosticSecret } from "../../features/diagnostics/sanitization";
 
 // Browser keys exist only in this tab's memory, never in browser persistence.
 const tabSecrets = new Map<string, string>();
@@ -14,8 +15,15 @@ export interface ExpoSecureStoreModule {
 
 export function createMobileSecretStore(store: ExpoSecureStoreModule) {
   const port: SecureValuePort = {
-    get: (key) => store.getItemAsync(key),
-    set: (key, value) => store.setItemAsync(key, value),
+    get: async (key) => {
+      const value = await store.getItemAsync(key);
+      if (value && key.endsWith(":value")) registerDiagnosticSecret(value);
+      return value;
+    },
+    set: (key, value) => {
+      if (key.endsWith(":value")) registerDiagnosticSecret(value);
+      return store.setItemAsync(key, value);
+    },
     delete: (key) => store.deleteItemAsync(key),
   };
   return new HostScopedSecretStore(port, "mobile-provider-headers");

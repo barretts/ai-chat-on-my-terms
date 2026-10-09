@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   createHttpTransport,
+  errorDetails,
   HttpTransportError,
   type FetchLike,
 } from "@locallab/network-http";
@@ -214,7 +215,9 @@ export function decodeOpenAIAdvancedFrame(
           input: args,
         },
       ];
-    throw malformed("OpenAI returned a malformed function call");
+    throw malformed(
+      `OpenAI returned a malformed function call.\nServer response:\n${JSON.stringify(data, null, 2)}`,
+    );
   }
   if (
     type === "response.output_text.annotation.added" &&
@@ -289,8 +292,19 @@ export function createOpenAIAdvancedProvider(
           },
           { ...(signal ? { signal } : {}) },
         );
-        const value = await response.json();
-        if (!record(value) || !Array.isArray(value.data)) throw malformed();
+        const raw = await response.text();
+        let value: unknown;
+        try {
+          value = JSON.parse(raw);
+        } catch (cause) {
+          throw malformed(
+            `OpenAI model list contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+          );
+        }
+        if (!record(value) || !Array.isArray(value.data))
+          throw malformed(
+            `OpenAI model list was malformed.\nServer response:\n${raw}`,
+          );
         return {
           ok: true,
           value: value.data.flatMap((m) =>
@@ -368,12 +382,21 @@ export function createOpenAIAdvancedProvider(
           let data: unknown;
           try {
             data = JSON.parse(frame.data);
-          } catch {
-            throw malformed();
+          } catch (cause) {
+            throw malformed(
+              `Responses stream contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${frame.data}`,
+            );
           }
-          if (!record(data)) throw malformed();
+          if (!record(data))
+            throw malformed(
+              `Responses stream event was malformed.\nServer response:\n${frame.data}`,
+            );
           const type = typeof data.type === "string" ? data.type : frame.event;
-          if (type === "response.failed" || type === "error")
+          if (
+            type === "response.failed" ||
+            type === "error" ||
+            data.error != null
+          )
             throw apiError(data);
           for (const value of decodeOpenAIAdvancedFrame(
             data,
@@ -452,15 +475,23 @@ async function headers(
     const key = value.trim().replace(/^(?:Bearer(?:\s+|$))+/i, "");
     if (!key) throw new Error();
     return { authorization: `Bearer ${key}` };
-  } catch {
+  } catch (cause) {
     throw new OpenAIAdvancedError(
       "unauthorized",
-      "Saved API key is unavailable for this endpoint",
+      `Saved API key is unavailable for this endpoint.\n${errorDetails(cause)}`,
       true,
     );
   }
 }
 function apiError(data: Record<string, unknown>): OpenAIAdvancedError {
+  const classified = classifyApiError(data);
+  return new OpenAIAdvancedError(
+    classified.code,
+    `${classified.message}\nServer response:\n${JSON.stringify(data, null, 2)}`,
+    classified.recoverable,
+  );
+}
+function classifyApiError(data: Record<string, unknown>): OpenAIAdvancedError {
   const root = record(data.response) ? data.response : data;
   const error = record(root.error)
     ? root.error
@@ -485,6 +516,17 @@ function apiError(data: Record<string, unknown>): OpenAIAdvancedError {
   return malformed("OpenAI rejected the advanced request");
 }
 function normalize(error: unknown): OpenAIAdvancedError {
+  const classified = classify(error);
+  const detail = errorDetails(error);
+  return classified.message.includes(detail)
+    ? classified
+    : new OpenAIAdvancedError(
+        classified.code,
+        `${classified.message}\n${detail}`,
+        classified.recoverable,
+      );
+}
+function classify(error: unknown): OpenAIAdvancedError {
   if (error instanceof OpenAIAdvancedError) return error;
   if (error instanceof HttpTransportError) {
     if (error.code === "unauthorized" || error.code === "forbidden")

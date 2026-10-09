@@ -4,12 +4,17 @@
     "slug": "locallab",
     "scheme": "locallab",
     "version": "0.1.0",
+    "icon": "./assets/locallab-icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "web": { "bundler": "metro", "output": "single" },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/locallab-icon.png"
+    },
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "3",
+      "buildNumber": "14",
       "deploymentTarget": "17.0",
       "bundleIdentifier": "app.locallab.mobile",
       "infoPlist": {

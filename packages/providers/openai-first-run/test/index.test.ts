@@ -77,6 +77,102 @@ async function collect(events: AsyncIterable<RunEvent>) {
 }
 
 describe("OpenAI Responses first-run provider", () => {
+  it.each([
+    [401, "unauthorized"],
+    [404, "missing-model"],
+  ])(
+    "preserves the complete HTTP %i body in chat and model inventory errors",
+    async (status, code) => {
+      const body =
+        "Server diagnosis: " + "x".repeat(20_000) + "\nfinal-response-detail";
+      const config = connection;
+      const provider = createOpenAIResponsesProvider({
+        secrets: testSecrets().secrets,
+        fetch: async () =>
+          new Response(body, {
+            status,
+            statusText: "Fixture failure",
+            headers: { "content-type": "text/plain" },
+          }),
+        resolveConnection: async () => config,
+      });
+      const events = await collect(
+        provider.startRun(request, new AbortController().signal),
+      );
+      const failure = events.at(-1);
+      expect(failure?.type).toBe("RunFailed");
+      if (failure?.type !== "RunFailed")
+        throw new Error("Expected a failed run");
+      expect(failure.error.code).toBe(code);
+      expect(failure.error.message).toContain(body);
+      expect(failure.error.message).toContain(`HTTP ${status} Fixture failure`);
+      expect(failure.error.message).toContain("text/plain");
+      const inventory = await provider.listModels(config);
+      expect(inventory.ok).toBe(false);
+      if (inventory.ok) throw new Error("Expected failed inventory");
+      expect(inventory.error.code).toBe(code);
+      expect(inventory.error.message).toContain(body);
+    },
+  );
+
+  it("preserves structured stream errors without a message, including envelope and cause fields", async () => {
+    const payload = {
+      error: { code: "invalid_api_key", policy: "not enabled" },
+      request_id: "fixture-request",
+      cause: { policy: "server-side explanation" },
+      details: "x".repeat(9_000) + "stream-tail",
+    };
+    const config = connection;
+    const provider = createOpenAIResponsesProvider({
+      secrets: testSecrets().secrets,
+      fetch: async () =>
+        new Response(`event: error\ndata: ${JSON.stringify(payload)}\n\n`, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+      resolveConnection: async () => config,
+    });
+    const events = await collect(
+      provider.startRun(request, new AbortController().signal),
+    );
+    const failure = events.at(-1);
+    expect(failure?.type).toBe("RunFailed");
+    if (failure?.type !== "RunFailed") throw new Error("Expected a failed run");
+    expect(failure.error.code).toBe("unauthorized");
+    expect(failure.error.message).toContain(JSON.stringify(payload, null, 2));
+  });
+
+  it("includes the complete malformed stream event and invalid model inventory response", async () => {
+    const raw = "<html>" + "x".repeat(9_000) + "invalid-body-tail</html>";
+    const config = connection;
+    const provider = createOpenAIResponsesProvider({
+      secrets: testSecrets().secrets,
+      fetch: async () =>
+        new Response(`data: ${raw}\n\n`, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+      resolveConnection: async () => config,
+    });
+    const events = await collect(
+      provider.startRun(request, new AbortController().signal),
+    );
+    const failure = events.at(-1);
+    expect(failure?.type).toBe("RunFailed");
+    if (failure?.type !== "RunFailed") throw new Error("Expected a failed run");
+    expect(failure.error.code).toBe("malformed");
+    expect(failure.error.message).toContain(raw);
+    const inventoryProvider = createOpenAIResponsesProvider({
+      secrets: testSecrets().secrets,
+      fetch: async () =>
+        new Response(raw, { headers: { "content-type": "text/html" } }),
+      resolveConnection: async () => config,
+    });
+    const inventory = await inventoryProvider.listModels(config);
+    expect(inventory.ok).toBe(false);
+    if (inventory.ok) throw new Error("Expected failed inventory");
+    expect(inventory.error.code).toBe("malformed");
+    expect(inventory.error.message).toContain(raw);
+  });
+
   it("streams ordered text and usage through the host-scoped secret reference", async () => {
     const { secrets, calls } = testSecrets();
     let sentAuth = "";
@@ -230,10 +326,10 @@ describe("OpenAI Responses first-run provider", () => {
     expect(contents).not.toMatch(/api[_-]?key|authorization|bearer\s/i);
   });
 
-  it("maps the Responses model_not_found event without exposing provider detail", async () => {
+  it("maps the Responses model_not_found event and preserves the server detail", async () => {
     const { secrets } = testSecrets();
     const bytes = new TextEncoder().encode(
-      'event: response.failed\ndata: {"type":"response.failed","response":{"error":{"code":"model_not_found","message":"secret-bearing provider detail"}}}\n\n',
+      'event: response.failed\ndata: {"type":"response.failed","response":{"error":{"code":"model_not_found","message":"model disabled by account policy"}}}\n\n',
     );
     const fetch: FetchLike = async () =>
       new Response(bytes, { headers: { "content-type": "text/event-stream" } });
@@ -249,7 +345,9 @@ describe("OpenAI Responses first-run provider", () => {
       type: "RunFailed",
       error: { code: "missing-model", recoverable: false },
     });
-    expect(JSON.stringify(events)).not.toContain("secret-bearing");
+    expect(JSON.stringify(events)).toContain(
+      "model disabled by account policy",
+    );
   });
 
   it("persists endpoint/model/reference across repository recreation without putting the key in SQLite", async () => {

@@ -1,4 +1,9 @@
-import { HttpTransportError, type HttpTransport } from "@locallab/network-http";
+import {
+  errorDetails,
+  httpResponseError,
+  HttpTransportError,
+  type HttpTransport,
+} from "@locallab/network-http";
 
 export interface OllamaModelConnection {
   readonly baseUrl: string;
@@ -300,19 +305,22 @@ export class OllamaModelService {
       let row: unknown;
       try {
         row = JSON.parse(line);
-      } catch {
+      } catch (cause) {
         throw new OllamaModelServiceError(
           "pull",
-          "Ollama returned malformed pull progress",
+          `Ollama returned malformed pull progress.\n${errorDetails(cause)}\nServer response:\n${line}`,
         );
       }
       if (!isRecord(row))
         throw new OllamaModelServiceError(
           "pull",
-          "Ollama returned invalid pull progress",
+          `Ollama returned invalid pull progress.\nServer response:\n${line}`,
         );
-      if (typeof row.error === "string")
-        throw new OllamaModelServiceError("pull", row.error);
+      if (row.error != null)
+        throw new OllamaModelServiceError(
+          "pull",
+          `Ollama reported a model pull error.\nServer response:\n${line}`,
+        );
       const total = numericField(row, "total");
       const completed = numericField(row, "completed");
       const status = stringField(row, "status")?.toLowerCase();
@@ -408,10 +416,13 @@ export class OllamaModelService {
       if (error instanceof HttpTransportError)
         throw new OllamaModelServiceError(
           operation,
-          error.message,
+          errorDetails(error),
           error.status,
         );
-      throw new OllamaModelServiceError(operation, "Ollama request failed");
+      throw new OllamaModelServiceError(
+        operation,
+        `Ollama ${operation} request failed.\n${errorDetails(error)}`,
+      );
     }
   }
 }
@@ -446,33 +457,33 @@ async function readObject(
   operation: "inventory",
 ): Promise<Record<string, unknown>> {
   if (!response.ok) throw await responseError(response, operation);
+  const raw = await response.text();
   try {
-    const value: unknown = await response.json();
-    if (isRecord(value)) return value;
-  } catch {
-    /* normalize below */
+    const value: unknown = JSON.parse(raw);
+    if (isRecord(value) && value.error == null) return value;
+  } catch (cause) {
+    throw new OllamaModelServiceError(
+      operation,
+      `Ollama returned invalid inventory JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+    );
   }
   throw new OllamaModelServiceError(
     operation,
-    "Ollama returned invalid inventory data",
+    `Ollama returned invalid inventory data.\nServer response:\n${raw}`,
   );
 }
 async function responseError(
   response: Response,
   operation: OllamaModelServiceError["operation"],
 ): Promise<OllamaModelServiceError> {
-  let message = `Ollama ${operation} failed (HTTP ${response.status})`;
-  try {
-    const text = (await response.text()).slice(0, 4096);
-    const parsed: unknown = JSON.parse(text);
-    message =
-      isRecord(parsed) && typeof parsed.error === "string"
-        ? parsed.error
-        : text || message;
-  } catch {
-    /* bounded fallback */
-  }
-  return new OllamaModelServiceError(operation, message, response.status);
+  const failure = await httpResponseError(response, {
+    summary: `Ollama ${operation} failed`,
+  });
+  return new OllamaModelServiceError(
+    operation,
+    errorDetails(failure),
+    response.status,
+  );
 }
 function endpoint(baseUrl: string, path: string): string {
   const url = new URL(baseUrl);
@@ -514,5 +525,5 @@ function numericField(
     : undefined;
 }
 function publicError(error: unknown): string {
-  return error instanceof Error ? error.message : "Ollama pull failed";
+  return errorDetails(error);
 }

@@ -28,6 +28,53 @@ function stream(value: string) {
 }
 
 describe("Ollama model lifecycle", () => {
+  it("preserves complete plain text HTTP errors for inventory, pull and delete", async () => {
+    const raw = "Publisher failure: " + "x".repeat(20_000) + "http-tail";
+    const api = service(
+      async () =>
+        new Response(raw, {
+          status: 503,
+          statusText: "Fixture failure",
+          headers: { "content-type": "text/plain" },
+        }),
+    );
+    await expect(api.inventory("conn", "qwen3:8b")).rejects.toThrow(raw);
+    await expect(api.delete("conn", "qwen3:8b")).rejects.toThrow(raw);
+    const failure = await api.pull("conn", "qwen3:8b").result;
+    expect(failure.status).toBe("failed");
+    expect(failure.error).toContain(raw);
+    expect(failure.error).toContain("HTTP 503 Fixture failure");
+    expect(failure.error).toContain("text/plain");
+  });
+
+  it("preserves structured pull errors without a message and their full envelope", async () => {
+    const raw = JSON.stringify({
+      error: { code: "publisher_unavailable", retry_after: 37 },
+      request_id: "fixture-request",
+      cause: { policy: "publisher explanation" },
+      details: "x".repeat(9_000) + "stream-tail",
+    });
+    const failure = await service(async () => stream(raw + "\n")).pull(
+      "conn",
+      "qwen3:8b",
+    ).result;
+    expect(failure.status).toBe("failed");
+    expect(failure.error).toContain(raw);
+  });
+
+  it("includes malformed inventory and pull progress bodies in their errors", async () => {
+    const raw = "invalid-json" + "x".repeat(9_000) + "malformed-tail";
+    await expect(
+      service(async () => new Response(raw)).inventory("conn", "qwen3:8b"),
+    ).rejects.toThrow(raw);
+    const failure = await service(async () => stream(raw + "\n")).pull(
+      "conn",
+      "qwen3:8b",
+    ).result;
+    expect(failure.status).toBe("failed");
+    expect(failure.error).toContain(raw);
+  });
+
   it("pulls with progress and reports installed, loaded and selected independently", async () => {
     const fetch: FetchLike = async (input, init) => {
       const url = new URL(String(input));

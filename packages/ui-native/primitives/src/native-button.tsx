@@ -25,14 +25,20 @@ export function NativeButton({
       {...props}
       contentStyle={[{ minHeight: 46 }, props.contentStyle]}
       style={[
-        {
-          borderRadius: 0,
-          borderWidth: props.mode === "text" ? 0 : 2,
-          borderTopColor: theme.dark ? "#756880" : "#ffffff",
-          borderLeftColor: theme.dark ? "#756880" : "#ffffff",
-          borderRightColor: "#6a6070",
-          borderBottomColor: "#6a6070",
-        },
+        theme.roundness > 0
+          ? {
+              borderRadius: 24,
+              borderWidth: props.mode === "outlined" ? 1 : 0,
+              borderColor: theme.colors.outline,
+            }
+          : {
+              borderRadius: 0,
+              borderWidth: props.mode === "text" ? 0 : 2,
+              borderTopColor: theme.dark ? "#756880" : "#ffffff",
+              borderLeftColor: theme.dark ? "#756880" : "#ffffff",
+              borderRightColor: "#6a6070",
+              borderBottomColor: "#6a6070",
+            },
         props.style,
       ]}
       labelStyle={[{ letterSpacing: 0, fontWeight: "600" }, props.labelStyle]}

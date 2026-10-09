@@ -1,4 +1,65 @@
-import { MD3DarkTheme, MD3LightTheme } from "react-native-paper";
+import { Platform } from "react-native";
+import {
+  configureFonts,
+  MD3DarkTheme,
+  MD3LightTheme,
+} from "react-native-paper";
+
+const phoneFonts = configureFonts({
+  config: {
+    fontFamily:
+      Platform.OS === "ios"
+        ? "System"
+        : Platform.OS === "web"
+          ? "system-ui"
+          : "sans-serif",
+    letterSpacing: 0,
+  },
+});
+const readingFonts = {
+  ...phoneFonts,
+  bodyLarge: { ...phoneFonts.bodyLarge, fontSize: 17, lineHeight: 25 },
+  bodySmall: { ...phoneFonts.bodySmall, fontSize: 14, lineHeight: 20 },
+  default: { ...phoneFonts.default, fontSize: 16, lineHeight: 24 },
+};
+
+/** Standard Paper surfaces and shape for the phone interface. */
+export const phoneTheme = {
+  ...MD3LightTheme,
+  fonts: readingFonts,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: "#59328b",
+    onPrimary: "#ffffff",
+    primaryContainer: "#eee7f7",
+    onPrimaryContainer: "#3f285d",
+    background: "#faf9f7",
+    surface: "#ffffff",
+    surfaceVariant: "#f0edf3",
+    onSurface: "#26232b",
+    onSurfaceVariant: "#68616f",
+    outline: "#827a89",
+    outlineVariant: "#e1dce6",
+  },
+};
+export const phoneDarkTheme = {
+  ...MD3DarkTheme,
+  fonts: readingFonts,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: "#d3b0ff",
+    onPrimary: "#2f1849",
+    primaryContainer: "#362b45",
+    onPrimaryContainer: "#eadcfb",
+    background: "#19171c",
+    surface: "#242128",
+    surfaceVariant: "#322d38",
+    onSurface: "#f2edf5",
+    onSurfaceVariant: "#bdb5c5",
+    outline: "#938a9d",
+    outlineVariant: "#403947",
+  },
+};
 
 /** Paper theme mapped from the package's semantic palette. */
 export const nativeTheme = {

@@ -4,6 +4,8 @@ import {
 } from "@locallab/security-secrets";
 import * as SecureStore from "expo-secure-store";
 import { randomUUID } from "../crypto";
+import { expoSecureStoreKey } from "./secure-store-key";
+import { registerDiagnosticSecret } from "../../features/diagnostics/sanitization";
 
 /** Adapter boundary for expo-secure-store. Inject SecureStore's getItemAsync/setItemAsync/deleteItemAsync. */
 export interface ExpoSecureStoreModule {
@@ -15,10 +17,19 @@ export interface ExpoSecureStoreModule {
 export function createMobileSecretStore(
   expoSecureStore: ExpoSecureStoreModule,
 ) {
+  // Shared-store key names contain colons. Expo rejected those before any OS
+  // writes, so there is no native legacy payload to migrate; refs are unchanged.
   const port: SecureValuePort = {
-    get: (key) => expoSecureStore.getItemAsync(key),
-    set: (key, value) => expoSecureStore.setItemAsync(key, value),
-    delete: (key) => expoSecureStore.deleteItemAsync(key),
+    get: async (key) => {
+      const value = await expoSecureStore.getItemAsync(expoSecureStoreKey(key));
+      if (value && key.endsWith(":value")) registerDiagnosticSecret(value);
+      return value;
+    },
+    set: (key, value) => {
+      if (key.endsWith(":value")) registerDiagnosticSecret(value);
+      return expoSecureStore.setItemAsync(expoSecureStoreKey(key), value);
+    },
+    delete: (key) => expoSecureStore.deleteItemAsync(expoSecureStoreKey(key)),
   };
   return new HostScopedSecretStore(port, "mobile-provider-headers", randomUUID);
 }

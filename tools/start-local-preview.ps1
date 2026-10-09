@@ -1,7 +1,8 @@
 param(
     [ValidateRange(1024, 65535)][int]$Port = 8081,
     [string[]]$ProviderOrigin = @(),
-    [switch]$Restart
+    [switch]$Restart,
+    [switch]$ResetCache
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,7 +25,9 @@ $previewExistingListeners = @(Get-NetTCPConnection -LocalPort $Port -State Liste
 if ($previewExistingListeners.Count) {
     $previewExistingId = $previewExistingListeners[0].OwningProcess
     $previewExistingProcess = Get-CimInstance Win32_Process -Filter ('ProcessId = ' + $previewExistingId)
-    if ($previewExistingProcess.CommandLine -notmatch [regex]::Escape((Join-Path $previewRepoRoot 'apps/mobile')) -or $previewExistingProcess.CommandLine -notmatch ('--port["\s]+' + $Port)) {
+    $previewAppCommand = $previewExistingProcess.CommandLine -match [regex]::Escape((Join-Path $previewRepoRoot 'apps/mobile'))
+    $previewHoistedExpoCommand = $previewExistingProcess.CommandLine -match [regex]::Escape((Join-Path $previewRepoRoot 'node_modules')) -and $previewExistingProcess.CommandLine -match '[\\/]expo[\\/]bin[\\/]cli'
+    if ((-not $previewAppCommand -and -not $previewHoistedExpoCommand) -or $previewExistingProcess.CommandLine -notmatch ('--port["\s]+' + $Port)) {
         throw "Port $Port is already used by a different process. Choose another -Port."
     }
     $previewExistingConfig = Invoke-RestMethod -Uri "$previewUrl/_locallab/preview-config" -TimeoutSec 5
@@ -46,6 +49,7 @@ $previewArguments = @(
     '--filter', '@locallab/mobile', 'exec', 'expo', 'start',
     '--localhost', '--port', [string]$Port, '--no-dev'
 )
+if ($ResetCache) { $previewArguments += '--clear' }
 $previewProcess = Start-Process -FilePath $previewShellPath -ArgumentList $previewArguments -WorkingDirectory $previewRepoRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $previewLogDirectory 'server.log') -RedirectStandardError (Join-Path $previewLogDirectory 'server-error.log') -PassThru
 $previewDeadline = [DateTime]::UtcNow.AddSeconds(45)
 do {

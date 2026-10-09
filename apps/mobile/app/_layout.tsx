@@ -1,18 +1,44 @@
-import { Stack } from "expo-router";
+import { Stack, type ErrorBoundaryProps } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { KeyboardAvoidingView, Platform } from "react-native";
-import { useTheme } from "react-native-paper";
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { useTheme, PaperProvider, Button } from "react-native-paper";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppThemeProvider } from "../features/themes/provider";
 import { MessengerDesktop } from "../features/themes/messenger-desktop";
 import { installNativeAbortCompatibility } from "../platform/abort-compatibility";
+import { DiagnosticsProvider } from "../features/diagnostics/provider";
+import { ErrorNotice } from "../features/diagnostics/error-notice";
+import { describeError } from "../features/diagnostics/errors";
 
 installNativeAbortCompatibility();
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const message = describeError(error, {
+    operation: "Render app screen",
+    recovery:
+      "Tap Try again. If the screen keeps failing, enable trace recording and share the log.",
+  });
+  return (
+    <PaperProvider>
+      <DiagnosticsProvider>
+        <ScrollView
+          contentContainerStyle={{ padding: 24, paddingTop: 64, gap: 16 }}
+        >
+          <ErrorNotice message={message} />
+          <Button mode="contained" onPress={() => void retry()}>
+            Try again
+          </Button>
+        </ScrollView>
+      </DiagnosticsProvider>
+    </PaperProvider>
+  );
+}
 
 function RootNavigator() {
   const theme = useTheme();
   return (
     <SafeAreaView
+      testID="app-safe-area"
       edges={["top", "bottom", "left", "right"]}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
@@ -38,7 +64,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-        <RootNavigator />
+        <DiagnosticsProvider>
+          <RootNavigator />
+        </DiagnosticsProvider>
       </AppThemeProvider>
     </SafeAreaProvider>
   );

@@ -8,8 +8,9 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Text, TextInput, useTheme } from "react-native-paper";
+import { IconButton, Text, TextInput, useTheme } from "react-native-paper";
 import { NativeButton } from "./native-button";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /** Searchable picker with bounded rendering and full-size mobile touch targets. */
 export function NativeDropdown({
@@ -34,6 +35,10 @@ export function NativeDropdown({
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ||
+    value ||
+    "Choose…";
   const matching = options.filter((option) =>
     `${option.label} ${option.value}`
       .toLowerCase()
@@ -45,6 +50,7 @@ export function NativeDropdown({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityValue={{ text: selectedLabel }}
         accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
         onPress={() => {
@@ -54,6 +60,11 @@ export function NativeDropdown({
         }}
         style={[
           styles.anchor,
+          theme.roundness > 0 && {
+            borderRadius: 12,
+            borderWidth: 1,
+            minHeight: 52,
+          },
           {
             backgroundColor: theme.dark ? theme.colors.surface : "#fffdf8",
             borderColor: theme.colors.outline,
@@ -61,9 +72,7 @@ export function NativeDropdown({
         ]}
       >
         <Text numberOfLines={1} style={{ flex: 1 }}>
-          {options.find((option) => option.value === value)?.label ||
-            value ||
-            "Choose…"}
+          {selectedLabel}
         </Text>
         <Text style={{ color: theme.colors.primary }}>
           {loading ? "…" : "▼"}
@@ -75,110 +84,151 @@ export function NativeDropdown({
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.overlay}
+        <SafeAreaView
+          edges={["top", "bottom", "left", "right"]}
+          style={{ flex: 1 }}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Dismiss ${label}`}
-            onPress={() => setOpen(false)}
-            style={StyleSheet.absoluteFill}
-          />
-          <View
-            accessibilityViewIsModal
-            style={[
-              styles.popup,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.outline,
-              },
-            ]}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.overlay}
           >
-            <View style={styles.title}>
-              <Text style={styles.titleText}>{label}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Close ${label}`}
-                onPress={() => setOpen(false)}
-                hitSlop={10}
-              >
-                <Text style={styles.titleText}>×</Text>
-              </Pressable>
-            </View>
-            <TextInput
-              label={`Search ${label.toLowerCase()}`}
-              accessibilityLabel={`Search ${label.toLowerCase()}`}
-              value={query}
-              onChangeText={setQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              mode="outlined"
-              style={{ margin: 12 }}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Dismiss ${label}`}
+              onPress={() => setOpen(false)}
+              style={StyleSheet.absoluteFill}
             />
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              style={{ maxHeight: 340 }}
-              contentContainerStyle={{ padding: 8 }}
+            <View
+              accessibilityViewIsModal
+              style={[
+                styles.popup,
+                theme.roundness > 0 && {
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  overflow: "hidden",
+                },
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.outline,
+                },
+              ]}
             >
-              {loading ? (
-                <Text accessibilityLiveRegion="polite" style={{ padding: 12 }}>
-                  Reading models from your endpoint…
-                </Text>
-              ) : null}
-              {matching.slice(0, 80).map((option) => (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Choose ${option.label}`}
-                  accessibilityState={{ selected: value === option.value }}
-                  onPress={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  style={{
-                    padding: 12,
-                    minHeight: 48,
-                    backgroundColor:
-                      value === option.value
-                        ? theme.colors.primaryContainer
-                        : "transparent",
-                    borderBottomWidth: 1,
-                    borderColor: theme.colors.outlineVariant,
-                  }}
+              <View
+                style={[
+                  styles.title,
+                  theme.roundness > 0 && {
+                    backgroundColor: theme.colors.surface,
+                    paddingVertical: 8,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.titleText,
+                    theme.roundness > 0 && {
+                      color: theme.colors.onSurface,
+                      fontSize: 20,
+                      flex: 1,
+                    },
+                  ]}
                 >
+                  {label}
+                </Text>
+                {theme.roundness > 0 ? (
+                  <IconButton
+                    icon="close"
+                    accessibilityLabel={`Close ${label}`}
+                    style={{ width: 44, height: 44, margin: 0 }}
+                    onPress={() => setOpen(false)}
+                  />
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Close ${label}`}
+                    onPress={() => setOpen(false)}
+                    hitSlop={10}
+                  >
+                    <Text style={styles.titleText}>×</Text>
+                  </Pressable>
+                )}
+              </View>
+              <TextInput
+                label={`Search ${label.toLowerCase()}`}
+                accessibilityLabel={`Search ${label.toLowerCase()}`}
+                value={query}
+                onChangeText={setQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+                mode="outlined"
+                style={{ margin: 12 }}
+              />
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                style={{ maxHeight: 340 }}
+                contentContainerStyle={{ padding: 8 }}
+              >
+                {loading ? (
                   <Text
+                    accessibilityLiveRegion="polite"
+                    style={{ padding: 12 }}
+                  >
+                    Reading models from your endpoint…
+                  </Text>
+                ) : null}
+                {matching.slice(0, 80).map((option) => (
+                  <Pressable
+                    key={option.value}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Choose ${option.label}`}
+                    accessibilityState={{ selected: value === option.value }}
+                    onPress={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
                     style={{
-                      fontWeight: value === option.value ? "700" : "400",
+                      padding: 12,
+                      minHeight: 48,
+                      backgroundColor:
+                        value === option.value
+                          ? theme.colors.primaryContainer
+                          : "transparent",
+                      borderBottomWidth: 1,
+                      borderColor: theme.colors.outlineVariant,
                     }}
                   >
-                    {option.label}
+                    <Text
+                      style={{
+                        fontWeight: value === option.value ? "700" : "400",
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                    {option.detail ? (
+                      <Text variant="bodySmall">{option.detail}</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+                {!matching.length && !loading ? (
+                  <Text style={{ padding: 12 }}>
+                    {query ? "No matches. Try another search." : emptyText}
                   </Text>
-                  {option.detail ? (
-                    <Text variant="bodySmall">{option.detail}</Text>
-                  ) : null}
-                </Pressable>
-              ))}
-              {!matching.length && !loading ? (
-                <Text style={{ padding: 12 }}>
-                  {query ? "No matches. Try another search." : emptyText}
+                ) : null}
+              </ScrollView>
+              <View style={{ padding: 12, gap: 8 }}>
+                <Text variant="bodySmall">
+                  {matching.length} matches
+                  {matching.length > 80 ? " · Search to narrow the list" : ""}
                 </Text>
-              ) : null}
-            </ScrollView>
-            <View style={{ padding: 12, gap: 8 }}>
-              <Text variant="bodySmall">
-                {matching.length} matches
-                {matching.length > 80 ? " · Search to narrow the list" : ""}
-              </Text>
-              <NativeButton
-                accessibilityLabel={`Done choosing ${label}`}
-                onPress={() => setOpen(false)}
-              >
-                Done
-              </NativeButton>
+                <NativeButton
+                  accessibilityLabel={`Done choosing ${label}`}
+                  onPress={() => setOpen(false)}
+                >
+                  Done
+                </NativeButton>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
     </View>
   );

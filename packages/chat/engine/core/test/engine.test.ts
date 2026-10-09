@@ -6,6 +6,10 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, it } from "vitest";
 import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
+import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
 import type {
   SQLiteDatabasePort,
   SqliteBindValue,
@@ -436,10 +440,11 @@ describe("chat engine durable send pipeline", () => {
     const db = await ready(":memory:");
     try {
       let index = 0;
+      const originalFailure = new Error("connection rejected secret-value");
       const port: ProviderPort = {
         ...provider("remote"),
         startRun() {
-          throw new Error("connection rejected secret-value");
+          throw originalFailure;
         },
       };
       const engine = new ChatEngine({
@@ -454,6 +459,10 @@ describe("chat engine durable send pipeline", () => {
       const output: RunEvent[] = [];
       for await (const event of run.events) output.push(event);
       assert.equal(output[0]?.type, "RunFailed");
+      if (output[0]?.type !== "RunFailed")
+        throw new Error("Expected a failed run");
+      assert.equal(localFailureCause(output[0].error), originalFailure);
+      assert.equal(JSON.stringify(output[0]).includes("secret-value"), false);
       const row = db
         .prepare("SELECT status,parameters_json FROM runs WHERE id=?")
         .get(run.runId);
@@ -465,6 +474,89 @@ describe("chat engine durable send pipeline", () => {
       assert.equal(
         (await engine.getProjection(conversationId)).cursors[0]?.terminal,
         true,
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  it("preserves live full failure detail through the schema clone without writing it to SQLite or JSON", async () => {
+    const db = await ready(":memory:");
+    try {
+      let index = 0;
+      const body =
+        "HTTP503 fixture response\n" +
+        "private detail ".repeat(1600) +
+        "LAST-PRIVATE-FIELD";
+      const originalFailure = new Error(body);
+      const publicFailure = {
+        code: "quota",
+        message: "Review provider setup and retry.",
+        recoverable: true,
+      };
+      retainLocalFailureCause(publicFailure, originalFailure);
+      const port: ProviderPort = {
+        ...provider("remote"),
+        async *startRun(request) {
+          yield {
+            type: "RunFailed",
+            runId: request.runId,
+            sequence: 0,
+            timestamp: "2026-01-01T00:00:00.000Z",
+            error: publicFailure,
+          } satisfies RunEvent;
+        },
+      };
+      const engine = new ChatEngine({
+        db: adapter(db),
+        createId: () => ids[index++]!,
+      });
+      const run = await engine.send({
+        conversationId,
+        text: "ephemeral failure fixture",
+        binding: binding(port, "remote"),
+      });
+      const output: RunEvent[] = [];
+      for await (const event of run.events) output.push(event);
+      const failure = output[0];
+      assert.equal(failure?.type, "RunFailed");
+      if (failure?.type !== "RunFailed")
+        throw new Error("Expected a failed run");
+      assert.notEqual(
+        failure.error,
+        publicFailure,
+        "Schema validation must clone the public error",
+      );
+      assert.equal(localFailureCause(failure.error), originalFailure);
+      assert.equal(
+        JSON.stringify(failure).includes("LAST-PRIVATE-FIELD"),
+        false,
+      );
+      assert.equal(JSON.stringify(failure).includes("private detail"), false);
+      const row = db
+        .prepare("SELECT parameters_json FROM runs WHERE id=?")
+        .get(run.runId);
+      assert.equal(
+        String(row?.parameters_json).includes("LAST-PRIVATE-FIELD"),
+        false,
+      );
+      assert.equal(
+        String(row?.parameters_json).includes("private detail"),
+        false,
+      );
+      const saved = JSON.parse(String(row?.parameters_json)) as {
+        events: RunEvent[];
+      };
+      const savedFailure = saved.events[0];
+      assert.equal(savedFailure?.type, "RunFailed");
+      if (savedFailure?.type !== "RunFailed")
+        throw new Error("Expected a saved failed event");
+      assert.equal(localFailureCause(savedFailure.error), savedFailure.error);
+      assert.equal(
+        JSON.stringify(await engine.getProjection(conversationId)).includes(
+          "LAST-PRIVATE-FIELD",
+        ),
+        false,
       );
     } finally {
       db.close();

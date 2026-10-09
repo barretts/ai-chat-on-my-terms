@@ -5,6 +5,15 @@ import type {
 } from "@locallab/contracts/ports";
 import { EntityIdSchema, type Revision } from "@locallab/contracts/identity";
 import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
+import {
+  conservativeTokenCount,
+  ContextBudgetError,
+  type ContextMessage,
+} from "@locallab/context";
+import {
   RunEventSchema,
   RunRequestSchema,
   type RunEvent,
@@ -50,6 +59,9 @@ export interface ToolRunPolicy {
   readonly maxEventBytes?: number;
   readonly maxEvents?: number;
   readonly maxTotalEventBytes?: number;
+  /** Active model capacity, including the response reservation, checked on every round. */
+  readonly tokenBudget?: number;
+  readonly reservedOutputTokens?: number;
 }
 export interface ToolInvocationRecord {
   readonly id: string;
@@ -223,9 +235,7 @@ export class ToolLoopEngine {
             sequence: 0,
             timestamp: clock.timestamp(),
           };
-          const failure = safeFailure(
-            error instanceof ToolEngineError ? error.code : "malformed",
-          );
+          const failure = failureFor(error);
           yield {
             ...(failure.code === "canceled"
               ? { type: "RunCanceled" as const, reason: "canceled" }
@@ -427,12 +437,14 @@ export class ToolLoopEngine {
           maxContextBytes,
           "The tool request exceeds its context size limit.",
         );
+        checkTokenBudget(child, policy);
         EntityIdSchema.parse(child.runId);
         iterator = provider
           .startRun(child, controller.signal)
           [Symbol.asyncIterator]();
         let previous = -1,
           completed = false,
+          finishReason: string | undefined,
           text = "";
         const calls: Array<{
           event: Extract<RunEvent, { type: "ToolCall" }>;
@@ -459,6 +471,11 @@ export class ToolLoopEngine {
             "The provider event exceeds its size limit.",
           );
           const event = RunEventSchema.parse(next.value);
+          if (event.type === "RunFailed" && next.value.type === "RunFailed")
+            retainLocalFailureCause(
+              event.error,
+              localFailureCause(next.value.error),
+            );
           if (event.runId !== child.runId || event.sequence <= previous)
             throw new ToolEngineError(
               "malformed",
@@ -474,12 +491,13 @@ export class ToolLoopEngine {
           if (event.type === "RunFailed") {
             yield emit({
               type: "RunFailed",
-              error: safeFailure(event.error.code),
+              error: event.error,
             });
             return;
           }
           if (event.type === "RunCompleted") {
             completed = true;
+            finishReason = event.finishReason;
             continue;
           }
           if (event.type === "TextDelta" || event.type === "ReasoningDelta") {
@@ -522,11 +540,19 @@ export class ToolLoopEngine {
             let parsed: unknown;
             try {
               parsed = immutableJson(tool.parseInput(event.input));
-            } catch {
-              throw new ToolEngineError(
+            } catch (cause) {
+              const failure = new ToolEngineError(
                 "malformed",
-                "Tool arguments did not match the registered schema.",
+                `Arguments for ${tool.name} did not match the registered schema.`,
               );
+              retainLocalFailureCause(
+                failure,
+                cause !== null &&
+                  (typeof cause === "object" || typeof cause === "function")
+                  ? localFailureCause(cause)
+                  : cause,
+              );
+              throw failure;
             }
             assertBytes(
               parsed,
@@ -562,7 +588,10 @@ export class ToolLoopEngine {
         iterator = undefined;
         void finishedIterator.return?.().catch(() => {});
         if (!calls.length) {
-          yield emit({ type: "RunCompleted", finishReason: "stop" });
+          yield emit({
+            type: "RunCompleted",
+            finishReason: finishReason ?? "stop",
+          });
           return;
         }
         const exchange: ToolRoundExchange = { text, calls: [] };
@@ -602,9 +631,12 @@ export class ToolLoopEngine {
                 controller.signal,
               );
               check();
-              output = result.ok
-                ? immutableJson(result.value)
-                : { error: safeFailure(result.error.code) };
+              if (result.ok) output = immutableJson(result.value);
+              else {
+                const error = immutableJson(result.error);
+                retainLocalFailureCause(error, localFailureCause(result.error));
+                output = { error };
+              }
               state = result.ok ? "completed" : "failed";
               assertBytes(
                 output,
@@ -613,10 +645,20 @@ export class ToolLoopEngine {
               );
             } catch (error) {
               if (controller.signal.aborted) throw controller.signal.reason;
+              const known = error instanceof ToolEngineError;
+              const failure = safeFailure(
+                known ? error.code : "tool-error",
+                known ? error.message : undefined,
+              );
+              retainLocalFailureCause(
+                failure,
+                error !== null &&
+                  (typeof error === "object" || typeof error === "function")
+                  ? localFailureCause(error)
+                  : error,
+              );
               output = {
-                error: safeFailure(
-                  error instanceof ToolEngineError ? error.code : "tool-error",
-                ),
+                error: failure,
               };
               state = "failed";
             }
@@ -653,10 +695,7 @@ export class ToolLoopEngine {
         );
       }
     } catch (error) {
-      const failure =
-        error instanceof ToolEngineError
-          ? safeFailure(error.code)
-          : safeFailure("malformed");
+      const failure = failureFor(error);
       yield failure.code === "canceled"
         ? emit({ type: "RunCanceled", reason: "canceled" })
         : emit({ type: "RunFailed", error: failure });
@@ -845,6 +884,54 @@ function safeFailure(code: string, knownMessage?: string) {
     message: knownMessage ?? messages[code] ?? messages["tool-error"]!,
     recoverable: true,
   };
+}
+function failureFor(cause: unknown) {
+  const known =
+    cause instanceof ToolEngineError || cause instanceof ContextBudgetError;
+  const failure = safeFailure(
+    known ? cause.code : "malformed",
+    known ? cause.message : undefined,
+  );
+  retainLocalFailureCause(
+    failure,
+    cause !== null && (typeof cause === "object" || typeof cause === "function")
+      ? localFailureCause(cause)
+      : cause,
+  );
+  return failure;
+}
+function checkTokenBudget(request: RunRequest, policy: ToolRunPolicy) {
+  if (policy.tokenBudget === undefined) return;
+  const budget = bound(policy.tokenBudget, 2, 2_000_000, "token budget");
+  const reserved = bound(
+    policy.reservedOutputTokens ?? 512,
+    1,
+    budget - 1,
+    "output reservation",
+  );
+  const messages: ContextMessage[] = request.context.map((item, index) => ({
+    id: `tool-round-context-${index}`,
+    role: ["system", "developer", "user", "assistant", "tool"].includes(
+      item.kind,
+    )
+      ? (item.kind as ContextMessage["role"])
+      : "system",
+    parts: [
+      {
+        type: "text",
+        text:
+          typeof item.value === "string"
+            ? item.value
+            : JSON.stringify(item.value),
+      },
+    ],
+  }));
+  const estimate = conservativeTokenCount(messages);
+  const capacity = budget - reserved;
+  if (estimate > capacity)
+    throw new ContextBudgetError(
+      `Tool continuation needs approximately ${estimate} input tokens, but the input budget is ${capacity} (${budget} context tokens minus ${reserved} reserved for the response). Shorten the tool output or persona, increase context to match the active model, or lower the output token limit.`,
+    );
 }
 function uuid7() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));

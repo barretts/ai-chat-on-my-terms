@@ -4,6 +4,10 @@ import { Keyboard, Platform, useWindowDimensions } from "react-native";
 /** Preserve space for content on short screens and while the native keyboard is open. */
 export function useWorkspaceLayout() {
   const { width, height, fontScale } = useWindowDimensions();
+  const touchLayout =
+    Platform.OS !== "web" ||
+    (typeof window !== "undefined" &&
+      window.matchMedia?.("(pointer: coarse)").matches === true);
   const [keyboardVisible, setKeyboardVisible] = useState(
     () => Keyboard.isVisible?.() ?? false,
   );
@@ -24,6 +28,8 @@ export function useWorkspaceLayout() {
   }, []);
   return {
     width,
+    fontScale,
+    phone: width < 600 || (height < 600 && touchLayout),
     compact: height < 700 || fontScale > 1.3 || keyboardVisible,
     keyboardVisible,
     showClock: width >= 360 && fontScale <= 1.3,

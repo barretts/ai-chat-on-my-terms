@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireNativeModule } from "expo";
 import { createAppleMLProbe, type NativeAppleMLProbe } from "./index.js";
 
 /** Native bridge for an Expo development build with AppleMLProbe autolinked. */

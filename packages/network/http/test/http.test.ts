@@ -3,10 +3,108 @@ import { test } from "node:test";
 import {
   createHttpTransport,
   HttpTransportError,
+  httpResponseError,
+  errorDetails,
   type FetchLike,
 } from "../src/index.js";
 
 const ORIGIN = "https://provider.example";
+
+test("HTTP and SSE failures retain status and the complete unstructured response beyond previous limits", async () => {
+  const body = JSON.stringify({
+    failure: {
+      reason: "upstream model could not load",
+      diagnostic: "detail ".repeat(2500),
+      end: "LAST-RESPONSE-FIELD",
+    },
+  });
+  for (const stream of [false, true]) {
+    const client = transport(
+      async () =>
+        new Response(body, {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const pending = stream
+      ? client.streamSse(`${ORIGIN}/chat`)[Symbol.asyncIterator]().next()
+      : client.request(`${ORIGIN}/models`);
+    await assert.rejects(pending, (error: unknown) => {
+      assert.ok(error instanceof HttpTransportError);
+      assert.equal(error.response?.body, body);
+      assert.equal(error.response?.complete, true);
+      assert.ok(error.message.includes(body));
+      assert.match(error.message, /HTTP 503 Service Unavailable/);
+      assert.match(error.message, /LAST-RESPONSE-FIELD/);
+      return true;
+    });
+  }
+});
+
+test("a stalled error body reports its received content and incomplete read explicitly", async () => {
+  const response = new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("first diagnostic line"));
+      },
+      pull() {
+        return new Promise(() => undefined);
+      },
+    }),
+    { status: 502 },
+  );
+  const error = await httpResponseError(response, { timeoutMs: 20 });
+  assert.equal(error.status, 502);
+  assert.equal(error.response?.complete, false);
+  assert.equal(error.response?.body, "first diagnostic line");
+  assert.match(error.message, /Response body \(incomplete\)/);
+  assert.match(error.message, /Reading the error response timed out/);
+});
+
+test("native non-streaming responses retain their full text and remain cancellable", async () => {
+  const body = "native response detail ".repeat(800) + "NATIVE-LAST-FIELD";
+  const legacyResponse = {
+    status: 403,
+    statusText: "Forbidden",
+    headers: new Headers({ "content-type": "text/plain" }),
+    text: async () => body,
+  } as Response;
+  const error = await httpResponseError(legacyResponse);
+  assert.equal(error.response?.body, body);
+  assert.equal(error.response?.complete, true);
+  assert.match(error.message, /NATIVE-LAST-FIELD/);
+  const stalled = {
+    ...legacyResponse,
+    text: () => new Promise<string>(() => undefined),
+  } as Response;
+  const failure = await httpResponseError(stalled, { timeoutMs: 20 });
+  assert.equal(failure.response?.complete, false);
+  assert.match(failure.message, /timed out/);
+});
+
+test("plain response objects and fetch causes retain details without a message field", async () => {
+  assert.match(
+    errorDetails({ failure: { reason: "structured failure", retryAfter: 20 } }),
+    /structured failure/,
+  );
+  assert.match(
+    errorDetails({
+      error: { cause: { reason: "nested server cause must survive" } },
+    }),
+    /nested server cause must survive/,
+  );
+  const nativeCause = new Error("TLS certificate rejected: fixture detail");
+  const client = transport(async () => {
+    throw nativeCause;
+  });
+  await assert.rejects(client.request(`${ORIGIN}/models`), (error: unknown) => {
+    assert.ok(error instanceof HttpTransportError);
+    assert.equal(error.cause, nativeCause);
+    assert.match(error.message, /TLS certificate rejected: fixture detail/);
+    return true;
+  });
+});
 
 function transport(fetch: FetchLike, timeoutMs = 500) {
   return createHttpTransport({

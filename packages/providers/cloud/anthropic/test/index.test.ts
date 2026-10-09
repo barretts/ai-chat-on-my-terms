@@ -75,6 +75,102 @@ async function collect(source: AsyncIterable<RunEvent>) {
 }
 
 describe("Anthropic Messages provider", () => {
+  it.each([
+    [401, "unauthorized"],
+    [404, "missing-model"],
+  ])(
+    "preserves the complete HTTP %i body in chat and model inventory errors",
+    async (status, code) => {
+      const body =
+        "Server diagnosis: " + "x".repeat(20_000) + "\nfinal-response-detail";
+      const config = connection;
+      const provider = createAnthropicProvider({
+        secrets: secrets,
+        fetch: async () =>
+          new Response(body, {
+            status,
+            statusText: "Fixture failure",
+            headers: { "content-type": "text/plain" },
+          }),
+        resolveConnection: async () => config,
+      });
+      const events = await collect(
+        provider.startRun(request, new AbortController().signal),
+      );
+      const failure = events.at(-1);
+      expect(failure?.type).toBe("RunFailed");
+      if (failure?.type !== "RunFailed")
+        throw new Error("Expected a failed run");
+      expect(failure.error.code).toBe(code);
+      expect(failure.error.message).toContain(body);
+      expect(failure.error.message).toContain(`HTTP ${status} Fixture failure`);
+      expect(failure.error.message).toContain("text/plain");
+      const inventory = await provider.listModels(config);
+      expect(inventory.ok).toBe(false);
+      if (inventory.ok) throw new Error("Expected failed inventory");
+      expect(inventory.error.code).toBe(code);
+      expect(inventory.error.message).toContain(body);
+    },
+  );
+
+  it("preserves structured stream errors without a message, including envelope and cause fields", async () => {
+    const payload = {
+      error: { type: "rate_limit_error", retry_after: 37 },
+      request_id: "fixture-request",
+      cause: { policy: "server-side explanation" },
+      details: "x".repeat(9_000) + "stream-tail",
+    };
+    const config = connection;
+    const provider = createAnthropicProvider({
+      secrets: secrets,
+      fetch: async () =>
+        new Response(`event: error\ndata: ${JSON.stringify(payload)}\n\n`, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+      resolveConnection: async () => config,
+    });
+    const events = await collect(
+      provider.startRun(request, new AbortController().signal),
+    );
+    const failure = events.at(-1);
+    expect(failure?.type).toBe("RunFailed");
+    if (failure?.type !== "RunFailed") throw new Error("Expected a failed run");
+    expect(failure.error.code).toBe("quota");
+    expect(failure.error.message).toContain(JSON.stringify(payload, null, 2));
+  });
+
+  it("includes the complete malformed stream event and invalid model inventory response", async () => {
+    const raw = "<html>" + "x".repeat(9_000) + "invalid-body-tail</html>";
+    const config = connection;
+    const provider = createAnthropicProvider({
+      secrets: secrets,
+      fetch: async () =>
+        new Response(`data: ${raw}\n\n`, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+      resolveConnection: async () => config,
+    });
+    const events = await collect(
+      provider.startRun(request, new AbortController().signal),
+    );
+    const failure = events.at(-1);
+    expect(failure?.type).toBe("RunFailed");
+    if (failure?.type !== "RunFailed") throw new Error("Expected a failed run");
+    expect(failure.error.code).toBe("malformed");
+    expect(failure.error.message).toContain(raw);
+    const inventoryProvider = createAnthropicProvider({
+      secrets: secrets,
+      fetch: async () =>
+        new Response(raw, { headers: { "content-type": "text/html" } }),
+      resolveConnection: async () => config,
+    });
+    const inventory = await inventoryProvider.listModels(config);
+    expect(inventory.ok).toBe(false);
+    if (inventory.ok) throw new Error("Expected failed inventory");
+    expect(inventory.error.code).toBe("malformed");
+    expect(inventory.error.message).toContain(raw);
+  });
+
   it("recovers an older generic Authorization secret as a host-bound x-api-key", async () => {
     let calls = 0;
     const port = createAnthropicProvider({

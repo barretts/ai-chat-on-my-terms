@@ -7,8 +7,10 @@ import {
   View,
   type AccessibilityActionEvent,
 } from "react-native";
-import { Searchbar, Text, useTheme, type MD3Theme } from "react-native-paper";
-import { NativeButton } from "@locallab/ui-native-primitives";
+import { IconButton, Searchbar, SegmentedButtons, Text, useTheme, type MD3Theme } from "react-native-paper";
+import { NativeButton, useWorkspaceLayout } from "@locallab/ui-native-primitives";
+import { describeError } from "../diagnostics/errors";
+import { ErrorNotice } from "../diagnostics/error-notice";
 import {
   deleteConfirmationText,
   formatHistoryDate,
@@ -24,9 +26,13 @@ import {
 
 type Notice = { text: string; undo?: { id: string; title: string } } | null;
 
-export function HistoryScreen(props: HistoryFeatureProps) {
+export function HistoryScreen(
+  props: HistoryFeatureProps & { hideBackButton?: boolean },
+) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { phone } = useWorkspaceLayout();
+  const scroll = useRef<ScrollView>(null);
+  const styles = useMemo(() => createStyles(theme, phone), [theme, phone]);
   const now = props.now ?? (() => new Date());
   const [view, setView] = useState<HistoryView>("recent");
   const [query, setQuery] = useState("");
@@ -39,6 +45,9 @@ export function HistoryScreen(props: HistoryFeatureProps) {
   const [row, dispatch] = useReducer(historyRowReducer, IDLE_ROW);
   const requestVersion = useRef(0);
   const mutationActive = useRef(false);
+  useEffect(() => {
+    if (phone && error) scroll.current?.scrollTo({ y: 0, animated: true });
+  }, [phone, error]);
 
   const reload = useCallback(async () => {
     const version = ++requestVersion.current;
@@ -51,9 +60,12 @@ export function HistoryScreen(props: HistoryFeatureProps) {
       setRows(next);
       setArchivedCount(count);
       setError("");
-    } catch {
+    } catch (cause) {
       if (version !== requestVersion.current) return;
-      setError("Your chats could not be loaded. Nothing was changed. Try again.");
+      setError(describeError(cause, {
+        operation: `Load ${view === "archived" ? "archived" : "recent"} chats`,
+        recovery: "Tap Reload chats to read your saved conversations again.",
+      }));
     } finally {
       if (version === requestVersion.current) setLoaded(true);
     }
@@ -68,16 +80,17 @@ export function HistoryScreen(props: HistoryFeatureProps) {
 
   const say = (text: string) => AccessibilityInfo.announceForAccessibility(text);
 
-  const mutate = async (work: () => Promise<void>, failure: string) => {
+  const mutate = async (work: () => Promise<void>, operation: string, recovery: string) => {
     if (mutationActive.current) return;
     mutationActive.current = true;
     setBusy(true);
     setError("");
     try {
       await work();
-    } catch {
-      setError(failure);
-      say(failure);
+    } catch (cause) {
+      const message = describeError(cause, { operation, recovery });
+      setError(message);
+      say(message);
     } finally {
       mutationActive.current = false;
       setBusy(false);
@@ -96,7 +109,7 @@ export function HistoryScreen(props: HistoryFeatureProps) {
       setNotice({ text, undo: { id: conversation.id, title } });
       say(text);
       await reload();
-    }, "That chat could not be archived. It is still in Recent.");
+    }, "Archive a chat", "Reload chats to check its current location, then try Archive again.");
 
   const unarchive = (conversationId: string, title: string, fromUndo = false) =>
     mutate(async () => {
@@ -108,7 +121,7 @@ export function HistoryScreen(props: HistoryFeatureProps) {
       setNotice({ text });
       say(text);
       await reload();
-    }, "That chat could not be moved back. It is still archived.");
+    }, "Move an archived chat back to Recent", "Reload chats to check its current location, then try Move to Recent again.");
 
   const remove = (conversation: HistoryConversation) =>
     mutate(async () => {
@@ -119,7 +132,7 @@ export function HistoryScreen(props: HistoryFeatureProps) {
       setNotice({ text });
       say(text);
       await reload();
-    }, "That chat could not be deleted. Nothing was removed. Try again.");
+    }, "Delete a chat", "Reload chats to check whether it remains, then try Delete again if needed.");
 
   const switchView = (next: HistoryView) => {
     dispatch({ type: "dismiss" });
@@ -131,20 +144,47 @@ export function HistoryScreen(props: HistoryFeatureProps) {
     ? `No ${view === "archived" ? "archived " : ""}chats match "${query.trim()}".`
     : view === "archived"
       ? "Nothing archived. Archived chats wait here until you move them back."
-      : "No chats yet. Tap New to start one.";
+      : "No chats yet. Go back to chat and start a new conversation.";
 
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-      <View style={styles.titleRow}>
+    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+      {!phone ? <View style={styles.titleRow}>
         <Text accessibilityRole="header" variant="titleLarge" style={styles.flex}>
           Chat history
         </Text>
+        {!props.hideBackButton ? (
+          <NativeButton accessibilityLabel="Back to chat" onPress={props.onClose}>
+            Back to chat
+          </NativeButton>
+        ) : null}
+      </View> : !props.hideBackButton ? (
         <NativeButton accessibilityLabel="Back to chat" onPress={props.onClose}>
           Back to chat
         </NativeButton>
-      </View>
+      ) : null}
 
-      <View accessibilityRole="tablist" style={styles.tabs}>
+      {phone ? (
+        <SegmentedButtons
+          value={view}
+          onValueChange={(value) => switchView(value as HistoryView)}
+          buttons={[
+            {
+              value: "recent",
+              label: "Recent",
+              accessibilityLabel: "Recent",
+              testID: "history-tab-recent",
+              style: { minHeight: 44 },
+            },
+            {
+              value: "archived",
+              label: `Archived${archivedCount ? ` (${archivedCount})` : ""}`,
+              accessibilityLabel: `Archived${archivedCount ? ` (${archivedCount})` : ""}`,
+              testID: "history-tab-archived",
+              style: { minHeight: 44 },
+            },
+          ]}
+        />
+      ) : <View accessibilityRole="tablist" style={styles.tabs}>
         {(["recent", "archived"] as const).map((key) => {
           const selected = view === key;
           const label = key === "recent" ? "Recent" : `Archived${archivedCount ? ` (${archivedCount})` : ""}`;
@@ -162,9 +202,10 @@ export function HistoryScreen(props: HistoryFeatureProps) {
             </Pressable>
           );
         })}
-      </View>
+      </View>}
 
       <Searchbar
+        role="searchbox"
         accessibilityLabel={view === "archived" ? "Search archived chats" : "Search chats"}
         maxLength={500}
         placeholder={view === "archived" ? "Search archived chats" : "Search chats"}
@@ -200,12 +241,20 @@ export function HistoryScreen(props: HistoryFeatureProps) {
       ) : null}
 
       {error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
-          {error}
-        </Text>
+        <View style={{ gap: 8 }}>
+          <ErrorNotice message={error} />
+          <NativeButton
+            accessibilityLabel="Reload chat history"
+            mode="outlined"
+            disabled={busy}
+            onPress={() => void reload()}
+          >
+            Reload chats
+          </NativeButton>
+        </View>
       ) : null}
 
-      {loaded && rows.length === 0 ? (
+      {loaded && !error && rows.length === 0 ? (
         <Text style={styles.empty}>{emptyText}</Text>
       ) : null}
 
@@ -266,7 +315,17 @@ export function HistoryScreen(props: HistoryFeatureProps) {
                     {conversation.preview ?? "No messages yet"}
                   </Text>
                 </Pressable>
-                <Pressable
+                {phone ? (
+                  <IconButton
+                    icon={expanded ? "chevron-up" : "dots-horizontal"}
+                    accessibilityLabel={`More actions for ${title}`}
+                    accessibilityState={{ expanded }}
+                    disabled={busy}
+                    onPress={toggle}
+                    style={styles.phoneMore}
+                    testID={`history-more-${conversation.id}`}
+                  />
+                ) : <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`More actions for ${title}`}
                   accessibilityState={{ expanded }}
@@ -277,7 +336,7 @@ export function HistoryScreen(props: HistoryFeatureProps) {
                   testID={`history-more-${conversation.id}`}
                 >
                   <Text style={styles.moreText}>{expanded ? "▴" : "⋯"}</Text>
-                </Pressable>
+                </Pressable>}
               </View>
 
               {expanded && !confirming ? (
@@ -369,9 +428,9 @@ export function HistoryScreen(props: HistoryFeatureProps) {
   );
 }
 
-const createStyles = (theme: MD3Theme) =>
+const createStyles = (theme: MD3Theme, phone: boolean) =>
   StyleSheet.create({
-    content: { padding: 12, gap: 10, paddingBottom: 32 },
+    content: { padding: phone ? 20 : 12, gap: phone ? 16 : 10, paddingBottom: 32 },
     flex: { flex: 1 },
     titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     bevel: {
@@ -399,7 +458,7 @@ const createStyles = (theme: MD3Theme) =>
     },
     tabText: { color: theme.colors.onSurface, fontWeight: "600" },
     tabTextSelected: { color: theme.colors.onSecondaryContainer },
-    search: { borderRadius: 0 },
+    search: { borderRadius: phone ? 18 : 0 },
     notice: {
       flexDirection: "row",
       alignItems: "center",
@@ -409,6 +468,7 @@ const createStyles = (theme: MD3Theme) =>
       borderWidth: 1,
       borderColor: theme.colors.outline,
       backgroundColor: theme.colors.secondaryContainer,
+      borderRadius: phone ? 16 : 0,
     },
     empty: { opacity: 0.72, paddingVertical: 12 },
     list: { gap: 8 },
@@ -416,10 +476,14 @@ const createStyles = (theme: MD3Theme) =>
       borderWidth: 1,
       borderColor: theme.colors.outlineVariant,
       backgroundColor: theme.colors.surface,
+      borderRadius: phone ? 18 : 0,
+      overflow: "hidden",
     },
-    rowCurrent: { borderLeftWidth: 4, borderLeftColor: "#59328b" },
+    rowCurrent: phone ? {
+      borderColor: theme.colors.primary,
+    } : { borderLeftWidth: 4, borderLeftColor: "#59328b" },
     rowMain: { flexDirection: "row", alignItems: "stretch" },
-    rowOpen: { flex: 1, minHeight: 56, paddingHorizontal: 12, paddingVertical: 8, gap: 2 },
+    rowOpen: { flex: 1, minHeight: phone ? 88 : 56, paddingHorizontal: phone ? 16 : 12, paddingVertical: phone ? 14 : 8, gap: phone ? 4 : 2 },
     pressed: { backgroundColor: theme.colors.surfaceVariant },
     rowHeading: { flexDirection: "row", alignItems: "baseline", gap: 8 },
     rowTitle: { flex: 1, fontWeight: "700", fontSize: 16, color: theme.colors.onSurface },
@@ -436,6 +500,7 @@ const createStyles = (theme: MD3Theme) =>
       margin: 4,
     },
     moreText: { fontSize: 20, fontWeight: "700", color: theme.colors.onSurface },
+    phoneMore: { width: 44, height: 44, margin: 8, alignSelf: "center" },
     actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingBottom: 10 },
     confirm: {
       gap: 8,

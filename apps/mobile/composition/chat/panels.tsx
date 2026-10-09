@@ -6,8 +6,16 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Searchbar, Text, useTheme } from "react-native-paper";
+import {
+  Button,
+  Searchbar,
+  SegmentedButtons,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import type { CapabilityMap } from "@locallab/contracts/ports";
+import { ErrorNotice } from "../../features/diagnostics/error-notice";
+import { describeError } from "../../features/diagnostics/errors";
 import type { ContextPolicy } from "@locallab/context";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
 import { SQLiteConversationLibrary } from "@locallab/conversation-library";
@@ -40,6 +48,8 @@ export interface ChatPanelsProps {
   personaId?: string;
   personaEnabled?: boolean;
   capabilities: CapabilityMap;
+  serverContextWindow?: number;
+  serverContextStatus?: "checking" | "available" | "unavailable";
   createId: () => string;
   library?: LibraryFeatureProps["library"];
   settingsStore?: ChatSettingsStore;
@@ -48,6 +58,7 @@ export interface ChatPanelsProps {
     source?: ChatSearchSource,
   ) => Promise<void> | void;
   onClose?: () => void;
+  hideBackButton?: boolean;
   onSelectCover?: LibraryFeatureProps["onSelectCover"];
   onContextReload?: () => Promise<void> | void;
   onCompact?: (policy: ContextPolicy) => Promise<void> | void;
@@ -113,14 +124,20 @@ export function ChatPanels(props: ChatPanelsProps) {
     setError("");
     try {
       await props.onOpenConversation(conversationId, source);
-    } catch {
-      setError("This conversation could not be opened. Try again.");
+    } catch (cause) {
+      setError(
+        describeError(cause, {
+          operation: "Open saved conversation",
+          recovery:
+            "Choose the chat again. Check available storage space if this keeps failing.",
+        }),
+      );
     }
   };
 
   return (
     <View style={[styles.host, { backgroundColor: theme.colors.background }]}>
-      {props.onClose ? (
+      {props.onClose && !props.hideBackButton ? (
         <View style={styles.topBar}>
           <Pressable
             accessibilityRole="button"
@@ -132,11 +149,7 @@ export function ChatPanels(props: ChatPanelsProps) {
           </Pressable>
         </View>
       ) : null}
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {error}
-        </Text>
-      ) : null}
+      {error ? <ErrorNotice message={error} /> : null}
       {props.panel === "library" ? (
         <LibraryScreen
           key={String(props.refreshKey ?? "library")}
@@ -153,6 +166,12 @@ export function ChatPanels(props: ChatPanelsProps) {
           conversationId={props.conversationId}
           store={settingsStore}
           capabilities={settingsCapabilities}
+          {...(props.serverContextWindow
+            ? { serverContextWindow: props.serverContextWindow }
+            : {})}
+          {...(props.serverContextStatus
+            ? { serverContextStatus: props.serverContextStatus }
+            : {})}
           personaEnabled={!!props.personaId && (props.personaEnabled ?? true)}
           {...(props.modelId ? { modelId: props.modelId } : {})}
           {...(props.personaId ? { personaId: props.personaId } : {})}
@@ -250,8 +269,15 @@ export function ChatSearchPanel(props: ChatSearchPanelProps) {
         .then((found) => {
           if (!canceled) setResults(found);
         })
-        .catch(() => {
-          if (!canceled) setError("Search could not be completed. Try again.");
+        .catch((cause) => {
+          if (!canceled)
+            setError(
+              describeError(cause, {
+                operation: "Search saved chats",
+                recovery:
+                  "Tap Retry search. For semantic search, check that the embedding model is installed.",
+              }),
+            );
         })
         .finally(() => {
           if (!canceled) setBusy(false);
@@ -310,9 +336,14 @@ export function ChatSearchPanel(props: ChatSearchPanelProps) {
         }
       }
       await props.onOpenConversation(result.conversationId, result.source);
-    } catch {
+    } catch (cause) {
       if (live.current)
-        setError("This conversation could not be opened. Try again.");
+        setError(
+          describeError(cause, {
+            operation: "Open search result",
+            recovery: "Retry opening the result, or find the chat in Library.",
+          }),
+        );
     } finally {
       if (live.current) setOpening(false);
     }
@@ -327,47 +358,43 @@ export function ChatSearchPanel(props: ChatSearchPanelProps) {
         Search conversations
       </Text>
       <Searchbar
+        role="searchbox"
         accessibilityLabel="Search saved conversations"
         placeholder="Find titles and message text"
         value={query}
         maxLength={500}
         onChangeText={setQuery}
       />
-      <View style={styles.row}>
-        <SearchChoice
-          label="Text"
-          selected={mode === "local"}
-          onPress={() => setMode("local")}
-        />
-        <SearchChoice
-          label="Semantic"
-          selected={mode === "semantic"}
-          disabled={!props.semanticSearch}
-          onPress={() => {
-            setCurrentChatOnly(false);
-            setMode("semantic");
-          }}
-        />
-      </View>
-      {!props.semanticSearch ? (
-        <Text variant="bodySmall">
-          Semantic search requires an available local embedding model and index.
-          Text search is available.
-        </Text>
+      {props.semanticSearch ? (
+        <View style={styles.row}>
+          <SearchChoice
+            label="Text"
+            selected={mode === "local"}
+            onPress={() => setMode("local")}
+          />
+          <SearchChoice
+            label="Semantic"
+            selected={mode === "semantic"}
+            onPress={() => {
+              setCurrentChatOnly(false);
+              setMode("semantic");
+            }}
+          />
+        </View>
       ) : null}
-      <View style={styles.row}>
-        <SearchChoice
-          label="All chats"
-          selected={!currentChatOnly}
-          onPress={() => setCurrentChatOnly(false)}
-        />
-        <SearchChoice
-          label="This chat"
-          selected={currentChatOnly}
-          disabled={mode === "semantic"}
-          onPress={() => setCurrentChatOnly(true)}
-        />
-      </View>
+      <SegmentedButtons
+        value={currentChatOnly ? "current" : "all"}
+        onValueChange={(value) => setCurrentChatOnly(value === "current")}
+        buttons={[
+          { value: "all", label: "All chats", style: { minHeight: 44 } },
+          {
+            value: "current",
+            label: "This chat",
+            disabled: mode === "semantic",
+            style: { minHeight: 44 },
+          },
+        ]}
+      />
       {mode === "semantic" ? (
         <Text variant="bodySmall">Semantic search covers all saved chats.</Text>
       ) : null}
@@ -378,10 +405,8 @@ export function ChatSearchPanel(props: ChatSearchPanelProps) {
         </View>
       ) : null}
       {error ? (
-        <View style={styles.row}>
-          <Text accessibilityRole="alert" style={styles.error}>
-            {error}
-          </Text>
+        <View style={{ gap: 12 }}>
+          <ErrorNotice message={error} />
           <Pressable
             accessibilityRole="button"
             onPress={() => setRetryKey((key) => key + 1)}
@@ -434,24 +459,18 @@ function SearchChoice(props: {
   disabled?: boolean;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Button
+      mode={props.selected ? "contained-tonal" : "outlined"}
       accessibilityState={{
         selected: props.selected,
         disabled: props.disabled ?? false,
       }}
       disabled={props.disabled ?? false}
       onPress={props.onPress}
-      style={[
-        styles.button,
-        props.selected && styles.selected,
-        props.disabled && styles.disabled,
-      ]}
+      contentStyle={{ minHeight: 44 }}
     >
-      <Text style={props.selected ? styles.selectedText : undefined}>
-        {props.label}
-      </Text>
-    </Pressable>
+      {props.label}
+    </Button>
   );
 }
 

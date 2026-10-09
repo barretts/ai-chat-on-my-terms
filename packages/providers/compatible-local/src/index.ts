@@ -4,7 +4,12 @@ import {
   resolveCapabilities,
   type CapabilityDecision,
 } from "@locallab/capabilities";
-import { HttpTransportError, type HttpTransport } from "@locallab/network-http";
+import {
+  errorDetails,
+  httpResponseError,
+  HttpTransportError,
+  type HttpTransport,
+} from "@locallab/network-http";
 import type { SecretRef, SecretStore } from "@locallab/security-secrets";
 
 export type CompatibleLocalProviderId = "jan" | "omlx" | "unsloth" | "custom";
@@ -45,12 +50,26 @@ export interface CompatibleLocalOptions {
   ) => Promise<CompatibleLocalConnection>;
   readonly secretStore?: SecretStore;
   readonly now?: () => string;
+  /** Enable only for a selected server/model whose function calling is established. */
+  readonly toolsEnabled?: boolean;
+  /** Add the NInfer thinking extension only after verifying this selected backend. */
+  readonly ninferThinkingControl?: boolean;
 }
 
 export interface CompatibleModel {
   /** Exact ID returned by the backend; never prettified or rewritten. */
   readonly id: string;
   readonly ownedBy?: string;
+  /** Effective request capacity advertised by the running server, not the training window. */
+  readonly contextWindowTokens?: number;
+  readonly contextWindowSource?: "models";
+  readonly toolsSupported?: true;
+}
+
+export interface CompatibleModelContext {
+  readonly contextWindowTokens: number;
+  readonly source: "models" | "llama.cpp-props";
+  readonly toolsSupported?: true;
 }
 
 type EventInput = RunEvent extends infer E
@@ -67,6 +86,12 @@ export function createCompatibleLocalProvider(
     connection: CompatibleLocalConnection,
     signal?: AbortSignal,
   ): Promise<readonly CompatibleModel[]>;
+  /** Best-effort discovery. Unsupported endpoints and unavailable metadata return undefined. */
+  discoverCompatibleModelContext(
+    connection: CompatibleLocalConnection,
+    modelId: string,
+    signal?: AbortSignal,
+  ): Promise<CompatibleModelContext | undefined>;
 } {
   const now = options.now ?? (() => new Date().toISOString());
 
@@ -103,20 +128,25 @@ export function createCompatibleLocalProvider(
       signal ? { signal } : {},
     );
     if (!response.ok)
+      throw await httpResponseError(response, {
+        summary: "Compatible server rejected model discovery",
+        ...(signal ? { signal } : {}),
+      });
+    const raw = await response.text();
+    let body: unknown;
+    try {
+      body = JSON.parse(raw);
+    } catch (cause) {
       throw new HttpTransportError(
-        response.status === 401
-          ? "unauthorized"
-          : response.status === 403
-            ? "forbidden"
-            : "http",
-        `Compatible server returned HTTP ${response.status}`,
-        response.status >= 500,
+        "malformed_stream",
+        `Compatible server returned an unreadable model catalog (HTTP ${response.status} ${response.statusText}).\n${errorDetails(cause)}\nResponse body:\n${raw}`,
+        false,
         response.status,
       );
-    const body: unknown = await response.json();
+    }
     if (!isRecord(body) || !Array.isArray(body.data))
       throw new TypeError(
-        "Compatible server returned an invalid model catalog",
+        `Compatible server returned an invalid model catalog (HTTP ${response.status} ${response.statusText}).\nResponse body:\n${raw}`,
       );
     const seen = new Set<string>();
     const models: CompatibleModel[] = [];
@@ -130,12 +160,119 @@ export function createCompatibleLocalProvider(
         continue;
       if (seen.has(row.id)) continue;
       seen.add(row.id);
+      const contextWindowTokens = advertisedContextWindow(row);
       models.push({
         id: row.id,
         ...(typeof row.owned_by === "string" ? { ownedBy: row.owned_by } : {}),
+        ...(contextWindowTokens === undefined
+          ? {}
+          : { contextWindowTokens, contextWindowSource: "models" as const }),
+        ...(row.owned_by === "ninfer" ? { toolsSupported: true as const } : {}),
       });
     }
     return models;
+  }
+
+  async function discoverCompatibleModelContext(
+    connection: CompatibleLocalConnection,
+    modelId: string,
+    signal?: AbortSignal,
+  ): Promise<CompatibleModelContext | undefined> {
+    if (!modelId.trim() || signal?.aborted) return undefined;
+    const controller = new AbortController();
+    let finishTimeout: (() => void) | undefined;
+    const cancel = () => {
+      controller.abort();
+      finishTimeout?.();
+    };
+    signal?.addEventListener("abort", cancel, { once: true });
+    // This optional probe must not make a chat wait on an unsupported endpoint or
+    // a response whose body stalls. The bound includes secret resolution and reads.
+    const timedOut = new Promise<undefined>((resolve) => {
+      finishTimeout = () => resolve(undefined);
+    });
+    const timer = setTimeout(() => {
+      controller.abort();
+      finishTimeout?.();
+    }, 3_500);
+
+    const discover = async (): Promise<CompatibleModelContext | undefined> => {
+      const origin = normalizeOrigin(connection.origin);
+      const models = await listCompatibleModels(connection, controller.signal);
+      const model = models.find((candidate) => candidate.id === modelId);
+      if (model?.contextWindowTokens !== undefined)
+        return {
+          contextWindowTokens: model.contextWindowTokens,
+          source: "models",
+          ...(model.toolsSupported ? { toolsSupported: true as const } : {}),
+        };
+      if (controller.signal.aborted) return undefined;
+      const headers = await headersFor(connection);
+      const optionalJson = async (url: URL): Promise<unknown> => {
+        if (controller.signal.aborted) return undefined;
+        try {
+          const response = await options.transport.request(
+            url,
+            {
+              signal: controller.signal,
+              headers: { accept: "application/json", ...headers },
+            },
+            {
+              signal: controller.signal,
+              timeoutMs: 3_500,
+              returnHttpErrors: true,
+            },
+          );
+          if (!response.ok) return undefined;
+          return JSON.parse(await response.text()) as unknown;
+        } catch {
+          return undefined;
+        }
+      };
+      // NInfer/vLLM model cards can advertise the configured max_model_len.
+      // Some servers expose more metadata on a single-model lookup than the list.
+      const details = await optionalJson(
+        apiUrl(origin, `models/${encodeURIComponent(modelId)}`),
+      );
+      if (isRecord(details) && details.id === modelId) {
+        const contextWindowTokens = advertisedContextWindow(details);
+        if (contextWindowTokens !== undefined)
+          return {
+            contextWindowTokens,
+            source: "models",
+            ...(details.owned_by === "ninfer" || model?.toolsSupported
+              ? { toolsSupported: true as const }
+              : {}),
+          };
+      }
+      if (controller.signal.aborted) return undefined;
+      // llama.cpp reports active per-slot context in /props. Passing autoload=false
+      // also keeps a router probe from loading an otherwise idle model.
+      const propsUrl = new URL("/props", origin);
+      propsUrl.searchParams.set("model", modelId);
+      propsUrl.searchParams.set("autoload", "false");
+      const props = await optionalJson(propsUrl);
+      if (!isRecord(props) || !isRecord(props.default_generation_settings))
+        return undefined;
+      const settings = props.default_generation_settings;
+      const alias =
+        typeof props.model_alias === "string"
+          ? props.model_alias
+          : settings.model;
+      if (alias !== modelId) return undefined;
+      const contextWindowTokens = positiveInt(settings.n_ctx);
+      return contextWindowTokens === undefined
+        ? undefined
+        : { contextWindowTokens, source: "llama.cpp-props" };
+    };
+
+    try {
+      return await Promise.race([discover().catch(() => undefined), timedOut]);
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+      signal?.removeEventListener("abort", cancel);
+    }
   }
 
   return {
@@ -157,6 +294,7 @@ export function createCompatibleLocalProvider(
     async listCompatibleModels(connection, signal) {
       return listCompatibleModels(connection, signal);
     },
+    discoverCompatibleModelContext,
     async getCapabilities(_connection, _modelId, signal) {
       if (signal?.aborted)
         return {
@@ -167,17 +305,17 @@ export function createCompatibleLocalProvider(
             recoverable: true,
           },
         };
-      // OpenAI compatibility establishes the chat wire format only. Model-specific
-      // tools, vision, reasoning, structured output, management, and MCP remain unknown.
+      // Function capability requires explicit selection metadata. Other model-specific
+      // features remain unknown from OpenAI compatibility alone.
       const resolved = resolveCapabilities({
         provider: {
           streaming: "yes",
           "parameter.temperature": "yes",
           "parameter.top_p": "yes",
           "parameter.max_output_tokens": "yes",
-          tools: "unknown",
+          tools: options.toolsEnabled === true ? "yes" : "unknown",
           vision: "unknown",
-          reasoning: "unknown",
+          reasoning: options.ninferThinkingControl === true ? "yes" : "unknown",
           json: "unknown",
           modelManagement: "unknown",
           mcp: "unknown",
@@ -219,8 +357,19 @@ export function createCompatibleLocalProvider(
           stream_options: { include_usage: true },
           ...safeParameters(request.parameters),
         };
+        if (options.ninferThinkingControl === true)
+          body.enable_thinking = request.reasoning;
+        const tools = functionDefinitions(request);
+        if (tools.length) {
+          body.tools = tools;
+          body.tool_choice = "auto";
+        }
         let sawTerminalChunk = false;
         let finishReason: string | undefined;
+        const toolDeltas = new Map<
+          number,
+          { id?: string; name: string; arguments: string }
+        >();
         for await (const frame of options.transport.streamSse(
           apiUrl(connection.origin, "chat/completions"),
           {
@@ -233,7 +382,7 @@ export function createCompatibleLocalProvider(
             body: JSON.stringify(body),
             signal,
           },
-          { signal, timeoutMs: 90_000 },
+          { signal, timeoutMs: 300_000 },
         )) {
           if (frame.data.trim() === "[DONE]") {
             sawTerminalChunk = true;
@@ -242,10 +391,58 @@ export function createCompatibleLocalProvider(
           let payload: unknown;
           try {
             payload = JSON.parse(frame.data);
-          } catch {
-            continue;
+          } catch (cause) {
+            throw new HttpTransportError(
+              "malformed_stream",
+              `Compatible server sent malformed stream data.\n${errorDetails(cause)}\nResponse body:\n${frame.data}`,
+              false,
+            );
           }
-          if (!isRecord(payload)) continue;
+          if (
+            frame.event === "error" ||
+            (isRecord(payload) &&
+              Object.hasOwn(payload, "error") &&
+              payload.error != null)
+          ) {
+            const details =
+              isRecord(payload) && isRecord(payload.error)
+                ? payload.error
+                : payload;
+            const statusValue = isRecord(details)
+              ? (details.status ?? details.code)
+              : undefined;
+            const status =
+              typeof statusValue === "number"
+                ? statusValue
+                : typeof statusValue === "string" && /^\d{3}$/.test(statusValue)
+                  ? Number(statusValue)
+                  : undefined;
+            const text = errorDetails(details);
+            throw new HttpTransportError(
+              status === 401 || /auth|api.?key/i.test(text)
+                ? "unauthorized"
+                : status === 403
+                  ? "forbidden"
+                  : "http",
+              `Compatible server returned a stream error.\nResponse body:\n${frame.data}`,
+              status === 429 ||
+                (status !== undefined && status >= 500) ||
+                /rate.?limit|quota|billing/i.test(text),
+              status,
+            );
+          }
+          if (!isRecord(payload))
+            throw new HttpTransportError(
+              "malformed_stream",
+              `Compatible server sent an invalid stream payload.\nResponse body:\n${frame.data}`,
+              false,
+            );
+          if (!Array.isArray(payload.choices) && !isRecord(payload.usage))
+            throw new HttpTransportError(
+              "malformed_stream",
+              `Compatible server sent a stream payload without choices or usage.\nResponse body:\n${frame.data}`,
+              false,
+            );
           if (isRecord(payload.usage)) {
             const inputTokens = nonnegativeInt(payload.usage.prompt_tokens);
             const outputTokens = nonnegativeInt(
@@ -275,6 +472,32 @@ export function createCompatibleLocalProvider(
               type: "ReasoningDelta",
               text: choice.delta.reasoning_content,
             });
+          if (Array.isArray(choice.delta.tool_calls))
+            for (const item of choice.delta.tool_calls) {
+              if (
+                !isRecord(item) ||
+                !isRecord(item.function) ||
+                !Number.isInteger(item.index) ||
+                (item.index as number) < 0
+              )
+                throw new Error(
+                  "Compatible server sent a malformed function-call delta.",
+                );
+              const index = item.index as number;
+              const tool = toolDeltas.get(index) ?? { name: "", arguments: "" };
+              if (typeof item.id === "string") tool.id = item.id;
+              if (typeof item.function.name === "string")
+                tool.name += item.function.name;
+              if (typeof item.function.arguments === "string")
+                tool.arguments += item.function.arguments;
+              toolDeltas.set(index, tool);
+              if (toolDeltas.size > 128 || tool.arguments.length > 1_000_000)
+                throw new HttpTransportError(
+                  "malformed_stream",
+                  "Compatible function calls exceeded their argument or call limit.",
+                  false,
+                );
+            }
         }
         if (signal.aborted) {
           yield emit({ type: "RunCanceled", reason: "canceled" });
@@ -282,9 +505,49 @@ export function createCompatibleLocalProvider(
         }
         if (!sawTerminalChunk)
           throw new Error("Compatible chat stream ended without a final chunk");
+        if (finishReason === "tool_calls" && !toolDeltas.size)
+          throw new Error(
+            "Compatible server ended for function calls without supplying a call.",
+          );
+        for (const [index, tool] of [...toolDeltas].sort(([a], [b]) => a - b)) {
+          if (!tool.name || !request.permittedTools.includes(tool.name))
+            throw new HttpTransportError(
+              "forbidden",
+              `Compatible server requested an unpermitted function: ${tool.name || "[missing name]"}.`,
+              false,
+            );
+          let input: unknown;
+          try {
+            input = JSON.parse(tool.arguments);
+          } catch (cause) {
+            throw new HttpTransportError(
+              "malformed_stream",
+              `Compatible server sent malformed function arguments.\n${errorDetails(cause)}\nTool arguments:\n${tool.arguments}`,
+              false,
+            );
+          }
+          if (!isRecord(input))
+            throw new HttpTransportError(
+              "malformed_stream",
+              `Compatible function arguments must be a JSON object.\nTool arguments:\n${tool.arguments}`,
+              false,
+            );
+          yield emit({
+            type: "ToolCall",
+            invocationId: stableToolId(
+              `${request.runId}:${tool.id ?? index}:${tool.name}`,
+            ),
+            name: tool.name,
+            input,
+          });
+        }
         yield emit({
           type: "RunCompleted",
-          ...(finishReason ? { finishReason } : {}),
+          ...(toolDeltas.size
+            ? { finishReason: "tool_calls" }
+            : finishReason
+              ? { finishReason }
+              : {}),
         });
       } catch (error) {
         if (signal.aborted)
@@ -382,13 +645,32 @@ function isEmbeddingOnly(row: Record<string, unknown>): boolean {
     row.id as string,
   );
 }
-function toMessages(
-  request: RunRequest,
-): Array<{ role: string; content: string }> {
-  const messages: Array<{ role: string; content: string }> = [];
+function toMessages(request: RunRequest): Array<Record<string, unknown>> {
+  const messages: Array<Record<string, unknown>> = [];
   for (const item of request.context) {
-    if (!["system", "developer", "user", "assistant"].includes(item.kind))
+    if (
+      !["system", "developer", "user", "assistant", "tool"].includes(item.kind)
+    )
       continue;
+    if (item.kind === "tool") {
+      if (
+        !isRecord(item.value) ||
+        typeof item.value.tool_call_id !== "string" ||
+        !item.value.tool_call_id
+      )
+        throw new TypeError(
+          "Function results require a matching tool_call_id.",
+        );
+      messages.push({
+        role: "tool",
+        tool_call_id: item.value.tool_call_id,
+        content:
+          typeof item.value.content === "string"
+            ? item.value.content
+            : JSON.stringify(item.value.content ?? item.value.output ?? null),
+      });
+      continue;
+    }
     const content =
       typeof item.value === "string"
         ? item.value
@@ -397,13 +679,95 @@ function toMessages(
           : isRecord(item.value) && typeof item.value.text === "string"
             ? item.value.text
             : undefined;
-    if (content !== undefined)
+    const toolCalls =
+      item.kind === "assistant" &&
+      isRecord(item.value) &&
+      Array.isArray(item.value.tool_calls)
+        ? item.value.tool_calls.map(encodeHistoryCall)
+        : [];
+    if (content !== undefined || toolCalls.length)
       messages.push({
         role: item.kind === "developer" ? "system" : item.kind,
-        content,
+        content: content ?? "",
+        ...(toolCalls.length ? { tool_calls: toolCalls } : {}),
       });
   }
   return messages;
+}
+function encodeHistoryCall(value: unknown): Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    !isRecord(value.function) ||
+    typeof value.function.name !== "string" ||
+    !value.function.name
+  )
+    throw new TypeError(
+      "Saved assistant function calls require an ID and function name.",
+    );
+  const argumentsValue =
+    typeof value.function.arguments === "string"
+      ? JSON.parse(value.function.arguments)
+      : value.function.arguments;
+  if (!isRecord(argumentsValue))
+    throw new TypeError("Saved function arguments must be a JSON object.");
+  return {
+    id: value.id,
+    type: "function",
+    function: {
+      name: value.function.name,
+      arguments: JSON.stringify(argumentsValue),
+    },
+  };
+}
+function functionDefinitions(
+  request: RunRequest,
+): Array<Record<string, unknown>> {
+  const definitions = request.context.find(
+    (item) => item.kind === "tool-definitions",
+  )?.value;
+  if (!Array.isArray(definitions)) return [];
+  return definitions.flatMap((definition) => {
+    if (
+      !isRecord(definition) ||
+      typeof definition.name !== "string" ||
+      !request.permittedTools.includes(definition.name)
+    )
+      return [];
+    if (
+      !isRecord(definition.parameters) ||
+      definition.parameters.type !== "object"
+    )
+      throw new TypeError(
+        `Function ${definition.name} requires an object argument schema.`,
+      );
+    return [
+      {
+        type: "function",
+        function: {
+          name: definition.name,
+          description:
+            typeof definition.description === "string"
+              ? definition.description
+              : "",
+          parameters: definition.parameters,
+        },
+      },
+    ];
+  });
+}
+function stableToolId(seed: string): string {
+  let tail = "";
+  for (let lane = 0; lane < 3; lane++) {
+    let h = 2166136261 ^ Math.imul(lane + 1, 0x9e3779b9);
+    for (let i = 0; i < seed.length; i++)
+      h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    tail += ((h ^ (h >>> 16)) >>> 0).toString(16).padStart(8, "0");
+  }
+  return `${seed.slice(0, 13)}-7${tail.slice(0, 3)}-8${tail.slice(3, 6)}-${tail.slice(6, 18)}`;
 }
 function safeParameters(
   parameters: Readonly<Record<string, unknown>>,
@@ -436,6 +800,7 @@ function errorResult(
   code:
     | "offline"
     | "timeout"
+    | "quota"
     | "unauthorized"
     | "permission"
     | "unsupported"
@@ -452,28 +817,27 @@ function errorResult(
     };
   if (error instanceof HttpTransportError) {
     const code =
-      error.code === "timeout"
-        ? "timeout"
-        : error.code === "unauthorized"
-          ? "unauthorized"
-          : error.code === "forbidden"
-            ? "permission"
-            : error.code === "host_not_authorized" ||
-                error.code === "cleartext_not_authorized"
+      error.status === 429 || /rate.?limit|quota|billing/i.test(error.message)
+        ? "quota"
+        : error.code === "timeout"
+          ? "timeout"
+          : error.code === "unauthorized"
+            ? "unauthorized"
+            : error.code === "forbidden"
               ? "permission"
-              : error.code === "malformed_stream"
-                ? "malformed"
-                : "offline";
+              : error.code === "host_not_authorized" ||
+                  error.code === "cleartext_not_authorized"
+                ? "permission"
+                : error.code === "malformed_stream"
+                  ? "malformed"
+                  : "offline";
     return { code, message: error.message, recoverable: error.recoverable };
   }
   if (error instanceof TypeError)
     return { code: "malformed", message: error.message, recoverable: false };
   return {
     code: "offline",
-    message:
-      error instanceof Error
-        ? error.message
-        : "Compatible-provider request failed",
+    message: error instanceof Error ? error.message : errorDetails(error),
     recoverable: true,
   };
 }
@@ -481,6 +845,18 @@ function nonnegativeInt(value: unknown): number | undefined {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
     ? value
     : undefined;
+}
+function positiveInt(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? value
+    : undefined;
+}
+function advertisedContextWindow(
+  row: Record<string, unknown>,
+): number | undefined {
+  // max_model_len is NInfer/vLLM's effective served limit. llama.cpp's
+  // meta.n_ctx_train is a model training property and must never set this budget.
+  return positiveInt(row.max_model_len);
 }
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

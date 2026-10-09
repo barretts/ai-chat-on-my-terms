@@ -33,6 +33,9 @@ export interface RemotePullOperation {
 export interface ModelFeatureDependencies {
   readonly catalog: readonly CatalogModel[];
   readonly localModelsSection?: ReactNode;
+  readonly connectionSelector?: ReactNode;
+  readonly initialSection?: "phone" | "connected";
+  readonly phoneDownloadBusy?: boolean;
   readonly lifecycle: {
     getAll(): readonly ModelLifecycle[];
     set(value: ModelLifecycle): void;
@@ -45,6 +48,8 @@ export interface ModelFeatureDependencies {
   readonly onSelectModel?: (modelId: string) => void | Promise<void>;
   readonly onContextReload?: (modelId: string) => void | Promise<void>;
   readonly onImageHostUpdate?: (modelId: string) => void | Promise<void>;
+  readonly onOpenConnections?: () => void;
+  readonly onReturnToChat?: () => void;
 }
 
 export interface LifecycleSelectionStore {

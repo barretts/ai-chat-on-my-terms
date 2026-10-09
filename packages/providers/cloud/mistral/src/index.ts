@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   createHttpTransport,
+  errorDetails,
   HttpTransportError,
   type FetchLike,
 } from "@locallab/network-http";
@@ -53,9 +54,19 @@ export function createMistralProvider(
           },
           signal ? { signal } : {},
         );
-        const body: unknown = await response.json();
+        const raw = await response.text();
+        let body: unknown;
+        try {
+          body = JSON.parse(raw);
+        } catch (cause) {
+          throw new ProtocolError(
+            `Mistral model list contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+          );
+        }
         if (!isObj(body) || !Array.isArray(body.data))
-          throw new ProtocolError("Mistral model list was malformed");
+          throw new ProtocolError(
+            `Mistral model list was malformed.\nServer response:\n${raw}`,
+          );
         return {
           ok: true,
           value: [
@@ -137,6 +148,7 @@ export function createMistralProvider(
           done = false,
           inputTokens: number | undefined,
           outputTokens: number | undefined;
+        let filteredResponse: string | undefined;
         const calls = new Map<
           number,
           { id?: string; name: string; args: string }
@@ -161,7 +173,8 @@ export function createMistralProvider(
           }
           const data = parse(frame.data);
           if (!data) continue;
-          if (isObj(data.error)) throw classifyApiError(data.error);
+          if (data.error != null || frame.event === "error")
+            throw classifyApiError(data);
           if (isObj(data.usage)) {
             inputTokens = int(data.usage.prompt_tokens);
             outputTokens = int(data.usage.completion_tokens);
@@ -172,6 +185,7 @@ export function createMistralProvider(
             if (typeof choice.finish_reason === "string") {
               finish = choice.finish_reason;
               done = true;
+              if (finish === "content_filter") filteredResponse = frame.data;
             }
             const delta = isObj(choice.delta) ? choice.delta : undefined;
             if (!delta) continue;
@@ -205,7 +219,7 @@ export function createMistralProvider(
           throw new ProtocolError("Mistral stream ended without a final chunk");
         else if (finish === "content_filter")
           throw new SafetyError(
-            "Mistral blocked the response under its content policy",
+            `Mistral blocked the response under its content policy.\nServer response:\n${filteredResponse ?? "The provider returned no further details."}`,
           );
         else {
           for (const [index, call] of [...calls].sort(([a], [b]) => a - b)) {
@@ -214,9 +228,9 @@ export function createMistralProvider(
             let input: unknown = call.args;
             try {
               input = JSON.parse(call.args);
-            } catch {
+            } catch (cause) {
               throw new ProtocolError(
-                "Mistral returned malformed tool arguments",
+                `Mistral returned malformed tool arguments.\n${errorDetails(cause)}\nServer response:\n${call.args}`,
               );
             }
             yield emit({
@@ -288,8 +302,10 @@ async function keyFor(store: SecretStore, origin: string, ref: SecretRef) {
       values.authorization?.replace(/^Bearer\s+/i, "") ?? values["x-api-key"];
     if (!key || /[\r\n]/.test(key)) throw new Error();
     return key;
-  } catch {
-    throw new AuthError("Mistral API key is unavailable for this host");
+  } catch (cause) {
+    throw new AuthError(
+      `Mistral API key is unavailable for this host.\n${errorDetails(cause)}`,
+    );
   }
 }
 function toMessages(
@@ -396,11 +412,15 @@ function parse(raw: string): Obj | undefined {
   let value: unknown;
   try {
     value = JSON.parse(raw);
-  } catch {
-    throw new ProtocolError("Mistral stream contained malformed JSON");
+  } catch (cause) {
+    throw new ProtocolError(
+      `Mistral stream contained malformed JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+    );
   }
   if (!isObj(value))
-    throw new ProtocolError("Mistral stream event was malformed");
+    throw new ProtocolError(
+      `Mistral stream event was malformed.\nServer response:\n${raw}`,
+    );
   return value;
 }
 function isObj(v: unknown): v is Obj {
@@ -417,7 +437,13 @@ class ProtocolError extends Error {}
 class AuthError extends Error {}
 class SafetyError extends Error {}
 class UnsupportedError extends Error {}
-function classifyApiError(error: Obj) {
+function classifyApiError(data: Obj) {
+  const error = isObj(data.error) ? data.error : data;
+  const classified = classifyErrorResponse(error);
+  classified.message = `${classified.message || "Mistral reported a request error"}\nServer response:\n${JSON.stringify(data, null, 2)}`;
+  return classified;
+}
+function classifyErrorResponse(error: Obj) {
   const code =
     `${String(error.code ?? "")} ${String(error.type ?? "")}`.toLowerCase();
   if (/quota|rate.?limit/.test(code)) return new QuotaError();
@@ -430,6 +456,16 @@ function classifyApiError(error: Obj) {
 class QuotaError extends Error {}
 class MissingModelError extends Error {}
 function normalize(error: unknown) {
+  const classified = classify(error);
+  const detail = errorDetails(error);
+  return {
+    ...classified,
+    message: classified.message.includes(detail)
+      ? classified.message
+      : `${classified.message}\n${detail}`,
+  };
+}
+function classify(error: unknown) {
   if (
     error instanceof AuthError ||
     (error instanceof HttpTransportError &&

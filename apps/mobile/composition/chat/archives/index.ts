@@ -10,6 +10,12 @@ import {
 } from "@locallab/archives";
 import { initializeChatHistory } from "@locallab/chat-history";
 import { createChatId } from "../../first-run-chat";
+import {
+  WORKSPACE_FILES_SQL,
+  WORKSPACE_LIMITS,
+  validateWorkspacePath,
+  type WorkspaceFile,
+} from "../../../features/workspace-files/store";
 import type {
   ArchiveAttachmentDescriptor,
   MobileArchiveOptions,
@@ -41,6 +47,19 @@ type StoredConversation = {
 };
 type StoredMessage = { id: string; role: string; parts_json: string };
 type StoredVariant = { id: string; content_json: string; selected: number };
+type StoredWorkspaceFile = {
+  path: string;
+  content: string;
+  byte_length: number;
+  revision: number;
+  created_at: string;
+  updated_at: string;
+};
+type ArchivedWorkspace = {
+  version: 1;
+  conversationId: string;
+  files: readonly WorkspaceFile[];
+};
 
 /** Shared SQLite rows and managed blobs are the only data sources; endpoint configuration is never exported. */
 export function createMobileArchivePorts(
@@ -53,6 +72,7 @@ export function createMobileArchivePorts(
 
   async function readConversations(
     selectedId?: string,
+    workspaceAssets?: ArchiveAsset[],
   ): Promise<ArchiveConversation[]> {
     await ready;
     const result: ArchiveConversation[] = [];
@@ -62,6 +82,12 @@ export function createMobileArchivePorts(
         `SELECT id,title,created_at,updated_at FROM conversations${selectedId ? " WHERE id=?" : ""} ORDER BY created_at,id`,
         ...(selectedId ? [selectedId] : []),
       );
+      const hasWorkspace =
+        workspaceAssets &&
+        (await scopedDb.getFirstAsync<{ name: string }>(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_workspace_files'",
+        ));
+      let workspaceBytes = 0;
       for (const row of rows) {
         const messages = await scopedDb.getAllAsync<StoredMessage>(
           "SELECT id,role,parts_json FROM messages WHERE conversation_id=? ORDER BY sequence",
@@ -95,6 +121,40 @@ export function createMobileArchivePorts(
           updatedAt: row.updated_at,
           messages: archiveMessages,
         });
+        if (hasWorkspace) {
+          const files = await scopedDb.getAllAsync<StoredWorkspaceFile>(
+            "SELECT path,content,byte_length,revision,created_at,updated_at FROM chat_workspace_files WHERE conversation_id=? ORDER BY path COLLATE NOCASE",
+            row.id,
+          );
+          if (!files.length) continue;
+          const snapshot = validateWorkspaceArchive(
+            {
+              version: 1,
+              conversationId: row.id,
+              files: files.map((file) => ({
+                path: file.path,
+                kind: /\.md$/i.test(file.path) ? "markdown" : "text",
+                content: file.content,
+                byteLength: file.byte_length,
+                revision: file.revision,
+                createdAt: file.created_at,
+                updatedAt: file.updated_at,
+              })),
+            },
+            new Set([row.id]),
+          );
+          const bytes = encoder.encode(JSON.stringify(snapshot));
+          workspaceBytes += bytes.byteLength;
+          if (workspaceBytes > MAX_ZIP_BYTES)
+            throw new ArchiveValidationError(
+              "Chat workspace files exceed the 512 MiB archive limit",
+            );
+          workspaceAssets!.push({
+            path: `workspaces/${encodeURIComponent(row.id)}.json`,
+            mimeType: "application/json",
+            bytes,
+          });
+        }
       }
     });
     return result;
@@ -102,6 +162,7 @@ export function createMobileArchivePorts(
 
   async function requiredAssets(
     conversations: readonly ArchiveConversation[],
+    workspaceAssets: readonly ArchiveAsset[] = [],
   ): Promise<ArchiveAsset[]> {
     const blobIds = new Set<string>();
     const attachmentIds = new Set<string>();
@@ -110,7 +171,7 @@ export function createMobileArchivePorts(
       if (BLOB_KEYS.has(key)) blobIds.add(bareBlobId(value));
       if (key === "attachmentId") attachmentIds.add(value);
     });
-    const assets: ArchiveAsset[] = [];
+    const assets: ArchiveAsset[] = [...workspaceAssets];
     for (const id of attachmentIds) {
       const descriptor = await attachments?.get(id);
       if (!descriptor)
@@ -126,6 +187,8 @@ export function createMobileArchivePorts(
       });
     }
     let totalBytes = assets.reduce((sum, asset) => sum + asset.bytes.length, 0);
+    if (totalBytes > MAX_ZIP_BYTES)
+      throw new ArchiveValidationError("Chat assets exceed the 512 MiB limit");
     for (const id of blobIds) {
       const lease = await blobs.acquireLease(id, "chat-archive-export", 60_000);
       try {
@@ -171,8 +234,41 @@ export function createMobileArchivePorts(
       }
     }
     const descriptors: ArchiveAttachmentDescriptor[] = [];
+    const workspaces = new Map<string, ArchivedWorkspace>();
+    const conversationIds = new Set(
+      input.map((conversation) => conversation.id),
+    );
+    for (const asset of assets) {
+      if (!asset.path.startsWith("assets/workspaces/")) continue;
+      const encodedId = /^assets\/workspaces\/([^/]+)\.json$/.exec(
+        asset.path,
+      )?.[1];
+      if (
+        !encodedId ||
+        asset.mimeType.split(";")[0]?.trim().toLowerCase() !==
+          "application/json"
+      )
+        throw new ArchiveValidationError("Invalid workspace archive asset");
+      let parsed: unknown;
+      let pathId: string;
+      try {
+        parsed = JSON.parse(decoder.decode(asset.bytes));
+        pathId = decodeURIComponent(encodedId);
+      } catch {
+        throw new ArchiveValidationError(
+          "Workspace archive asset is malformed JSON or has an invalid identity",
+        );
+      }
+      const workspace = validateWorkspaceArchive(parsed, conversationIds);
+      if (workspace.conversationId !== pathId || workspaces.has(pathId))
+        throw new ArchiveValidationError(
+          "Workspace archive identity is invalid or duplicated",
+        );
+      workspaces.set(pathId, workspace);
+    }
     try {
       for (const asset of assets) {
+        if (asset.path.startsWith("assets/workspaces/")) continue;
         const descriptorId = /^assets\/attachments\/([^/]+)\.json$/.exec(
           asset.path,
         )?.[1];
@@ -252,10 +348,11 @@ export function createMobileArchivePorts(
       await db.withTransactionAsync(async (transaction) => {
         const scopedDb = transaction ?? db;
         const scopedBlobs = blobs.withDatabase(scopedDb);
-        const scopedAttachments = attachments!.withDatabase(
+        const scopedAttachments = attachments?.withDatabase(
           scopedDb,
           scopedBlobs,
         );
+        if (workspaces.size) await scopedDb.execAsync(WORKSPACE_FILES_SQL);
         for (const descriptor of descriptors) {
           const blobRef = blobMap.get(descriptor.blobRef);
           if (!blobRef)
@@ -277,14 +374,14 @@ export function createMobileArchivePorts(
             throw new ArchiveValidationError(
               "Attachment preview is missing from archive",
             );
-          await scopedAttachments.save({
+          await scopedAttachments!.save({
             ...descriptor,
             id: attachmentMap.get(descriptor.id)!,
             blobRef,
             ...(previewRef ? { previewRef } : {}),
           });
         }
-        for (const conversation of prepared) {
+        for (const [index, conversation] of prepared.entries()) {
           importedIds.push(conversation.id);
           await scopedDb.runAsync(
             "INSERT INTO conversations (id,title,created_at,updated_at) VALUES (?,?,?,?)",
@@ -297,6 +394,18 @@ export function createMobileArchivePorts(
             "INSERT INTO chat_history_metadata (conversation_id) VALUES (?)",
             conversation.id,
           );
+          const originalId = input[index]!.id;
+          for (const file of workspaces.get(originalId)?.files ?? [])
+            await scopedDb.runAsync(
+              "INSERT INTO chat_workspace_files(conversation_id,path,content,byte_length,revision,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
+              conversation.id,
+              file.path,
+              file.content,
+              file.byteLength,
+              file.revision,
+              file.createdAt,
+              file.updatedAt,
+            );
           for (const [sequence, message] of conversation.messages.entries()) {
             await scopedDb.runAsync(
               "INSERT INTO messages (id,conversation_id,role,parts_json,sequence,created_at) VALUES (?,?,?,?,?,?)",
@@ -327,11 +436,11 @@ export function createMobileArchivePorts(
               if (BLOB_KEYS.has(key)) blobRefs.add(bareBlobId(value));
             });
             for (const id of attachmentRefs) {
-              await scopedAttachments.retain(
+              await scopedAttachments!.retain(
                 `conversation:${conversation.id}`,
                 id,
               );
-              await scopedAttachments.retain(`message:${message.id}`, id);
+              await scopedAttachments!.retain(`message:${message.id}`, id);
             }
             for (const id of blobRefs)
               await scopedBlobs.addReference(id, {
@@ -382,10 +491,11 @@ export function createMobileArchivePorts(
       });
     },
     async exportAll() {
-      const conversations = await readConversations();
+      const workspaceAssets: ArchiveAsset[] = [];
+      const conversations = await readConversations(undefined, workspaceAssets);
       const bytes = await exportAllChatsZip(
         conversations,
-        await requiredAssets(conversations),
+        await requiredAssets(conversations, workspaceAssets),
         zip,
         now(),
       );
@@ -523,4 +633,80 @@ function validateDescriptor(value: unknown): ArchiveAttachmentDescriptor {
   )
     throw new ArchiveValidationError("Invalid archived attachment descriptor");
   return clean(value) as unknown as ArchiveAttachmentDescriptor;
+}
+
+function validateWorkspaceArchive(
+  value: unknown,
+  conversationIds: ReadonlySet<string>,
+): ArchivedWorkspace {
+  if (
+    !isRecord(value) ||
+    value.version !== 1 ||
+    typeof value.conversationId !== "string" ||
+    !conversationIds.has(value.conversationId) ||
+    !Array.isArray(value.files) ||
+    value.files.length > WORKSPACE_LIMITS.fileCount
+  )
+    throw new ArchiveValidationError(
+      "Workspace files have an invalid version, chat binding or file count",
+    );
+  const paths = new Set<string>();
+  let totalBytes = 0;
+  const files: WorkspaceFile[] = value.files.map((input: unknown) => {
+    if (
+      !isRecord(input) ||
+      typeof input.content !== "string" ||
+      !Number.isSafeInteger(input.revision) ||
+      Number(input.revision) < 1 ||
+      typeof input.createdAt !== "string" ||
+      input.createdAt.length > 64 ||
+      !Number.isFinite(Date.parse(input.createdAt)) ||
+      typeof input.updatedAt !== "string" ||
+      input.updatedAt.length > 64 ||
+      !Number.isFinite(Date.parse(input.updatedAt))
+    )
+      throw new ArchiveValidationError(
+        "Workspace file content, revision or timestamps are invalid",
+      );
+    let path: string;
+    try {
+      path = validateWorkspacePath(input.path);
+    } catch {
+      throw new ArchiveValidationError(
+        "Workspace archive contains an unsafe logical file path",
+      );
+    }
+    if (paths.has(path.toLowerCase()))
+      throw new ArchiveValidationError(
+        "Workspace archive contains duplicate file paths",
+      );
+    paths.add(path.toLowerCase());
+    const byteLength = encoder.encode(input.content).byteLength;
+    totalBytes += byteLength;
+    if (
+      input.byteLength !== byteLength ||
+      byteLength > WORKSPACE_LIMITS.fileBytes ||
+      totalBytes > WORKSPACE_LIMITS.chatBytes
+    )
+      throw new ArchiveValidationError(
+        "Workspace file sizes are invalid or exceed the chat file limits",
+      );
+    const kind = /\.md$/i.test(path)
+      ? ("markdown" as const)
+      : ("text" as const);
+    if (input.kind !== kind)
+      throw new ArchiveValidationError(
+        "Workspace file type does not match its logical path",
+      );
+    return {
+      path,
+      kind,
+      content: input.content,
+      byteLength,
+      revision: Number(input.revision),
+      createdAt: input.createdAt,
+      updatedAt: input.updatedAt,
+    };
+  });
+  return { version: 1, conversationId: value.conversationId, files };
 }

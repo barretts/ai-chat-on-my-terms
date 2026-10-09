@@ -130,12 +130,12 @@ export class AdvancedChatEngine {
         input.conversationId,
         conversation.modelId,
       ));
+    const packed = await this.buildContext(input, beforeSequence);
     await this.history.recordModelUse(
       input.conversationId,
       binding.modelRecordId,
       this.now(),
     );
-    const packed = await this.buildContext(input, beforeSequence);
     const port = retryingPort(binding.port);
     const coreInput = {
       ...input,
@@ -222,7 +222,11 @@ export class AdvancedChatEngine {
       parts: input.contextParts ??
         input.userParts ?? [{ type: "text", text: input.text }],
     });
-    return packContext({ ...this.options.context, messages });
+    return packContext({
+      ...this.options.context,
+      messages,
+      requiredMessageIds: ["pending-user-turn"],
+    });
   }
 
   private async maybeTitle(input: AdvancedSendInput): Promise<void> {

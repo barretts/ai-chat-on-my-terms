@@ -5,6 +5,10 @@ import {
 } from "@locallab/contracts/run-events";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
+import {
   RunEventProjection,
   type ProjectionSnapshot,
   type TranscriptMessage,
@@ -411,6 +415,11 @@ export class ChatEngine {
           terminal
         )
           throw new Error("Provider emitted an invalid or out-of-order event");
+        if (parsed.data.type === "RunFailed" && next.value.type === "RunFailed")
+          retainLocalFailureCause(
+            parsed.data.error,
+            localFailureCause(next.value.error),
+          );
         sequence = parsed.data.sequence;
         terminal =
           parsed.data.type === "RunCompleted" ||
@@ -463,6 +472,8 @@ export class ChatEngine {
             timestamp: this.now(),
             error: safeProviderFailure(error),
           };
+      if (event.type === "RunFailed")
+        retainLocalFailureCause(event.error, error);
       terminal = true;
       if (!controller.signal.aborted) {
         projection.apply(event);

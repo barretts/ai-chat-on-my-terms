@@ -1,6 +1,11 @@
 import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
-import { HttpTransportError, type HttpTransport } from "@locallab/network-http";
+import {
+  errorDetails,
+  httpResponseError,
+  HttpTransportError,
+  type HttpTransport,
+} from "@locallab/network-http";
 import type { OllamaModelService } from "@locallab/provider-ollama-models";
 
 /** Resolved connection data is supplied by the host at request time. */
@@ -150,15 +155,15 @@ export function createOllamaChatProvider(
           },
         );
         if (!response.ok) {
-          const detail = await boundedErrorDetail(response);
-          if (response.status === 401 || response.status === 403)
-            throw new HttpTransportError(
-              response.status === 401 ? "unauthorized" : "forbidden",
-              "Ollama access was denied",
-              false,
-              response.status,
-            );
-          throw new OllamaBackendError(detail || `HTTP ${response.status}`);
+          const failure = await httpResponseError(response, {
+            summary: "Ollama chat request failed",
+            signal: controller.signal,
+            ...(options.timeoutMs === undefined
+              ? {}
+              : { timeoutMs: options.timeoutMs }),
+          });
+          if (response.status === 401 || response.status === 403) throw failure;
+          throw new OllamaBackendError(failure.message);
         }
         if (!response.body)
           throw new OllamaProtocolError("Ollama returned an empty stream");
@@ -174,11 +179,22 @@ export function createOllamaChatProvider(
           if (!line.trim()) return [];
           let chunk: OllamaChunk;
           try {
-            chunk = JSON.parse(line) as OllamaChunk;
-          } catch {
-            throw new OllamaProtocolError("Ollama returned malformed NDJSON");
+            const parsed: unknown = JSON.parse(line);
+            if (!isRecord(parsed))
+              throw new OllamaProtocolError(
+                `Ollama returned an invalid NDJSON event.\nServer response:\n${line}`,
+              );
+            chunk = parsed as OllamaChunk;
+          } catch (cause) {
+            if (cause instanceof OllamaProtocolError) throw cause;
+            throw new OllamaProtocolError(
+              `Ollama returned malformed NDJSON.\n${errorDetails(cause)}\nServer response:\n${line}`,
+            );
           }
-          if (chunk.error) throw new OllamaBackendError(chunk.error);
+          if (chunk.error != null)
+            throw new OllamaBackendError(
+              `Ollama reported a chat error.\nServer response:\n${line}`,
+            );
           const events: RunEvent[] = [];
           const message = chunk.message;
           if (typeof message?.thinking === "string" && message.thinking)
@@ -261,7 +277,9 @@ export function createOllamaChatProvider(
           terminal = true;
           yield emit({ type: "RunCanceled", reason: "canceled" });
         } else if (doneReason === undefined) {
-          throw new OllamaDisconnectError();
+          throw new OllamaDisconnectError(
+            "Ollama stream disconnected before completion",
+          );
         } else {
           terminal = true;
           yield emit({ type: "RunCompleted", finishReason: doneReason });
@@ -301,25 +319,8 @@ export function createOllamaChatProvider(
   };
 }
 
-async function boundedErrorDetail(response: Response): Promise<string> {
-  try {
-    const text = await response.text();
-    if (text.length > 8192) return text.slice(0, 8192);
-    try {
-      const value: unknown = JSON.parse(text);
-      if (isRecord(value) && typeof value.error === "string")
-        return value.error;
-    } catch {
-      // Keep small plain-text Ollama error bodies classifiable.
-    }
-    return text;
-  } catch {
-    return "";
-  }
-}
-
 interface OllamaChunk {
-  readonly error?: string;
+  readonly error?: unknown;
   readonly message?: {
     readonly content?: unknown;
     readonly thinking?: unknown;
@@ -414,6 +415,20 @@ function isCanceled(error: unknown): boolean {
 }
 
 function normalizeError(
+  error: unknown,
+  canceled: boolean | undefined,
+  fallback: string,
+) {
+  const classified = classifyError(error, canceled, fallback);
+  const detail = errorDetails(error);
+  return {
+    ...classified,
+    message: classified.message.includes(detail)
+      ? classified.message
+      : `${classified.message}\n${detail}`,
+  };
+}
+function classifyError(
   error: unknown,
   canceled: boolean | undefined,
   fallback: string,

@@ -1,0 +1,139 @@
+--- a/src/serve/openai_schema.h
++++ b/src/serve/openai_schema.h
+@@ -65,9 +65,12 @@
+                                   std::int64_t created, const CompletionUsage& usage);
+ std::string sse_done();
+ 
+-// /v1/models payloads.
+-std::string make_models_list(const std::string& model_id, std::int64_t created);
+-std::string make_model_object(const std::string& model_id, std::int64_t created);
++// /v1/models payloads. max_model_len is the active server context ceiling;
++// zero omits the optional metadata for callers that do not know that ceiling.
++std::string make_models_list(const std::string& model_id, std::int64_t created,
++                             std::uint32_t max_model_len);
++std::string make_model_object(const std::string& model_id, std::int64_t created,
++                              std::uint32_t max_model_len);
+ 
+ // Error object body.
+ std::string make_error_body(const ApiError& error);
+--- a/src/serve/openai_schema.cpp
++++ b/src/serve/openai_schema.cpp
+@@ -693,18 +693,22 @@
+ 
+ std::string sse_done() { return "data: [DONE]\n\n"; }
+ 
+-std::string make_models_list(const std::string& model_id, std::int64_t created) {
+-    const Json payload = {{"object", "list"},
+-                          {"data", Json::array({Json{{"id", model_id},
+-                                                     {"object", "model"},
+-                                                     {"created", created},
+-                                                     {"owned_by", "ninfer"}}})}};
++std::string make_models_list(const std::string& model_id, std::int64_t created,
++                             std::uint32_t max_model_len) {
++    Json payload = {{"object", "list"},
++                    {"data", Json::array({Json{{"id", model_id},
++                                               {"object", "model"},
++                                               {"created", created},
++                                               {"owned_by", "ninfer"}}})}};
++    if (max_model_len != 0) { payload["data"][0]["max_model_len"] = max_model_len; }
+     return payload.dump();
+ }
+ 
+-std::string make_model_object(const std::string& model_id, std::int64_t created) {
+-    const Json payload = {
++std::string make_model_object(const std::string& model_id, std::int64_t created,
++                              std::uint32_t max_model_len) {
++    Json payload = {
+         {"id", model_id}, {"object", "model"}, {"created", created}, {"owned_by", "ninfer"}};
++    if (max_model_len != 0) { payload["max_model_len"] = max_model_len; }
+     return payload.dump();
+ }
+ 
+--- a/src/serve/http_server.cpp
++++ b/src/serve/http_server.cpp
+@@ -316,7 +316,8 @@
+ }
+ 
+ void HttpServer::handle_models(const httplib::Request&, httplib::Response& res) const {
+-    res.set_content(make_models_list(public_model_id_, unix_time_now()), "application/json");
++    res.set_content(make_models_list(public_model_id_, unix_time_now(), options_.max_context),
++                    "application/json");
+ }
+ 
+ void HttpServer::handle_model(const httplib::Request& req, httplib::Response& res) const {
+@@ -330,7 +331,8 @@
+         write_error(res, error);
+         return;
+     }
+-    res.set_content(make_model_object(public_model_id_, unix_time_now()), "application/json");
++    res.set_content(make_model_object(public_model_id_, unix_time_now(), options_.max_context),
++                    "application/json");
+ }
+ 
+ void HttpServer::handle_chat_completions(const httplib::Request& req, httplib::Response& res) {
+--- a/tests/test_openai_schema.cpp
++++ b/tests/test_openai_schema.cpp
+@@ -669,15 +669,30 @@
+ 
+ int test_models_and_error() {
+     int failures    = 0;
+-    const Json list = Json::parse(make_models_list("qwen3.6-27b", 1));
++    const Json list = Json::parse(make_models_list("qwen3.6-27b", 1, 0));
+     failures += check(list.at("object") == "list", "models list object");
+     failures += check(list.at("data").at(0).at("id") == "qwen3.6-27b", "models list id");
+     failures += check(list.at("data").at(0).at("object") == "model", "models list entry object");
+     failures += check(list.at("data").at(0).at("owned_by") == "ninfer", "models list owner");
+ 
+-    const Json one = Json::parse(make_model_object("qwen3.6-27b", 1));
++    const Json one = Json::parse(make_model_object("qwen3.6-27b", 1, 0));
+     failures += check(one.at("id") == "qwen3.6-27b" && one.at("object") == "model", "model object");
+     failures += check(one.at("owned_by") == "ninfer", "model owner");
++    failures += check(!list.at("data").at(0).contains("max_model_len") &&
++                          !one.contains("max_model_len"),
++                      "unknown context metadata is omitted");
++
++    const Json active_list = Json::parse(make_models_list("qwen3.8-27b-sm89", 1, 65536));
++    const Json active_one = Json::parse(make_model_object("qwen3.8-27b-sm89", 1, 65536));
++    failures += check(active_list.at("data").at(0).at("max_model_len") == 65536,
++                      "models list advertises active 64K context");
++    failures += check(active_one.at("max_model_len") == 65536,
++                      "model detail advertises active 64K context");
++    failures += check(active_list.at("data").at(0) == active_one,
++                      "list and detail metadata agree");
++    const Json smaller = Json::parse(make_model_object("qwen3.8-27b-sm89", 1, 16384));
++    failures += check(smaller.at("max_model_len") == 16384,
++                      "context follows the configured server limit for the same model");
+ 
+     ApiError error;
+     error.status   = 400;
+--- a/docs/serving.md
++++ b/docs/serving.md
+@@ -47,8 +47,8 @@
+ | Method and path | Behavior |
+ |---|---|
+ | `GET /health` | process health |
+-| `GET /v1/models` | configured OpenAI model alias |
+-| `GET /v1/models/{id}` | lookup of the configured alias |
++| `GET /v1/models` | configured OpenAI model alias and active `max_model_len` |
++| `GET /v1/models/{id}` | lookup of the configured alias and active `max_model_len` |
+ | `POST /v1/chat/completions` | OpenAI-style chat generation |
+ | `POST /v1/responses` | OpenAI Responses Core generation, state, typed Items, and SSE |
+ | `POST /v1/responses/input_tokens` | Responses prompt-token count without generation |
+@@ -57,6 +57,17 @@
+ | `GET /v1/responses/{id}/input_items` | list that Response's normalized input Items |
+ | `POST /v1/messages` | Anthropic-style message generation |
+ | `POST /v1/messages/count_tokens` | checkpoint-native expanded input-token count |
++
++## Model context metadata
++
++Each model object returned by `GET /v1/models` and `GET /v1/models/{id}` includes
++`max_model_len`, the running server's exact per-sequence logical context ceiling from
++`--max-context`. Clients can use this value to budget input and reserve response tokens within
++the same context window. It reflects the active server configuration and may be lower than the
++checkpoint's nominal context size.
++
++For example, the SM89 launcher sets `--max-context 65536`, so both endpoints advertise
++`"max_model_len": 65536` for `qwen3.8-27b-sm89`.
+ 
+ ## OpenAI Chat Completions
+ 

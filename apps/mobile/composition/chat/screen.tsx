@@ -5,19 +5,43 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ReactNode,
 } from "react";
 import { chatStartupError } from "./startup-errors";
+import { ErrorNotice } from "../../features/diagnostics/error-notice";
+import { describeError } from "../../features/diagnostics/errors";
+import { DiagnosticsScreen } from "../../features/diagnostics/screen";
+import { traceLog } from "../../features/diagnostics/trace-log";
 import {
   AccessibilityInfo,
   ActivityIndicator,
   AppState,
+  BackHandler,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
-import { Link, useFocusEffect } from "expo-router";
+import {
+  Link,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import {
+  chatPageLabels,
+  chatPageParam,
+  readChatPage,
+  type ChatPage,
+} from "./navigation";
+import { openConnectionCatalog } from "./connection-catalog";
+import {
+  discoverRegisteredModelContext,
+  modelContextKey,
+  supportsContextDiscovery,
+} from "./model-context";
 import { openMobileDatabase } from "../../platform/database-open";
 import { retryMobileDatabaseOpen } from "../../platform/database-retry";
 import { memoryModelControlPrompt } from "./persona-memory";
@@ -33,16 +57,57 @@ import {
   type GenerationSession,
 } from "../../platform/generation-session";
 import { recoverInterruptedChatRuns } from "./recovery";
-import { Text, useTheme, type MD3Theme } from "react-native-paper";
-import { NativeButton, useWorkspaceLayout } from "@locallab/ui-native-primitives";
+import {
+  Appbar,
+  Button,
+  Dialog,
+  Divider,
+  Icon,
+  IconButton,
+  List,
+  Modal,
+  Portal,
+  SegmentedButtons,
+  Text,
+  useTheme,
+  type MD3Theme,
+} from "react-native-paper";
+import {
+  NativeButton,
+  useWorkspaceLayout,
+} from "@locallab/ui-native-primitives";
 import { SQLiteOnboardingRepository } from "../../features/onboarding";
 import type { CapabilityMap, ProviderPort } from "@locallab/contracts/ports";
 import type { FetchLike } from "@locallab/network-http";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
 import { AdvancedChatEngine } from "@locallab/chat-engine-advanced";
 import {
+  ToolLoopEngine,
+  ToolRegistry,
+  SQLiteToolInvocationStore,
+} from "@locallab/tools-engine";
+import { conservativeTokenCount, ContextBudgetError } from "@locallab/context";
+import {
+  SQLiteWorkspaceFiles,
+  createWorkspaceTools,
+  validateWorkspacePath,
+} from "../../features/workspace-files";
+import { WorkspaceFilesScreen } from "../../features/workspace-files/screen";
+import {
+  WORKSPACE_FILES_TOOL,
+  workspaceFileIntent,
+  requestsWorkspaceTools,
+  workspaceDocumentInstruction,
+} from "./workspace-file-intent";
+import {
+  withWorkspaceFileOutput,
+  withVerifiedWorkspaceFileSave,
+} from "./workspace-file-output";
+import { mobileArchiveZip } from "./archives/zip";
+import {
   createSQLiteChatFeatureBindings,
   toRecoverableChatError,
+  chatFailureCause,
   ChatAttachmentIntakeError,
 } from "@locallab/chat-integration";
 import { SQLiteGenerationLifecycle } from "@locallab/generation-lifecycle-ios";
@@ -90,12 +155,15 @@ import { ProviderMemoryExtractor } from "@locallab/memory-extraction";
 import { PersonaScreen } from "../../features/personas/screen";
 import { createManagedPersonaAvatarPort } from "../../features/personas/avatar";
 import { MemoryScreen } from "../../features/memory/screen";
-import { ChatPanels, type ChatPanel } from "./panels";
+import { ChatPanels } from "./panels";
 import {
   createMobileChatAttachmentIntake,
   type MobileChatAttachmentIntake,
 } from "./attachments";
-import { createNativeMobileArchivePorts } from "./archives/native";
+import {
+  createNativeMobileArchivePorts,
+  nativeArchiveFiles,
+} from "./archives/native";
 import { ArchivesScreen } from "../../features/archives/screen";
 import {
   SQLiteChatProviderRegistry,
@@ -122,6 +190,21 @@ import {
   saveActiveChat,
 } from "./selection";
 import { ForegroundRunAdmission } from "./foreground";
+import { useAppTheme } from "../../features/themes/provider";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { webAccessFetch } from "../../platform/web-access";
+import { braveSearchFetch } from "../../platform/brave-search-fetch";
+import {
+  SQLiteWebResearchSettings,
+  createConfiguredWebResearchClient,
+} from "./web-research-settings";
+import { WebResearchSettingsPanel } from "./web-research-settings-panel";
+import {
+  createWebResearchClient,
+  resolveWebResearchIntent,
+  withWebResearch,
+  WEB_FETCH_TOOL,
+} from "./web-research";
 import {
   EMPTY_PRESETS,
   resolveSettings,
@@ -144,7 +227,9 @@ type ChatRuntime = {
   features: ReturnType<typeof createSQLiteChatFeatureBindings>;
   lifecycle: SQLiteGenerationLifecycle;
   registry: SQLiteChatProviderRegistry;
+  webSettings: SQLiteWebResearchSettings;
   preferences: SQLiteComposerPreferenceStore;
+  toolInvocations: SQLiteToolInvocationStore;
   identities: Awaited<ReturnType<typeof initializePersonaMemoryChat>>;
 };
 type LocalModel = { id: string; label: string; sha256: string };
@@ -157,7 +242,8 @@ function conversationCleanupPorts(
   return {
     releaseAttachment: (ownerId, attachmentId) =>
       intake.attachments.release(ownerId, attachmentId),
-    removeBlobReference: (blobId, owner) => blobs.removeReference(blobId, owner),
+    removeBlobReference: (blobId, owner) =>
+      blobs.removeReference(blobId, owner),
   };
 }
 
@@ -172,7 +258,39 @@ export default function CompleteChatScreen() {
   );
   const theme = useTheme();
   const layout = useWorkspaceLayout();
-  const styles = useMemo(() => createStyles(theme.colors, theme.dark), [theme.colors, theme.dark]);
+  const workspace = useAppTheme();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ panel?: string | string[] }>();
+  const panel = readChatPage(params.panel);
+  const setPanel = useCallback(
+    (
+      next: ChatPage | null | ((current: ChatPage | null) => ChatPage | null),
+    ) => {
+      router.setParams({
+        panel: chatPageParam(typeof next === "function" ? next(panel) : next),
+      });
+    },
+    [router, panel],
+  );
+  const [phoneMenuOpen, setPhoneMenuOpen] = useState(false);
+  useEffect(() => {
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (phoneMenuOpen) {
+        setPhoneMenuOpen(false);
+        return true;
+      }
+      if (panel) {
+        setPanel(null);
+        return true;
+      }
+      return false;
+    });
+    return () => listener.remove();
+  }, [phoneMenuOpen, panel, setPanel]);
+  const styles = useMemo(
+    () => createStyles(theme.colors, theme.dark),
+    [theme.colors, theme.dark],
+  );
   const [openAttempt, setOpenAttempt] = useState(0);
   const [setupStyle, setSetupStyle] = useState<"beginner" | "power">(
     "beginner",
@@ -191,6 +309,15 @@ export default function CompleteChatScreen() {
   const [configured, setConfigured] = useState(false);
   const [configuredModel, setConfiguredModel] = useState("");
   const [error, setError] = useState("");
+  const [serverContext, setServerContext] = useState<{
+    key: string;
+    status: "checking" | "available" | "unavailable";
+    tokens?: number;
+    toolsSupported?: true;
+  } | null>(null);
+  useEffect(() => {
+    if (error) Keyboard.dismiss();
+  }, [error]);
   const [attachmentNotice, setAttachmentNotice] = useState("");
   const [clipboardResult, setClipboardResult] = useState<{
     message: string;
@@ -199,16 +326,6 @@ export default function CompleteChatScreen() {
   const [activeStop, setActiveStop] = useState<(() => Promise<void>) | null>(
     null,
   );
-  const [panel, setPanel] = useState<
-    | ChatPanel
-    | "archives"
-    | "providers"
-    | "personas"
-    | "memory"
-    | "voices"
-    | "history"
-    | null
-  >(null);
   const [conversationTitle, setConversationTitle] = useState<string | null>(
     null,
   );
@@ -244,6 +361,57 @@ export default function CompleteChatScreen() {
   const lastPayload = useRef<ComposerSendPayload | null>(null);
   const lastUserMessageId = useRef<string | undefined>(undefined);
   const providerCache = useRef(new Map<string, ProviderPort>());
+  const workspaceFiles = useMemo(
+    () =>
+      runtime
+        ? new SQLiteWorkspaceFiles(runtime.db, runtime.conversationId)
+        : undefined,
+    [runtime?.db, runtime?.conversationId],
+  );
+  const selectedContextKey = registration
+    ? modelContextKey(registration)
+    : null;
+  const currentContextKey = useRef(selectedContextKey);
+  currentContextKey.current = selectedContextKey;
+  const activeServerContext =
+    serverContext?.key === selectedContextKey ? serverContext : undefined;
+
+  useEffect(() => {
+    if (!runtime || !registration || !supportsContextDiscovery(registration)) {
+      setServerContext(null);
+      return;
+    }
+    const key = modelContextKey(registration);
+    const controller = new AbortController();
+    setServerContext((previous) => ({
+      key,
+      status: "checking",
+      ...(previous?.key === key && previous.tokens
+        ? { tokens: previous.tokens }
+        : {}),
+    }));
+    void discoverRegisteredModelContext(
+      registration,
+      { fetch: providerFetch as FetchLike, secrets: runtime.secrets },
+      controller.signal,
+    ).then((detected) => {
+      if (controller.signal.aborted || currentContextKey.current !== key)
+        return;
+      setServerContext({
+        key,
+        status: detected ? "available" : "unavailable",
+        ...(detected
+          ? {
+              tokens: detected.contextWindowTokens,
+              ...(detected.toolsSupported
+                ? { toolsSupported: true as const }
+                : {}),
+            }
+          : {}),
+      });
+    });
+    return () => controller.abort();
+  }, [runtime, selectedContextKey]);
 
   useEffect(() => {
     setClipboardResult(null);
@@ -276,6 +444,11 @@ export default function CompleteChatScreen() {
         const onboarding = await new SQLiteOnboardingRepository(database).get();
         if (mounted) setSetupStyle(onboarding.mode);
         const history = await initializeFirstRunChat(database);
+        const toolInvocations = new SQLiteToolInvocationStore(
+          database,
+          "00000000-0000-7000-8000-000000000076",
+        );
+        await toolInvocations.initialize();
         const conversation = await allocateChatConversation(
           history,
           "local",
@@ -284,6 +457,10 @@ export default function CompleteChatScreen() {
         const activeConversationId =
           (await readActiveChat(database)) ?? conversation.conversation.id;
         await saveActiveChat(database, activeConversationId);
+        await new SQLiteWorkspaceFiles(
+          database,
+          activeConversationId,
+        ).initialize();
         const fallback = await readFallbackChatSelection(
           database,
           activeConversationId,
@@ -308,7 +485,16 @@ export default function CompleteChatScreen() {
         void runConversationCleanups(
           database,
           conversationCleanupPorts(intake, blobs),
-        ).catch(() => undefined);
+        ).catch((cause) => {
+          if (mounted)
+            setError(
+              describeError(cause, {
+                operation: "Clean up unused chat files",
+                recovery:
+                  "Your saved chats remain available. Reopen LocalLab to retry cleaning unused files.",
+              }),
+            );
+        });
         const lifecycle = new SQLiteGenerationLifecycle(database);
         await lifecycle.initialize();
         const features = createSQLiteChatFeatureBindings({
@@ -316,8 +502,8 @@ export default function CompleteChatScreen() {
           attachments: intake.attachments,
           lifecycle,
         });
-        const registry = new SQLiteChatProviderRegistry(database);
-        await registry.initialize();
+        const registry = await openConnectionCatalog(database);
+        const webSettings = new SQLiteWebResearchSettings(database);
         await database.execAsync(
           "CREATE TABLE IF NOT EXISTS phone_model_choice_local (singleton INTEGER PRIMARY KEY CHECK(singleton=1), provider_id TEXT NOT NULL)",
         );
@@ -369,7 +555,9 @@ export default function CompleteChatScreen() {
           lifecycle,
           features,
           registry,
+          webSettings,
           preferences: new SQLiteComposerPreferenceStore(database),
+          toolInvocations,
           identities,
         });
         if (
@@ -382,16 +570,37 @@ export default function CompleteChatScreen() {
           );
       })
       .catch(async (cause: unknown) => {
-        console.error("Chat initialization failed", cause);
-        await close().catch(() => {});
-        if (mounted) setError(chatStartupError(cause, Platform.OS));
+        await close().catch((cleanupCause) => {
+          traceLog.event("Clean up failed chat startup", "failed", {
+            errorName:
+              cleanupCause instanceof Error ? cleanupCause.name : "Error",
+          });
+        });
+        if (mounted)
+          setError(
+            describeError(cause, {
+              operation: "Open chat storage",
+              recovery: chatStartupError(cause, Platform.OS),
+            }),
+          );
       });
     return () => {
       mounted = false;
       screenMounted.current = false;
       foregroundAdmission.suspend();
-      void close().catch(() => {});
-      for (const port of providerCache.current.values()) void port.dispose?.();
+      void close().catch((cause) => {
+        traceLog.event("Close chat runtime", "failed", {
+          errorName: cause instanceof Error ? cause.name : "Error",
+        });
+      });
+      for (const port of providerCache.current.values())
+        void Promise.resolve()
+          .then(() => port.dispose?.())
+          .catch((cause) => {
+            traceLog.event("Close model connection", "failed", {
+              errorName: cause instanceof Error ? cause.name : "Error",
+            });
+          });
     };
   }, [openAttempt]);
 
@@ -401,18 +610,37 @@ export default function CompleteChatScreen() {
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") return;
-      void mobileSpeech.stop().catch(() => {});
+      void mobileSpeech.stop().catch((cause) => {
+        traceLog.event("Suspend voice playback", "failed", {
+          errorName: cause instanceof Error ? cause.name : "Error",
+        });
+      });
       foregroundAdmission.suspend();
       const currentRuntime = liveRuntime.current;
       if (!currentRuntime) return;
       void currentRuntime.identities.memoryExtraction
         .cancelPending({ waitForResources: false })
-        .catch(() => {});
+        .catch((cause) => {
+          traceLog.event("Suspend memory extraction", "failed", {
+            errorName: cause instanceof Error ? cause.name : "Error",
+          });
+        });
       const active = activeRun.current;
       if (active) {
-        void active.stop().catch(() => {});
-        void currentRuntime.lifecycle.suspend(active.runId).catch(() => {
-          void active.stop().catch(() => {});
+        void active.stop().catch((cause) => {
+          traceLog.event("Suspend response", "failed", {
+            errorName: cause instanceof Error ? cause.name : "Error",
+          });
+        });
+        void currentRuntime.lifecycle.suspend(active.runId).catch((cause) => {
+          traceLog.event("Save suspended response", "failed", {
+            errorName: cause instanceof Error ? cause.name : "Error",
+          });
+          void active.stop().catch((stopCause) => {
+            traceLog.event("Stop suspended response", "failed", {
+              errorName: stopCause instanceof Error ? stopCause.name : "Error",
+            });
+          });
         });
       }
     });
@@ -444,9 +672,13 @@ export default function CompleteChatScreen() {
             ? savedBlobId
             : (available[0]?.id ?? ""),
       );
-    } catch {
+    } catch (cause) {
       setError(
-        "Managed models could not be read. Your conversations are still available.",
+        describeError(cause, {
+          operation: "Read installed models",
+          recovery:
+            "Open Models and retry. Your saved conversations remain available.",
+        }),
       );
     }
   }, [runtime]);
@@ -461,9 +693,13 @@ export default function CompleteChatScreen() {
       );
       setUsers(transcript.users);
       setAssistants(transcript.assistants);
-    } catch {
+    } catch (cause) {
       setError(
-        "This conversation could not be reopened. Your saved data was not changed.",
+        describeError(cause, {
+          operation: "Reopen conversation",
+          recovery:
+            "Choose the chat again in Recent chats. Your saved data was not changed.",
+        }),
       );
     }
   }, [runtime]);
@@ -485,12 +721,30 @@ export default function CompleteChatScreen() {
           .settingsForConversation(runtime.conversationId)
           .loadContextPolicy()
           .then(setContextPolicy),
-      ]).catch(() => setError("Saved chat settings could not be loaded."));
+      ]).catch((cause) =>
+        setError(
+          describeError(cause, {
+            operation: "Load saved chat settings",
+            recovery: "Reopen Settings and retry before sending.",
+          }),
+        ),
+      );
     if (runtime)
-      void runtime.setup.get(runtime.connectionId).then((saved) => {
-        setConfigured(!!saved);
-        setConfiguredModel(saved?.modelId ?? "");
-      });
+      void runtime.setup
+        .get(runtime.connectionId)
+        .then((saved) => {
+          setConfigured(!!saved);
+          setConfiguredModel(saved?.modelId ?? "");
+        })
+        .catch((cause) =>
+          setError(
+            describeError(cause, {
+              operation: "Load saved endpoint",
+              recovery:
+                "Open Connections to review or save the endpoint again.",
+            }),
+          ),
+        );
   }, [loadModels, loadTranscript, runtime]);
 
   useEffect(() => {
@@ -501,7 +755,16 @@ export default function CompleteChatScreen() {
       .then((conversation) => {
         if (live) setConversationTitle(conversation?.title?.trim() || null);
       })
-      .catch(() => undefined);
+      .catch((cause) => {
+        if (live)
+          setError(
+            describeError(cause, {
+              operation: "Load chat title",
+              recovery:
+                "Reopen this conversation from Recent chats. Its saved messages remain available.",
+            }),
+          );
+      });
     return () => {
       live = false;
     };
@@ -514,8 +777,14 @@ export default function CompleteChatScreen() {
         void runtime.registry
           .selected(runtime.conversationId)
           .then(setRegistration)
-          .catch(() =>
-            setError("The selected provider could not be reopened."),
+          .catch((cause) =>
+            setError(
+              describeError(cause, {
+                operation: "Reopen selected connection",
+                recovery:
+                  "Open Connections, choose the saved connection, and retry.",
+              }),
+            ),
           );
       }
       return undefined;
@@ -528,10 +797,19 @@ export default function CompleteChatScreen() {
     void (async () => {
       let caps: CapabilityMap = { streaming: "yes" };
       if (registration) {
-        const cacheKey = JSON.stringify(registration);
+        const toolsEnabled = activeServerContext?.toolsSupported === true;
+        const ninferThinkingControl =
+          activeServerContext?.toolsSupported === true;
+        const cacheKey = JSON.stringify([
+          registration,
+          toolsEnabled,
+          ninferThinkingControl,
+        ]);
         const port =
           providerCache.current.get(cacheKey) ??
           createRegisteredChatProvider(registration, {
+            toolsEnabled,
+            ninferThinkingControl,
             fetch: providerFetch as FetchLike,
             secrets: runtime.secrets,
             nativePort: (value) =>
@@ -561,17 +839,31 @@ export default function CompleteChatScreen() {
           "chat.systemPrompt": "yes",
           "parameter.contextWindow": "yes",
         });
-    })().catch(() => {
-      if (live)
+    })().catch((cause) => {
+      if (live) {
+        setError(
+          describeError(cause, {
+            operation: "Read model capabilities",
+            recovery:
+              "Check the selected model in Connections. Basic controls remain available.",
+          }),
+        );
         setCapabilities({
           "chat.systemPrompt": "yes",
           "parameter.contextWindow": "yes",
         });
+      }
     });
     return () => {
       live = false;
     };
-  }, [runtime, registration, mode, selectedModel]);
+  }, [
+    runtime,
+    registration,
+    mode,
+    selectedModel,
+    activeServerContext?.toolsSupported,
+  ]);
 
   const selectMode = async (next: FirstRunMode) => {
     if (sendPending.current || activeRun.current) return;
@@ -664,14 +956,93 @@ export default function CompleteChatScreen() {
         const selected = await runtime.registry.selected(
           runtime.conversationId,
         );
+        // Refresh each send: the same model can be restarted with a different limit.
+        const detectedContext = selected
+          ? await discoverRegisteredModelContext(selected, {
+              fetch: providerFetch as FetchLike,
+              secrets: runtime.secrets,
+            })
+          : undefined;
+        if (
+          selected &&
+          supportsContextDiscovery(selected) &&
+          screenMounted.current &&
+          currentContextKey.current === modelContextKey(selected)
+        ) {
+          setServerContext({
+            key: modelContextKey(selected),
+            status: detectedContext ? "available" : "unavailable",
+            ...(detectedContext
+              ? {
+                  tokens: detectedContext.contextWindowTokens,
+                  ...(detectedContext.toolsSupported
+                    ? { toolsSupported: true as const }
+                    : {}),
+                }
+              : {}),
+          });
+        }
+        const fileIntent =
+          workspaceFileIntent(text) ??
+          (payload.toolIds.includes(WORKSPACE_FILES_TOOL)
+            ? { path: "notes.md" }
+            : undefined);
+        const wantsFiles =
+          !!fileIntent ||
+          requestsWorkspaceTools(text) ||
+          payload.toolIds.includes(WORKSPACE_FILES_TOOL);
+        const toolsEnabled =
+          detectedContext?.toolsSupported === true && wantsFiles;
+        const fileStore = workspaceFiles!;
+        const existingFile = fileIntent
+          ? await fileStore.read(validateWorkspacePath(fileIntent.path))
+          : undefined;
+        const webPlan = resolveWebResearchIntent({
+          text,
+          searchEnabled: payload.searchEnabled,
+          fetchPagesEnabled: payload.toolIds.includes(WEB_FETCH_TOOL),
+          previousUserMessages: users.map((message) => message.text),
+        });
         if (selected) {
+          if (selected.modelId === "model-discovery") {
+            setError("Choose a model in Connections before sending.");
+            throw new Error("Choose a model in Connections before sending.");
+          }
+          const refs = [
+            ...(selected.credentialRef ? [selected.credentialRef] : []),
+            ...(selected.headerRefs ?? []),
+          ];
+          if (selected.endpoint && refs.length) {
+            try {
+              await runtime.secrets.resolveHeaders(
+                new URL(selected.endpoint).origin,
+                refs,
+              );
+            } catch (cause) {
+              const message = describeError(cause, {
+                operation: "Read connection credentials",
+                recovery:
+                  "Open Connections and enter the key again. Your draft is still here.",
+              });
+              setError(message);
+              throw new Error(message);
+            }
+          }
           modelId = selected.modelId;
           providerId = selected.id;
           connectionId = selected.id;
-          const cacheKey = JSON.stringify(selected);
+          const ninferThinkingControl =
+            detectedContext?.toolsSupported === true;
+          const cacheKey = JSON.stringify([
+            selected,
+            toolsEnabled,
+            ninferThinkingControl,
+          ]);
           port =
             providerCache.current.get(cacheKey) ??
             createRegisteredChatProvider(selected, {
+              toolsEnabled,
+              ninferThinkingControl,
               fetch: providerFetch as FetchLike,
               secrets: runtime.secrets,
               nativePort: (value) =>
@@ -776,6 +1147,9 @@ export default function CompleteChatScreen() {
           presets: { ...EMPTY_PRESETS, ...presets },
           personaEnabled: identity.personaId !== DEFAULT_PERSONA_ID,
           capabilities: appCapabilities,
+          ...(detectedContext
+            ? { serverContextWindow: detectedContext.contextWindowTokens }
+            : {}),
         });
         const transport =
           selected?.kind === "openai" || (!selected && mode === "openai")
@@ -798,7 +1172,29 @@ export default function CompleteChatScreen() {
         }
         const nativeGguf =
           selected?.kind === "local-gguf" || (!selected && mode === "local");
-        const budget =
+        const webEnabled = webPlan.search || webPlan.fetchPages;
+        const fileTools = toolsEnabled ? createWorkspaceTools(fileStore) : [];
+        const toolReservation = fileTools.length
+          ? conservativeTokenCount([
+              {
+                id: "workspace-tool-definitions",
+                role: "system",
+                parts: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(
+                      fileTools.map(({ name, description, parameters }) => ({
+                        name,
+                        description,
+                        parameters,
+                      })),
+                    ),
+                  },
+                ],
+              },
+            ]) + 64
+          : 0;
+        const requestedBudget =
           typeof settings.outbound.contextWindow === "number"
             ? Math.max(
                 256,
@@ -808,19 +1204,97 @@ export default function CompleteChatScreen() {
                 ),
               )
             : 4096;
+        const budget = Math.min(
+          requestedBudget,
+          detectedContext?.contextWindowTokens ?? requestedBudget,
+        );
+        const webReservation = webEnabled
+          ? Math.min(2000, Math.floor(budget / 3))
+          : 0;
+        const chatBudget = budget - webReservation - toolReservation;
+        if (chatBudget < 2)
+          throw new ContextBudgetError(
+            `Web research and file tools need more room than this ${budget}-token context allows. Increase Context window to match your model or turn these options off. Your draft is preserved.`,
+          );
         const reservation =
           typeof settings.outbound.max_output_tokens === "number"
             ? Math.min(
-                budget - 1,
+                chatBudget - 1,
                 Math.max(1, settings.outbound.max_output_tokens),
               )
-            : Math.min(512, budget - 1);
+            : Math.min(
+                settings.outbound.reasoning === true
+                  ? 4096
+                  : wantsFiles
+                    ? 2048
+                    : 512,
+                chatBudget - 1,
+              );
+        let documentPort = port;
+        if (fileTools.length) {
+          const registry = new ToolRegistry();
+          for (const tool of fileTools) registry.register(tool);
+          documentPort = new ToolLoopEngine({
+            registry,
+            store: runtime.toolInvocations,
+            createId: createChatId,
+          }).wrap(port, () => ({
+            globalEnabled: true,
+            capabilities: providerCapabilities,
+            roundLimit: 6,
+            maxToolCalls: 12,
+            deadlineMs: 300_000,
+            maxArgumentBytes: 1_000_000,
+            maxResultBytes: 256 * 1024,
+            maxContextBytes: 8 * 1024 * 1024,
+            maxEventBytes: 1024 * 1024,
+            maxTotalEventBytes: 8 * 1024 * 1024,
+            tokenBudget: budget,
+            reservedOutputTokens: reservation,
+          }));
+          if (fileIntent)
+            documentPort = withVerifiedWorkspaceFileSave(documentPort, {
+              path: fileIntent.path,
+            });
+        } else if (fileIntent) {
+          documentPort = withWorkspaceFileOutput(port, {
+            store: fileStore,
+            path: fileIntent.path,
+            ...(existingFile
+              ? { expectedRevision: existingFile.revision }
+              : {}),
+            createId: createChatId,
+          });
+        } else if (wantsFiles) {
+          throw new Error(
+            "This model has not reported support for reading or listing workspace files. Open Files to preview them, or select a model with file tool support. You can still ask this model to write a Markdown or text file.",
+          );
+        }
+        const generationPort = withWebResearch(documentPort, {
+          client: webEnabled
+            ? await createConfiguredWebResearchClient({
+                settings: runtime.webSettings,
+                secrets: runtime.secrets,
+                publicFetch: webAccessFetch,
+                searchApiFetch: braveSearchFetch,
+              })
+            : createWebResearchClient(webAccessFetch),
+          text,
+          search: webPlan.search,
+          fetchPages: webPlan.fetchPages,
+          ...(webPlan.searchQuery !== undefined
+            ? { searchQuery: webPlan.searchQuery }
+            : {}),
+          maxContextCharacters: Math.max(256, webReservation * 2),
+          maxContextBytes: Math.max(0, webReservation * 4 - 64),
+          createId: createChatId,
+        });
         const engine = new AdvancedChatEngine({
           db: runtime.db,
           createId: createChatId,
           generationOwner: runtime.generationSession.owner,
           context: {
-            tokenBudget: budget,
+            tokenBudget: chatBudget,
             reservedOutputTokens: reservation,
             policy: requestedPolicy ?? contextPolicy,
           },
@@ -882,22 +1356,38 @@ export default function CompleteChatScreen() {
           integration.send({
             conversationId: runtime.conversationId,
             text,
-            binding: { ...binding, port },
+            binding: { ...binding, port: generationPort },
             parameters: {
               ...settings.outbound,
+              max_output_tokens: reservation,
               ...(nativeGguf
                 ? { contextWindow: budget, max_output_tokens: reservation }
                 : {}),
             },
             userParts: prepared.userParts,
             attachmentRefs: prepared.attachmentRefs,
+            ...(fileTools.length
+              ? { permittedTools: fileTools.map((tool) => tool.name) }
+              : {}),
             contextParts: prepared.contextParts,
             pendingContext: prepared.providerContext,
-            systemPrompt: personaSystemPrompt(
-              identity,
-              settings.outbound.systemPrompt,
-              memoryPrompt?.value,
-            ),
+            systemPrompt: [
+              personaSystemPrompt(
+                identity,
+                settings.outbound.systemPrompt,
+                memoryPrompt?.value,
+              ),
+              fileIntent
+                ? workspaceDocumentInstruction(fileIntent, toolsEnabled)
+                : fileTools.length
+                  ? "Files are saved in this chat workspace. Use workspace_list_files, workspace_read_file and workspace_write_file for file requests. Read the current revision before updating an existing file. Only say a file is saved after a successful write result."
+                  : undefined,
+              fileIntent && existingFile && !toolsEnabled
+                ? `Existing file ${JSON.stringify(existingFile.path)} (revision ${existingFile.revision}) to update:\n${existingFile.content}`
+                : undefined,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
             reasoning: settings.outbound.reasoning === true,
             json: settings.outbound.json_mode === true,
           }),
@@ -933,6 +1423,14 @@ export default function CompleteChatScreen() {
               ? "local"
               : "remote",
           );
+          const title = payload.text.trim().replace(/\s+/g, " ").slice(0, 60);
+          if (title) {
+            await runtime.db.runAsync(
+              "UPDATE conversations SET title=? WHERE id=? AND (title IS NULL OR title IN ('Offline chat','OpenAI chat'))",
+              title,
+              runtime.conversationId,
+            );
+          }
           for (const ref of prepared.attachmentRefs) {
             await runtime.intake.attachments.retain(
               `message:${handle.userMessageId}`,
@@ -946,14 +1444,22 @@ export default function CompleteChatScreen() {
           setContextProgress(
             `${handle.contextUsage.inputTokens} / ${handle.contextUsage.tokenBudget} input tokens  -  ${handle.contextUsage.omittedMessageIds.length} messages omitted`,
           );
+          let runFailed = false;
           for await (const event of handle.events) {
+            if (event.type === "RunFailed") runFailed = true;
+            if (event.type === "RunStarted")
+              traceLog.event("Generate response", "start");
+            if (event.type === "RunCompleted")
+              traceLog.event("Generate response", "complete");
+            if (event.type === "RunCanceled")
+              traceLog.event("Generate response", "cancelled");
             if (event.type === "RunFailed")
               setError(
-                toRecoverableChatError(
-                  Object.assign(new Error(event.error.message), {
-                    code: event.error.code,
-                  }),
-                ).message,
+                describeError(chatFailureCause(event.error), {
+                  operation: "Generate response",
+                  recovery:
+                    "Check the model and connection, then retry your saved message.",
+                }),
               );
             const transcript = await readTranscript(
               runtime.db,
@@ -963,6 +1469,7 @@ export default function CompleteChatScreen() {
             setUsers(transcript.users);
             setAssistants(transcript.assistants);
           }
+          if (runFailed) return false;
           if (
             memoryPolicy.extract &&
             screenMounted.current &&
@@ -995,10 +1502,14 @@ export default function CompleteChatScreen() {
                     "The reply is saved, but memory extraction failed. You can add a fact in Memory.",
                   );
               })
-              .catch(() => {
+              .catch((cause) => {
                 if (screenMounted.current)
                   setError(
-                    "The reply is saved, but memory could not be updated.",
+                    describeError(cause, {
+                      operation: "Update memory from reply",
+                      recovery:
+                        "Your reply is saved. Open Memory to add a fact manually or turn automatic memory off.",
+                    }),
                   );
               });
           }
@@ -1009,8 +1520,12 @@ export default function CompleteChatScreen() {
             for await (const _event of handle.events) {
               /* settle cancellation */
             }
-          } catch {
+          } catch (settleCause) {
             // Preserve the original recoverable error after the engine has settled the run.
+            traceLog.event("Settle failed response", "failed", {
+              errorName:
+                settleCause instanceof Error ? settleCause.name : "Error",
+            });
           }
           throw toRecoverableChatError(cause);
         } finally {
@@ -1025,7 +1540,15 @@ export default function CompleteChatScreen() {
         runSettled.current = null;
       }
     },
-    [contextPolicy, loadTranscript, mode, runtime, selectedModel],
+    [
+      contextPolicy,
+      loadTranscript,
+      mode,
+      runtime,
+      selectedModel,
+      users,
+      workspaceFiles,
+    ],
   );
 
   const openConversation = async (
@@ -1125,8 +1648,14 @@ export default function CompleteChatScreen() {
       announce(text);
       return;
     }
-    void createNewChat().catch(() =>
-      setError("A new conversation could not be created."),
+    void createNewChat().catch((cause) =>
+      setError(
+        describeError(cause, {
+          operation: "Create new chat",
+          recovery:
+            "Retry New chat. Check available device storage if this keeps failing.",
+        }),
+      ),
     );
   };
 
@@ -1143,8 +1672,14 @@ export default function CompleteChatScreen() {
       );
       return;
     }
-    void openConversation(conversationId).catch(() =>
-      setError("That chat could not be opened. It was not changed."),
+    void openConversation(conversationId).catch((cause) =>
+      setError(
+        describeError(cause, {
+          operation: "Open saved chat",
+          recovery:
+            "Choose the chat again in Recent chats. Its saved data was not changed.",
+        }),
+      ),
     );
   };
 
@@ -1161,7 +1696,10 @@ export default function CompleteChatScreen() {
   const deleteFromHistory = async (conversationId: string) => {
     if (!runtime) return;
     const current = conversationId === runtime.conversationId;
-    if (pendingLeave?.kind === "open" && pendingLeave.conversationId === conversationId)
+    if (
+      pendingLeave?.kind === "open" &&
+      pendingLeave.conversationId === conversationId
+    )
       setPendingLeave(null);
     let replacement = runtime.conversationId;
     if (current) {
@@ -1184,7 +1722,15 @@ export default function CompleteChatScreen() {
     void runConversationCleanups(
       runtime.db,
       conversationCleanupPorts(runtime.intake, runtime.blobs),
-    ).catch(() => undefined);
+    ).catch((cause) =>
+      setError(
+        describeError(cause, {
+          operation: "Clean up deleted chat files",
+          recovery:
+            "The chat was removed. Reopen LocalLab to retry cleaning its unused files.",
+        }),
+      ),
+    );
   };
   const archives = useMemo(
     () =>
@@ -1195,9 +1741,6 @@ export default function CompleteChatScreen() {
             blobs: runtime.blobs,
             attachments: runtime.intake.attachments,
             selectedConversationId: () => runtime.conversationId,
-            onImported: async (ids) => {
-              if (ids[0]) await openConversation(ids[0]);
-            },
           })
         : undefined,
     [runtime],
@@ -1225,15 +1768,32 @@ export default function CompleteChatScreen() {
         .settingsForConversation(runtime.conversationId)
         .loadAppearance(runtime.conversationId)
         .then(setAppearance)
-        .catch(() => setError("Saved appearance could not be applied."));
+        .catch((cause) =>
+          setError(
+            describeError(cause, {
+              operation: "Load chat appearance",
+              recovery:
+                "Reopen Settings to retry loading your saved appearance.",
+            }),
+          ),
+        );
     },
     [runtime],
   );
 
   if (error && !runtime)
     return (
-      <View style={styles.center}>
-        <Text accessibilityRole="alert">{error}</Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          padding: 24,
+          gap: 16,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ErrorNotice message={error} />
         <Pressable
           accessibilityRole="button"
           onPress={() =>
@@ -1249,7 +1809,7 @@ export default function CompleteChatScreen() {
         <Link href="/onboarding" style={{ color: theme.colors.primary }}>
           Return to setup
         </Link>
-      </View>
+      </ScrollView>
     );
   if (!runtime)
     return (
@@ -1259,6 +1819,13 @@ export default function CompleteChatScreen() {
       </View>
     );
 
+  const chatTitle = panel
+    ? chatPageLabels[panel]
+    : historyDisplayTitle({ title: conversationTitle });
+  const phoneTitle =
+    !panel && ["Offline chat", "OpenAI chat"].includes(chatTitle)
+      ? "LocalLab"
+      : chatTitle;
   return (
     <View
       style={[
@@ -1272,58 +1839,220 @@ export default function CompleteChatScreen() {
       <View
         style={[
           styles.header,
+          layout.phone && { padding: 0, borderBottomWidth: 1 },
           { backgroundColor: theme.colors.background },
         ]}
       >
-        <View style={styles.titleRow}>
-          {appearance.avatar ? (
-            <View
-              accessible
-              accessibilityLabel={`Conversation avatar ${appearance.avatar}`}
+        {layout.phone ? (
+          <Appbar.Header
+            statusBarHeight={0}
+            mode="small"
+            style={{ backgroundColor: theme.colors.background }}
+          >
+            {panel ? (
+              <Appbar.BackAction
+                style={{ width: 44, height: 44, margin: 4 }}
+                accessibilityLabel="Return to conversation"
+                onPress={() => setPanel(null)}
+              />
+            ) : (
+              <Appbar.Action
+                icon="menu"
+                style={{ width: 44, height: 44, margin: 4 }}
+                accessibilityLabel="Open chat menu"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setPhoneMenuOpen(true);
+                }}
+              />
+            )}
+            <Appbar.Content
+              accessibilityValue={{
+                text:
+                  registration?.label ??
+                  (selectedModel
+                    ? "On-device model"
+                    : configured
+                      ? configuredModel
+                      : "No model connected"),
+              }}
+              disabled={working}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                minHeight: 44,
+                justifyContent: "center",
+                paddingHorizontal: 4,
+              }}
+              {...(!panel
+                ? {
+                    accessibilityLabel: "Choose chat connection",
+                    onPress: () => {
+                      Keyboard.dismiss();
+                      setPanel("providers");
+                    },
+                  }
+                : {})}
+              title={
+                <View style={{ minWidth: 0 }}>
+                  <Text
+                    numberOfLines={1}
+                    variant="titleMedium"
+                    style={{ fontSize: 18, fontWeight: "600" }}
+                    accessibilityRole="header"
+                  >
+                    {panel ? chatPageLabels[panel] : phoneTitle}
+                  </Text>
+                  {!panel ? (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        variant="bodySmall"
+                        style={{
+                          color: theme.colors.onSurfaceVariant,
+                          flexShrink: 1,
+                        }}
+                      >
+                        {registration?.label ??
+                          (selectedModel
+                            ? "On-device model"
+                            : configured
+                              ? configuredModel
+                              : "Choose a model")}
+                      </Text>
+                      <Icon
+                        source="chevron-down"
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              }
+            />
+            {!panel ? (
+              <>
+                <Appbar.Action
+                  icon="history"
+                  style={{ width: 44, height: 44, margin: 4 }}
+                  accessibilityLabel={
+                    panel === "history"
+                      ? "Close chat history"
+                      : "Open chat history"
+                  }
+                  onPress={() =>
+                    setPanel(panel === "history" ? null : "history")
+                  }
+                  testID="header-history"
+                />
+                <Appbar.Action
+                  icon="square-edit-outline"
+                  style={{ width: 44, height: 44, margin: 4 }}
+                  accessibilityLabel="Start a new chat"
+                  onPress={requestNewChat}
+                  testID="header-new-chat"
+                />
+              </>
+            ) : (
+              <Appbar.Action
+                icon="menu"
+                accessibilityLabel="Open chat menu"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setPhoneMenuOpen(true);
+                }}
+              />
+            )}
+          </Appbar.Header>
+        ) : (
+          <View style={styles.titleRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                workspace.layout.chatCollapsed
+                  ? "Show chat controls"
+                  : "Hide chat controls"
+              }
+              accessibilityState={{ expanded: !workspace.layout.chatCollapsed }}
+              onPress={() => {
+                void workspace
+                  .setLayoutPreferences({
+                    chatCollapsed: !workspace.layout.chatCollapsed,
+                  })
+                  .catch((cause) =>
+                    setError(
+                      describeError(cause, {
+                        operation: "Save chat layout",
+                        recovery:
+                          "Try changing the layout again. Reopen Settings if this keeps failing.",
+                      }),
+                    ),
+                  );
+              }}
+              style={{
+                minWidth: 44,
+                minHeight: 44,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: theme.colors.primaryContainer,
               }}
             >
-              <Text style={{ color: theme.colors.onPrimaryContainer }}>
-                {appearance.avatar.slice(0, 2).toUpperCase()}
+              <Text style={{ color: theme.colors.primary, fontSize: 18 }}>
+                {workspace.layout.chatCollapsed ? "▸" : "▾"}
               </Text>
-            </View>
-          ) : null}
-          <Text
-            accessibilityRole="header"
-            variant="titleMedium"
-            numberOfLines={1}
-            style={styles.title}
-          >
-            {panel === "history"
-              ? "Chat history"
-              : panel
-                ? `${panel[0]!.toUpperCase()}${panel.slice(1)}`
-                : historyDisplayTitle({ title: conversationTitle })}
-          </Text>
-          <HeaderButton
-            glyph="☰"
-            label="History"
-            accessibilityLabel={
-              panel === "history" ? "Close chat history" : "Open chat history"
-            }
-            selected={panel === "history"}
-            onPress={() => setPanel(panel === "history" ? null : "history")}
-            testID="header-history"
-          />
-          <HeaderButton
-            glyph="+"
-            label="New"
-            accessibilityLabel="Start a new chat"
-            onPress={requestNewChat}
-            testID="header-new-chat"
-          />
-        </View>
+            </Pressable>
+            {appearance.avatar ? (
+              <View
+                accessible
+                accessibilityLabel={`Conversation avatar ${appearance.avatar}`}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: theme.colors.primaryContainer,
+                }}
+              >
+                <Text style={{ color: theme.colors.onPrimaryContainer }}>
+                  {appearance.avatar.slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+            ) : null}
+            <Text
+              accessibilityRole="header"
+              variant="titleMedium"
+              numberOfLines={1}
+              style={styles.title}
+            >
+              {panel === "history"
+                ? "Chat history"
+                : panel
+                  ? `${panel[0]!.toUpperCase()}${panel.slice(1)}`
+                  : historyDisplayTitle({ title: conversationTitle })}
+            </Text>
+            <HeaderButton
+              glyph="☰"
+              label="History"
+              accessibilityLabel={
+                panel === "history" ? "Close chat history" : "Open chat history"
+              }
+              selected={panel === "history"}
+              onPress={() => setPanel(panel === "history" ? null : "history")}
+              testID="header-history"
+            />
+            <HeaderButton
+              glyph="+"
+              label="New"
+              accessibilityLabel="Start a new chat"
+              onPress={requestNewChat}
+              testID="header-new-chat"
+            />
+          </View>
+        )}
         {pendingLeave ? (
           <View accessibilityRole="alert" style={styles.headerBar}>
             <Text>
@@ -1345,11 +2074,16 @@ export default function CompleteChatScreen() {
                       : "Open chat"
                 }
                 onPress={() =>
-                  void confirmLeave().catch(() =>
+                  void confirmLeave().catch((cause) =>
                     setError(
-                      pendingLeave.kind === "new"
-                        ? "A new conversation could not be created."
-                        : "That chat could not be opened. It was not changed.",
+                      describeError(cause, {
+                        operation:
+                          pendingLeave.kind === "new"
+                            ? "Create new conversation"
+                            : "Open saved conversation",
+                        recovery:
+                          "Retry the action. The saved chat remains available in Recent chats.",
+                      }),
                     ),
                   )
                 }
@@ -1384,183 +2118,527 @@ export default function CompleteChatScreen() {
             </NativeButton>
           </View>
         ) : null}
-        <View
-          style={[
-            styles.headerDetails,
-            layout.keyboardVisible && !panel ? { display: "none" } : undefined,
-          ]}
+        <ChatControlsShell
+          phone={layout.phone}
+          visible={
+            layout.phone ? phoneMenuOpen : !workspace.layout.chatCollapsed
+          }
+          onClose={() => setPhoneMenuOpen(false)}
         >
-        {Platform.OS === "web" ? (
-          <Text variant="bodySmall">
-            {layout.compact
-              ? "Browser preview · Keys stay in this tab"
-              : "Browser preview: provider keys last for this tab. On-device models require the iPhone app."}
-          </Text>
-        ) : null}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.modes}
-          style={{ flexGrow: 0 }}
-        >
-          {(
-            [
-              "library",
-              "settings",
-              "search",
-              "archives",
-              "providers",
-              "voices",
-              "personas",
-              "memory",
-            ] as const
-          )
-            .filter(
-              (value) =>
-                setupStyle === "power" ||
-                showAdvancedTools ||
-                ["library", "settings", "providers", "voices"].includes(value),
-            )
-            .map((value) => (
-              <Pressable
-                key={value}
+          {layout.phone ? (
+            <View style={{ gap: 4 }}>
+              <List.Item
+                title="Connections"
+                description={
+                  registration
+                    ? `${registration.label} · ${registration.modelId}`
+                    : "Your PC, OpenRouter, and hosted models"
+                }
+                descriptionNumberOfLines={2}
+                left={(props) => <List.Icon {...props} icon="lan-connect" />}
+                right={(props) => <List.Icon {...props} icon="chevron-right" />}
                 accessibilityRole="button"
+                accessibilityLabel="Connections"
                 disabled={working}
-                onPress={() => setPanel(panel === value ? null : value)}
-              >
-                <Text style={styles.link}>
-                  {value[0]!.toUpperCase() + value.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          <Link href="/models" style={styles.link}>
-            Models
-          </Link>
-          {setupStyle === "beginner" ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setShowAdvancedTools((value) => !value)}
-            >
-              <Text style={styles.link}>
-                {showAdvancedTools ? "Fewer tools" : "More tools"}
-              </Text>
-            </Pressable>
-          ) : null}
-        </ScrollView>
-        {registration ? (
-          <Text>
-            {registration.kind === "local-gguf"
-              ? `On-device · ${registration.label}`
-              : `${registration.label} - ${registration.modelId}`}
-          </Text>
-        ) : null}
-        {persona ? (
-          <Text variant="labelSmall">Persona: {persona.name}</Text>
-        ) : null}
-        {contextProgress ? (
-          <Text variant="labelSmall">{contextProgress}</Text>
-        ) : null}
-        {!panel ? (
-          <View style={styles.modes}>
-            <ModeButton
-              label="Offline"
-              disabled={working}
-              selected={!registration && mode === "local"}
-              onPress={() =>
-                void selectMode("local").catch(() =>
-                  setError("Offline chat could not be opened."),
-                )
-              }
-            />
-            <ModeButton
-              label="OpenAI"
-              disabled={working}
-              selected={!registration && mode === "openai"}
-              onPress={() =>
-                void selectMode("openai").catch(() =>
-                  setError("OpenAI chat could not be opened."),
-                )
-              }
-            />
-          </View>
-        ) : null}
-        {panel || registration || sourceMessageId ? null : mode === "local" ? (
-          <Text variant="bodySmall">
-            {selectedModel
-              ? `On-device  -  ${models.find((model) => model.id === selectedModel)?.label ?? selectedModel.slice(0, 8)}`
-              : "Offline model required"}
-          </Text>
-        ) : (
-          <Text variant="bodySmall">
-            {configured
-              ? Platform.OS === "web"
-                ? "OpenAI Responses  -  key held in this tab"
-                : "OpenAI Responses  -  key stored securely"
-              : "OpenAI endpoint needs setup"}
-          </Text>
-        )}
-        {!panel &&
-        !sourceMessageId &&
-        !registration &&
-        mode === "local" &&
-        models.length > 1 ? (
-          <View style={styles.modes}>
-            {models.map((model) => (
-              <ModeButton
-                key={model.id}
-                label={model.label}
-                disabled={working}
-                selected={model.id === selectedModel}
-                onPress={() => setSelectedModel(model.id)}
+                onPress={() => {
+                  setPanel("providers");
+                  setPhoneMenuOpen(false);
+                }}
               />
-            ))}
-          </View>
-        ) : null}
-        {!panel &&
-        !sourceMessageId &&
-        !registration &&
-        mode === "local" &&
-        !selectedModel ? (
-          <View style={styles.recovery}>
-            <Link href="/models" style={styles.link}>
-              Open Models
-            </Link>
-            <Text variant="bodySmall">
-              Or choose a saved connection in Providers.
-            </Text>
-          </View>
-        ) : null}
-        {!panel &&
-        !sourceMessageId &&
-        !registration &&
-        mode === "local" &&
-        selectedModel ? (
-          <Text selectable variant="labelSmall">
-            Ready for offline chat.
-          </Text>
-        ) : null}
-        {!sourceMessageId && !registration && mode === "openai" ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={working}
-            onPress={() => setShowSetup((value) => !value)}
-          >
-            <Text style={styles.link}>
-              {showSetup
-                ? "Back to chat"
-                : configured
-                  ? "Edit OpenAI setup"
-                  : "Set up OpenAI"}
-            </Text>
-          </Pressable>
-        ) : null}
-        </View>
+              <List.Item
+                title="Models"
+                description="Download a model for your iPhone"
+                left={(props) => <List.Icon {...props} icon="cellphone" />}
+                accessibilityRole="button"
+                accessibilityLabel="Models"
+                onPress={() => {
+                  setPhoneMenuOpen(false);
+                  router.navigate("/models");
+                }}
+              />
+              <List.Item
+                title="Voices"
+                description="Offline voices and read aloud"
+                left={(props) => <List.Icon {...props} icon="volume-high" />}
+                accessibilityRole="button"
+                accessibilityLabel="Voices"
+                disabled={working}
+                onPress={() => {
+                  setPanel("voices");
+                  setPhoneMenuOpen(false);
+                }}
+              />
+              <Divider style={{ marginVertical: 8, marginHorizontal: 16 }} />
+              {(
+                [
+                  "library",
+                  "files",
+                  "settings",
+                  "search",
+                  "research",
+                  "diagnostics",
+                  "archives",
+                  "personas",
+                  "memory",
+                ] as const
+              )
+                .filter(
+                  (value) =>
+                    setupStyle === "power" ||
+                    showAdvancedTools ||
+                    ["library", "files", "settings"].includes(value),
+                )
+                .map((value) => (
+                  <List.Item
+                    key={value}
+                    title={chatPageLabels[value]}
+                    left={(props) => (
+                      <List.Icon
+                        {...props}
+                        icon={
+                          (
+                            {
+                              library: "bookshelf",
+                              files: "file-document-outline",
+                              settings: "tune",
+                              search: "magnify",
+                              research: "web",
+                              diagnostics: "bug-outline",
+                              archives: "archive-outline",
+                              personas: "account-outline",
+                              memory: "bookmark-outline",
+                            } as const
+                          )[value]
+                        }
+                      />
+                    )}
+                    accessibilityRole="button"
+                    accessibilityLabel={chatPageLabels[value]}
+                    disabled={working}
+                    onPress={() => {
+                      setPanel(value);
+                      setPhoneMenuOpen(false);
+                    }}
+                  />
+                ))}
+              {setupStyle === "beginner" ? (
+                <List.Item
+                  title={showAdvancedTools ? "Fewer tools" : "More tools"}
+                  left={(props) => (
+                    <List.Icon
+                      {...props}
+                      icon={showAdvancedTools ? "chevron-up" : "chevron-down"}
+                    />
+                  )}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    showAdvancedTools ? "Fewer tools" : "More tools"
+                  }
+                  onPress={() => setShowAdvancedTools((value) => !value)}
+                />
+              ) : null}
+              <Divider style={{ marginVertical: 8, marginHorizontal: 16 }} />
+              <View
+                style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}
+              >
+                <Text variant="labelLarge">Appearance</Text>
+                <SegmentedButtons
+                  value={workspace.themePreference}
+                  onValueChange={(value) =>
+                    void workspace
+                      .setThemePreference(value as "system" | "light" | "dark")
+                      .catch((cause) =>
+                        setError(
+                          describeError(cause, {
+                            operation: "Save app theme",
+                            recovery:
+                              "Choose the theme again in Settings to retry.",
+                          }),
+                        ),
+                      )
+                  }
+                  buttons={[
+                    {
+                      value: "system",
+                      label: "System",
+                      style: { minHeight: 44 },
+                    },
+                    {
+                      value: "light",
+                      label: "Light",
+                      style: { minHeight: 44 },
+                    },
+                    { value: "dark", label: "Dark", style: { minHeight: 44 } },
+                  ]}
+                />
+              </View>
+              <List.Accordion
+                title="Conversation details"
+                theme={{ colors: { background: theme.colors.surface } }}
+                left={(props) => (
+                  <List.Icon {...props} icon="information-outline" />
+                )}
+              >
+                <View
+                  style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 8 }}
+                >
+                  {persona ? (
+                    <Text variant="bodySmall">Persona: {persona.name}</Text>
+                  ) : null}
+                  {contextProgress ? (
+                    <Text variant="bodySmall">{contextProgress}</Text>
+                  ) : null}
+                  {Platform.OS === "web" ? (
+                    <Text variant="bodySmall">
+                      Browser keys last for this tab. On-device models run in
+                      the iPhone app.
+                    </Text>
+                  ) : null}
+                  {!registration ? (
+                    <View
+                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                    >
+                      <Button
+                        mode={mode === "local" ? "contained-tonal" : "text"}
+                        disabled={working}
+                        onPress={() =>
+                          void selectMode("local").catch((cause) =>
+                            setError(
+                              describeError(cause, {
+                                operation: "Open offline chat",
+                                recovery:
+                                  "Open Models and choose an installed phone model, then retry.",
+                              }),
+                            ),
+                          )
+                        }
+                      >
+                        Offline
+                      </Button>
+                      <Button
+                        mode={mode === "openai" ? "contained-tonal" : "text"}
+                        disabled={working}
+                        onPress={() =>
+                          void selectMode("openai").catch((cause) =>
+                            setError(
+                              describeError(cause, {
+                                operation: "Open OpenAI chat",
+                                recovery:
+                                  "Check the key and selected model in Connections, then retry.",
+                              }),
+                            ),
+                          )
+                        }
+                      >
+                        OpenAI
+                      </Button>
+                      {mode === "openai" ? (
+                        <Button
+                          onPress={() => {
+                            setPhoneMenuOpen(false);
+                            setShowSetup(true);
+                          }}
+                        >
+                          Edit OpenAI setup
+                        </Button>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
+              </List.Accordion>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.headerDetails,
+                !layout.phone && layout.keyboardVisible && !panel
+                  ? { display: "none" }
+                  : undefined,
+              ]}
+            >
+              {Platform.OS === "web" ? (
+                <Text variant="bodySmall">
+                  {layout.compact
+                    ? "Browser preview · Keys stay in this tab"
+                    : "Browser preview: provider keys last for this tab. On-device models require the iPhone app."}
+                </Text>
+              ) : null}
+              <ScrollView
+                horizontal={!layout.phone}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.modes,
+                  layout.phone && { flexWrap: "wrap" },
+                ]}
+                style={{ flexGrow: 0 }}
+              >
+                {(
+                  [
+                    "library",
+                    "settings",
+                    "search",
+                    "research",
+                    "diagnostics",
+                    "archives",
+                    "providers",
+                    "voices",
+                    "personas",
+                    "memory",
+                  ] as const
+                )
+                  .filter(
+                    (value) =>
+                      setupStyle === "power" ||
+                      showAdvancedTools ||
+                      [
+                        "library",
+                        "files",
+                        "settings",
+                        "providers",
+                        "voices",
+                      ].includes(value),
+                  )
+                  .map((value) =>
+                    layout.phone ? (
+                      <Button
+                        key={value}
+                        mode="text"
+                        contentStyle={{ minHeight: 44 }}
+                        disabled={working}
+                        onPress={() => {
+                          setPanel(panel === value ? null : value);
+                          setPhoneMenuOpen(false);
+                        }}
+                      >
+                        {value[0]!.toUpperCase() + value.slice(1)}
+                      </Button>
+                    ) : (
+                      <Pressable
+                        key={value}
+                        accessibilityRole="button"
+                        disabled={working}
+                        onPress={() => setPanel(panel === value ? null : value)}
+                      >
+                        <Text style={styles.link}>
+                          {value[0]!.toUpperCase() + value.slice(1)}
+                        </Text>
+                      </Pressable>
+                    ),
+                  )}
+                {layout.phone ? (
+                  <Button
+                    contentStyle={{ minHeight: 44 }}
+                    onPress={() => {
+                      setPhoneMenuOpen(false);
+                      router.navigate("/models");
+                    }}
+                  >
+                    Models
+                  </Button>
+                ) : (
+                  <Link href="/models" style={styles.link}>
+                    Models
+                  </Link>
+                )}
+                {setupStyle === "beginner" ? (
+                  layout.phone ? (
+                    <Button
+                      contentStyle={{ minHeight: 44 }}
+                      onPress={() => setShowAdvancedTools((value) => !value)}
+                    >
+                      {showAdvancedTools ? "Fewer tools" : "More tools"}
+                    </Button>
+                  ) : (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => setShowAdvancedTools((value) => !value)}
+                    >
+                      <Text style={styles.link}>
+                        {showAdvancedTools ? "Fewer tools" : "More tools"}
+                      </Text>
+                    </Pressable>
+                  )
+                ) : null}
+              </ScrollView>
+              {layout.phone ? (
+                <View style={{ gap: 8, paddingVertical: 8 }}>
+                  <Text variant="labelLarge">Appearance</Text>
+                  <SegmentedButtons
+                    value={workspace.themePreference}
+                    onValueChange={(value) => {
+                      void workspace
+                        .setThemePreference(
+                          value as "system" | "light" | "dark",
+                        )
+                        .catch((cause) =>
+                          setError(
+                            describeError(cause, {
+                              operation: "Save app theme",
+                              recovery:
+                                "Choose the theme again in Settings to retry.",
+                            }),
+                          ),
+                        );
+                    }}
+                    buttons={[
+                      { value: "system", label: "System" },
+                      { value: "light", label: "Light" },
+                      { value: "dark", label: "Dark" },
+                    ]}
+                  />
+                </View>
+              ) : null}
+              {registration ? (
+                <Text>
+                  {registration.kind === "local-gguf"
+                    ? `On-device · ${registration.label}`
+                    : `${registration.label} - ${registration.modelId}`}
+                </Text>
+              ) : null}
+              {persona ? (
+                <Text variant="labelSmall">Persona: {persona.name}</Text>
+              ) : null}
+              {contextProgress ? (
+                <Text variant="labelSmall">{contextProgress}</Text>
+              ) : null}
+              {!panel && !registration ? (
+                <View style={styles.modes}>
+                  <ModeButton
+                    label="Offline"
+                    disabled={working}
+                    selected={!registration && mode === "local"}
+                    onPress={() =>
+                      void selectMode("local").catch((cause) =>
+                        setError(
+                          describeError(cause, {
+                            operation: "Open offline chat",
+                            recovery:
+                              "Choose an installed model in Models, then retry.",
+                          }),
+                        ),
+                      )
+                    }
+                  />
+                  <ModeButton
+                    label="OpenAI"
+                    disabled={working}
+                    selected={!registration && mode === "openai"}
+                    onPress={() =>
+                      void selectMode("openai").catch((cause) =>
+                        setError(
+                          describeError(cause, {
+                            operation: "Open OpenAI chat",
+                            recovery:
+                              "Check the key and model in Connections, then retry.",
+                          }),
+                        ),
+                      )
+                    }
+                  />
+                </View>
+              ) : null}
+              {panel || registration || sourceMessageId ? null : mode ===
+                "local" ? (
+                <Text variant="bodySmall">
+                  {selectedModel
+                    ? `On-device  -  ${models.find((model) => model.id === selectedModel)?.label ?? selectedModel.slice(0, 8)}`
+                    : "Offline model required"}
+                </Text>
+              ) : (
+                <Text variant="bodySmall">
+                  {configured
+                    ? Platform.OS === "web"
+                      ? "OpenAI Responses  -  key held in this tab"
+                      : "OpenAI Responses  -  key stored securely"
+                    : "OpenAI endpoint needs setup"}
+                </Text>
+              )}
+              {!panel &&
+              !sourceMessageId &&
+              !registration &&
+              mode === "local" &&
+              models.length > 1 ? (
+                <View style={styles.modes}>
+                  {models.map((model) => (
+                    <ModeButton
+                      key={model.id}
+                      label={model.label}
+                      disabled={working}
+                      selected={model.id === selectedModel}
+                      onPress={() => setSelectedModel(model.id)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+              {!panel &&
+              !sourceMessageId &&
+              !registration &&
+              mode === "local" &&
+              !selectedModel ? (
+                <View style={styles.recovery}>
+                  <Link href="/models" style={styles.link}>
+                    Open Models
+                  </Link>
+                  <Text variant="bodySmall">
+                    Or choose a saved connection in Providers.
+                  </Text>
+                </View>
+              ) : null}
+              {!panel &&
+              !sourceMessageId &&
+              !registration &&
+              mode === "local" &&
+              selectedModel ? (
+                <Text selectable variant="labelSmall">
+                  Ready for offline chat.
+                </Text>
+              ) : null}
+              {!sourceMessageId && !registration && mode === "openai" ? (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={working}
+                  onPress={() => setShowSetup((value) => !value)}
+                >
+                  <Text style={styles.link}>
+                    {showSetup
+                      ? "Back to chat"
+                      : configured
+                        ? "Edit OpenAI setup"
+                        : "Set up OpenAI"}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          )}
+        </ChatControlsShell>
       </View>
       {error ? (
         <View style={{ backgroundColor: theme.colors.background }}>
-          <Text accessibilityRole="alert" style={styles.error}>
-            {error}
-          </Text>
+          <View style={{ padding: 12 }}>
+            <ErrorNotice message={error} maxTextHeight={160} />
+          </View>
+          {!panel && /\bcontext-full\b/.test(error) ? (
+            <NativeButton
+              accessibilityLabel="Adjust context settings"
+              onPress={() => setPanel("settings")}
+            >
+              Open Settings
+            </NativeButton>
+          ) : !panel && /web|search|Reader|Brave|DuckDuckGo/i.test(error) ? (
+            <NativeButton
+              accessibilityLabel="Fix web research"
+              onPress={() => setPanel("research")}
+            >
+              Web research settings
+            </NativeButton>
+          ) : !panel && registration?.endpoint ? (
+            <NativeButton
+              accessibilityLabel="Fix connection"
+              onPress={() => setPanel("providers")}
+            >
+              Open Connections
+            </NativeButton>
+          ) : null}
         </View>
       ) : null}
       {clipboardResult ? (
@@ -1582,8 +2660,23 @@ export default function CompleteChatScreen() {
           {attachmentNotice}
         </Text>
       ) : null}
-      {panel === "voices" ? (
-        <SpeechPanel onClose={() => setPanel(null)} />
+      {panel === "files" && workspaceFiles ? (
+        <WorkspaceFilesScreen
+          store={workspaceFiles}
+          files={nativeArchiveFiles}
+          zip={mobileArchiveZip}
+          refreshKey={assistants.length}
+          phoneLayout={layout.phone}
+        />
+      ) : panel === "research" ? (
+        <WebResearchSettingsPanel
+          settings={runtime.webSettings}
+          secrets={runtime.secrets}
+        />
+      ) : panel === "voices" ? (
+        <SpeechPanel
+          {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
+        />
       ) : panel === "providers" ? (
         <ProviderSetupPanel
           registry={runtime.registry}
@@ -1593,6 +2686,7 @@ export default function CompleteChatScreen() {
             await runtime.identities.memoryExtraction.cancelPending();
             setRegistration(value);
             setShowSetup(false);
+            setError("");
           }}
           onClose={() =>
             setPanel((current) => (current === "providers" ? null : current))
@@ -1605,7 +2699,7 @@ export default function CompleteChatScreen() {
           createId={createChatId}
           currentConversationId={runtime.conversationId}
           {...(avatarPort ? { avatarPort } : {})}
-          onClose={() => setPanel(null)}
+          {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
           onProfilesChanged={async () => {
             setPersona(
               await runtime.identities.personas.selected(
@@ -1646,21 +2740,38 @@ export default function CompleteChatScreen() {
       ) : panel === "memory" ? (
         <MemoryScreen
           store={runtime.identities.memory}
-          onClose={() => setPanel(null)}
+          {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
           onOpenSource={(conversationId, messageId) => {
-            void openConversation(conversationId, messageId).catch(() =>
-              setError("The memory source could not be opened."),
+            void openConversation(conversationId, messageId).catch((cause) =>
+              setError(
+                describeError(cause, {
+                  operation: "Open memory source chat",
+                  recovery:
+                    "Open the saved conversation from Library. Its messages may have been removed.",
+                }),
+              ),
             );
           }}
           onPreferencesChanged={(value) => {
             if (!value.extractionEnabled)
               void runtime.identities.memoryExtraction
                 .cancelPending({ waitForResources: false })
-                .catch(() => undefined);
+                .catch((cause) =>
+                  setError(
+                    describeError(cause, {
+                      operation: "Stop automatic memory",
+                      recovery:
+                        "Turn automatic memory off again in Memory to retry stopping it.",
+                    }),
+                  ),
+                );
           }}
         />
+      ) : panel === "diagnostics" ? (
+        <DiagnosticsScreen />
       ) : panel === "history" ? (
         <HistoryScreen
+          hideBackButton={layout.phone}
           history={runtime.composition.library}
           currentConversationId={runtime.conversationId}
           working={working}
@@ -1671,14 +2782,23 @@ export default function CompleteChatScreen() {
         />
       ) : panel === "archives" && archives ? (
         <View style={{ flex: 1, padding: 16, gap: 12 }}>
-          <ArchivesScreen ports={archives} />
-          <Pressable accessibilityRole="button" onPress={() => setPanel(null)}>
-            <Text>Back to chat</Text>
-          </Pressable>
+          <ArchivesScreen
+            ports={archives}
+            onOpenLibrary={() => setPanel("library")}
+          />
+          {!layout.phone ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setPanel(null)}
+            >
+              <Text>Back to chat</Text>
+            </Pressable>
+          ) : null}
         </View>
-      ) : panel && panel !== "archives" ? (
+      ) : panel && panel !== "archives" && panel !== "files" ? (
         <ChatPanels
           panel={panel}
+          hideBackButton={layout.phone}
           db={runtime.db}
           conversationId={runtime.conversationId}
           {...(registration?.modelId ||
@@ -1694,6 +2814,12 @@ export default function CompleteChatScreen() {
               }
             : {})}
           capabilities={capabilities}
+          {...(activeServerContext?.tokens
+            ? { serverContextWindow: activeServerContext.tokens }
+            : {})}
+          {...(activeServerContext
+            ? { serverContextStatus: activeServerContext.status }
+            : {})}
           {...(persona
             ? {
                 personaId: persona.id,
@@ -1749,10 +2875,10 @@ export default function CompleteChatScreen() {
               );
             }
           }}
-          onRetry={() => {
+          onRetry={async () => {
             if (!lastPayload.current || !lastUserMessageId.current) return;
             setPanel(null);
-            return send(lastPayload.current, lastUserMessageId.current);
+            await send(lastPayload.current, lastUserMessageId.current);
           }}
         />
       ) : !registration && showSetup && mode === "openai" ? (
@@ -1775,6 +2901,103 @@ export default function CompleteChatScreen() {
           <Transcript
             users={users}
             assistants={assistants}
+            {...(error && assistants.at(-1)?.status === "failed"
+              ? { displayedErrorRunId: assistants.at(-1)!.runId }
+              : {})}
+            {...(layout.phone
+              ? {
+                  emptyContent: (
+                    <View
+                      style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        paddingHorizontal: 16,
+                        paddingVertical: layout.compact ? 16 : 32,
+                        gap: layout.compact ? 12 : 16,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: layout.compact ? 48 : 72,
+                          height: layout.compact ? 48 : 72,
+                          borderRadius: layout.compact ? 16 : 24,
+                          backgroundColor: theme.colors.primaryContainer,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Icon
+                          source="message-text-outline"
+                          size={32}
+                          color={theme.colors.onPrimaryContainer}
+                        />
+                      </View>
+                      <Text
+                        variant="headlineMedium"
+                        accessibilityRole="header"
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "600",
+                          ...(layout.compact
+                            ? { fontSize: 24, lineHeight: 30 }
+                            : {}),
+                        }}
+                      >
+                        {registration ||
+                        (mode === "local" ? selectedModel : configured)
+                          ? "Where should we start?"
+                          : "Make room for a good idea."}
+                      </Text>
+                      <Text
+                        variant="bodyLarge"
+                        style={{
+                          textAlign: "center",
+                          color: theme.colors.onSurfaceVariant,
+                          maxWidth: 320,
+                          lineHeight: 25,
+                          ...(layout.compact
+                            ? { fontSize: 15, lineHeight: 22 }
+                            : {}),
+                        }}
+                      >
+                        {registration ||
+                        (mode === "local" ? selectedModel : configured)
+                          ? "Ask a question, work through an idea, or write something together."
+                          : "Use your PC, connect an online service, or download a model to your iPhone."}
+                      </Text>
+                      {!registration &&
+                      !(mode === "local" ? selectedModel : configured) ? (
+                        <View
+                          style={{
+                            width: "100%",
+                            maxWidth: 320,
+                            gap: 8,
+                            marginTop: 8,
+                          }}
+                        >
+                          <Button
+                            mode="contained"
+                            contentStyle={{ minHeight: 48 }}
+                            accessibilityLabel="Connect a model"
+                            onPress={() => setPanel("providers")}
+                          >
+                            Connect a model
+                          </Button>
+                          <Button
+                            mode="text"
+                            contentStyle={{ minHeight: 44 }}
+                            icon="cellphone"
+                            onPress={() => router.navigate("/models")}
+                          >
+                            Browse offline models
+                          </Button>
+                        </View>
+                      ) : null}
+                    </View>
+                  ),
+                }
+              : {})}
             onReadAloud={(text) => {
               void mobileSpeech
                 .refresh()
@@ -1792,9 +3015,11 @@ export default function CompleteChatScreen() {
                 )
                 .catch((cause: unknown) => {
                   setError(
-                    cause instanceof Error
-                      ? cause.message
-                      : "Offline speech could not start. Open Voices to download a voice.",
+                    describeError(cause, {
+                      operation: "Read response aloud",
+                      recovery:
+                        "Open Voices and select a fully installed voice, then retry reading aloud.",
+                    }),
                   );
                 });
             }}
@@ -1821,6 +3046,11 @@ export default function CompleteChatScreen() {
           />
         </>
       )}
+      {!panel && speechState.phase === "error" && !error ? (
+        <View style={{ padding: 12 }}>
+          <ErrorNotice message={speechState.message} maxTextHeight={160} />
+        </View>
+      ) : null}
       {!panel && !["idle", "error"].includes(speechState.phase) ? (
         <View>
           <Text accessibilityLiveRegion="polite">{speechState.message}</Text>
@@ -1842,10 +3072,30 @@ export default function CompleteChatScreen() {
         ]}
       >
         <AdvancedComposer
+          {...(layout.phone &&
+          !registration &&
+          !(mode === "local" ? selectedModel : configured)
+            ? { sendUnavailableReason: "Connect a model to send this message." }
+            : {})}
           key={runtime.conversationId}
           initialDraft={drafts.get(runtime.conversationId)}
           onDraftChange={(draft) => drafts.put(runtime.conversationId, draft)}
           onSend={send}
+          onSendError={setError}
+          toolsCollapsed={workspace.layout.composerCollapsed}
+          onToolsCollapsedChange={(collapsed) => {
+            void workspace
+              .setLayoutPreferences({ composerCollapsed: collapsed })
+              .catch((cause) =>
+                setError(
+                  describeError(cause, {
+                    operation: "Save composer layout",
+                    recovery:
+                      "Try the layout option again. It may reset after reopening the app.",
+                  }),
+                ),
+              );
+          }}
           starters={[
             {
               id: "explain",
@@ -1860,7 +3110,19 @@ export default function CompleteChatScreen() {
                 "Help me write a small function. Ask me what it should do.",
             },
           ]}
-          searchUnavailableReason="Web search is not available in this build."
+          tools={[
+            {
+              id: WORKSPACE_FILES_TOOL,
+              label: "Write files",
+              description: "Save Markdown and text in this chat",
+            },
+            {
+              id: WEB_FETCH_TOOL,
+              label: layout.phone ? "Read linked pages" : "Fetch pages",
+              description: "Include content from links in your message",
+            },
+          ]}
+          onOpenWebSettings={() => setPanel("research")}
           onRemoveAttachment={(item) =>
             runtime.intake.attachments.release(
               `draft:${runtime.conversationId}`,
@@ -1883,13 +3145,19 @@ export default function CompleteChatScreen() {
               ) {
                 item = cause.attachment;
                 setError(
-                  `The original file is saved. ${cause.message} Remove it before sending, or choose another file.`,
+                  describeError(cause, {
+                    operation: "Prepare attached file",
+                    recovery:
+                      "The original file is saved. Remove it before sending, or choose another file.",
+                  }),
                 );
               } else {
                 setError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "The attachment could not be added. Choose the file again.",
+                  describeError(cause, {
+                    operation: "Add attachment",
+                    recovery:
+                      "Choose the file again. Check that LocalLab can read the file and has enough storage.",
+                  }),
                 );
                 return null;
               }
@@ -1898,9 +3166,13 @@ export default function CompleteChatScreen() {
             let preview;
             try {
               preview = await runtime.intake.preview(item.id);
-            } catch {
+            } catch (cause) {
               setError(
-                "The attachment is saved, but its preview is unavailable.",
+                describeError(cause, {
+                  operation: "Preview attachment",
+                  recovery:
+                    "The file is saved. Remove it and choose a supported file if you need a preview.",
+                }),
               );
               return null;
             }
@@ -1918,6 +3190,79 @@ export default function CompleteChatScreen() {
   );
 }
 
+function ChatControlsShell({
+  phone,
+  visible,
+  onClose,
+  children,
+}: {
+  phone: boolean;
+  visible: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const theme = useTheme();
+  if (!phone) return visible ? <>{children}</> : null;
+  return (
+    <Portal>
+      <Modal
+        testID="chat-menu"
+        visible={visible}
+        onDismiss={onClose}
+        overlayAccessibilityLabel="Dismiss chat menu"
+        style={{ marginTop: 0, marginBottom: 0, alignItems: "flex-start" }}
+        contentContainerStyle={{
+          height: "100%",
+          width: "88%",
+          maxWidth: 380,
+          backgroundColor: theme.colors.surface,
+          borderTopRightRadius: 28,
+          borderBottomRightRadius: 28,
+          overflow: "hidden",
+        }}
+      >
+        <SafeAreaView
+          testID="phone-navigation-safe-area"
+          edges={["top", "bottom", "left", "right"]}
+          style={{ flex: 1 }}
+        >
+          <View
+            style={{
+              paddingLeft: 24,
+              paddingRight: 12,
+              paddingVertical: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Text
+              variant="titleLarge"
+              accessibilityRole="header"
+              style={{ flex: 1, fontWeight: "600" }}
+            >
+              LocalLab
+            </Text>
+            <IconButton
+              icon="close"
+              accessibilityLabel="Close chat menu"
+              style={{ width: 44, height: 44, margin: 0 }}
+              onPress={onClose}
+            />
+          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    </Portal>
+  );
+}
+
 function HeaderButton(props: {
   glyph: string;
   label: string;
@@ -1927,7 +3272,10 @@ function HeaderButton(props: {
   testID?: string;
 }) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme.colors, theme.dark), [theme.colors, theme.dark]);
+  const styles = useMemo(
+    () => createStyles(theme.colors, theme.dark),
+    [theme.colors, theme.dark],
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -1958,7 +3306,10 @@ function ModeButton(props: {
   onPress: () => void;
 }) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme.colors, theme.dark), [theme.colors, theme.dark]);
+  const styles = useMemo(
+    () => createStyles(theme.colors, theme.dark),
+    [theme.colors, theme.dark],
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -2072,7 +3423,11 @@ function createStyles(colors: MD3Theme["colors"], dark = false) {
       borderRightColor: bevelLight,
       borderBottomColor: bevelLight,
     },
-    headerButtonGlyph: { fontSize: 18, fontWeight: "700", color: colors.onSurface },
+    headerButtonGlyph: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.onSurface,
+    },
     headerButtonText: { fontWeight: "700", color: colors.onSurface },
     mode: {
       borderRadius: 0,

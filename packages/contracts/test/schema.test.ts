@@ -4,6 +4,10 @@ import test from "node:test";
 import { EntityIdSchema, compareRevision } from "../src/identity.js";
 import { JobSchema, SyncRecordSchema } from "../src/entities.js";
 import { RunEventBatchSchema } from "../src/run-events.js";
+import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "../src/local-failure-details.js";
 
 const fixture = async (name: string): Promise<unknown> =>
   JSON.parse(
@@ -81,4 +85,42 @@ test("revision ordering uses wall time, counter, then device ID", () => {
   };
   assert.equal(compareRevision(first, laterCounter), -1);
   assert.equal(compareRevision(first, laterDevice), -1);
+});
+
+test("local failure mappings unwrap chains without changing serializable public errors", () => {
+  const original = new Error(
+    "HTTP503 original response body with private fixture data",
+  );
+  const first = Object.freeze({
+    code: "offline",
+    message: "Provider unavailable",
+    recoverable: true,
+  });
+  const second = Object.freeze({
+    code: "network",
+    message: "Check the connection",
+    recoverable: true,
+  });
+  retainLocalFailureCause(first, original);
+  retainLocalFailureCause(second, first);
+  assert.equal(localFailureCause(second), original);
+  assert.deepEqual(Reflect.ownKeys(second), ["code", "message", "recoverable"]);
+  assert.equal(JSON.stringify(second).includes(original.message), false);
+  const restored = JSON.parse(JSON.stringify(second)) as object;
+  assert.equal(localFailureCause(restored), restored);
+});
+
+test("local failure mappings stop on cycles and do not traverse arbitrary Error.cause properties", () => {
+  const first = {};
+  const second = {};
+  retainLocalFailureCause(first, second);
+  retainLocalFailureCause(second, first);
+  assert.equal(localFailureCause(first), first);
+  const unrelated = new Error("Public wrapper", {
+    cause: new Error("Unmapped detail"),
+  });
+  assert.equal(localFailureCause(unrelated), unrelated);
+  const empty = {};
+  retainLocalFailureCause(empty, undefined);
+  assert.equal(localFailureCause(empty), undefined);
 });

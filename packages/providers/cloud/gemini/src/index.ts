@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   createHttpTransport,
+  errorDetails,
   HttpTransportError,
   type FetchLike,
 } from "@locallab/network-http";
@@ -55,9 +56,19 @@ export function createGeminiProvider(
           { headers: { "x-goog-api-key": key }, ...(signal ? { signal } : {}) },
           signal ? { signal } : {},
         );
-        const body: unknown = await response.json();
+        const raw = await response.text();
+        let body: unknown;
+        try {
+          body = JSON.parse(raw);
+        } catch (cause) {
+          throw new ProtocolError(
+            `Gemini model list contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+          );
+        }
         if (!isObj(body) || !Array.isArray(body.models))
-          throw new ProtocolError("Gemini model list was malformed");
+          throw new ProtocolError(
+            `Gemini model list was malformed.\nServer response:\n${raw}`,
+          );
         const values = body.models.flatMap((m) =>
           isObj(m) && typeof m.name === "string"
             ? [m.name.replace(/^models\//, "")]
@@ -146,13 +157,14 @@ export function createGeminiProvider(
         )) {
           const data = parse(frame.data);
           if (!data) continue;
-          if (isObj(data.error)) throw classifyApiError(data.error);
+          if (data.error != null || frame.event === "error")
+            throw classifyApiError(data);
           const feedback = isObj(data.promptFeedback)
             ? data.promptFeedback
             : undefined;
           if (feedback?.blockReason)
             throw new SafetyError(
-              "Gemini blocked the prompt under its safety policy",
+              `Gemini blocked the prompt under its safety policy.\nServer response:\n${frame.data}`,
             );
           const candidates = Array.isArray(data.candidates)
             ? data.candidates
@@ -169,7 +181,7 @@ export function createGeminiProvider(
             }
             if (reason === "SAFETY" || reason === "RECITATION")
               throw new SafetyError(
-                "Gemini blocked the response under its safety policy",
+                `Gemini blocked the response under its safety policy.\nServer response:\n${frame.data}`,
               );
             const content = isObj(candidate.content)
               ? candidate.content
@@ -276,8 +288,10 @@ async function keyFor(store: SecretStore, origin: string, ref: SecretRef) {
       values["authorization"]?.replace(/^Bearer\s+/i, "");
     if (!key || /[\r\n]/.test(key)) throw new Error();
     return key;
-  } catch {
-    throw new AuthError("Gemini API key is unavailable for this host");
+  } catch (cause) {
+    throw new AuthError(
+      `Gemini API key is unavailable for this host.\n${errorDetails(cause)}`,
+    );
   }
 }
 function toGeminiBody(
@@ -362,11 +376,15 @@ function parse(raw: string): Obj | undefined {
   let value: unknown;
   try {
     value = JSON.parse(raw);
-  } catch {
-    throw new ProtocolError("Gemini stream contained malformed JSON");
+  } catch (cause) {
+    throw new ProtocolError(
+      `Gemini stream contained malformed JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+    );
   }
   if (!isObj(value))
-    throw new ProtocolError("Gemini stream event was malformed");
+    throw new ProtocolError(
+      `Gemini stream event was malformed.\nServer response:\n${raw}`,
+    );
   return value;
 }
 function isObj(v: unknown): v is Obj {
@@ -420,7 +438,13 @@ class UnsupportedError extends Error {}
 class QuotaError extends Error {}
 class MissingModelError extends Error {}
 class ProviderRejectedError extends Error {}
-function classifyApiError(error: Obj) {
+function classifyApiError(data: Obj) {
+  const error = isObj(data.error) ? data.error : data;
+  const classified = classifyErrorResponse(error);
+  classified.message = `${classified.message || "Gemini reported a request error"}\nServer response:\n${JSON.stringify(data, null, 2)}`;
+  return classified;
+}
+function classifyErrorResponse(error: Obj) {
   const detail =
     `${String(error.status ?? "")} ${String(error.message ?? "")} ${String(error.code ?? "")}`.toLowerCase();
   if (/resource_exhausted|quota|rate.?limit|429/.test(detail))
@@ -434,6 +458,16 @@ function classifyApiError(error: Obj) {
   return new ProtocolError("Gemini reported a request error");
 }
 function normalize(error: unknown) {
+  const classified = classify(error);
+  const detail = errorDetails(error);
+  return {
+    ...classified,
+    message: classified.message.includes(detail)
+      ? classified.message
+      : `${classified.message}\n${detail}`,
+  };
+}
+function classify(error: unknown) {
   if (
     error instanceof AuthError ||
     (error instanceof HttpTransportError &&

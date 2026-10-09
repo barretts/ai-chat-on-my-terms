@@ -1,4 +1,5 @@
 import type { CatalogModel } from "@locallab/models-catalog";
+import { httpResponseError } from "@locallab/network-http";
 import {
   adoptDownloadedModel,
   assertDownloadedModel,
@@ -106,9 +107,11 @@ export async function downloadLocalModel(
         cache: "no-store",
       });
       if (!response.ok)
-        throw new Error(
-          `The model publisher returned HTTP ${response.status}. Try downloading again later.`,
-        );
+        throw await httpResponseError(response, {
+          summary:
+            "The model publisher rejected the download. Try again later.",
+          signal: controller.signal,
+        });
       if (new URL(response.url).protocol !== "https:" || !response.body)
         throw new Error(
           "The publisher did not return a secure streaming model download.",

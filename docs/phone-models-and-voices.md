@@ -9,9 +9,9 @@ The current preview is at **http://localhost:8085**. For a fresh preview, run:
 & ./tools/start-local-preview.ps1 -Port 8085 -ProviderOrigin 'https://openrouter.ai'
 ```
 
-Open the returned URL. Models, Voices, and Providers are available from chat. If you also connect a local model server, include its exact origin in `-ProviderOrigin`, for example `@('https://openrouter.ai', 'http://192.168.1.213:35961')`. The server must already be running.
+Open the returned URL. Models, Voices, and Connections are available from the phone chat menu (the desktop calls Connections "Providers"). If you also connect a local model server, include its exact origin in `-ProviderOrigin`, for example `@('https://openrouter.ai', 'http://192.168.1.213:35961')`. The server must already be running.
 
-For your PC's OxCoder server, choose the **Local server · llama.cpp** provider type, enter **http://192.168.1.213:35961/v1**, authorize local HTTP, and open **Chat model**. The server currently lists **local-coder**. On your iPhone, use this LAN address rather than localhost.
+For this Windows PC, open **Connections** and choose **This PC**. This fills **http://192.168.1.213:35961/v1**, the connection name, and authorization for this local HTTP origin. **Connection settings** exposes the saved address when you need to change it. Open **Chat model** or **Load models** to discover the currently loaded model, then choose **Save & chat**. The endpoint last checked listed **qwen3.8-27b-sm89**; the preset discovers the model instead of hardcoding that ID. On your iPhone, use this LAN address and the same private network as the PC. Local compatible-server generation can run for up to five minutes before its transport timeout. On desktop, the preset is under **Providers → Provider type → Barrett's PC · local coder**.
 
 ## Phone models
 
@@ -50,7 +50,7 @@ For a fresh local preview host, prepare the real runtime and model files:
 & ./tools/prepare-offline-speech.ps1
 ```
 
-Generated browser model/runtime assets are ignored by Git and EAS. Native installs use foreground downloads, check archive size, and unpack the voice. Full archive hashes are skipped. Saving/unpacking has its own visible phase. Older installed builds, including build 2, do not contain the new native speech module. [Signed iPhone build 3](https://expo.dev/accounts/barrett/projects/locallab/builds/37065560-7ff9-49da-aab0-2f291bc2076d) includes the new module and finished on September 28, 2026; physical device execution remains to be verified.
+Generated browser model/runtime assets are ignored by Git and EAS. Native installs use foreground downloads, check archive size, and unpack the voice. Full archive hashes are skipped. Saving/unpacking has its own visible phase. Older installed builds, including build 2, do not contain the new native speech module. The current [signed iPhone build 6](https://expo.dev/accounts/barrett/projects/locallab/builds/e6df90a6-89e8-4cec-a68e-6cb95554d90e) includes the speech module and finished phone design. It compiled and signed successfully at 2026-09-29 04:59:05 UTC; physical device execution remains to be verified.
 
 Voice sources: [Kokoro model](https://huggingface.co/hexgrad/Kokoro-82M), [Heart and Bella voice definitions](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md), [Piper LJ Speech model card](https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_US/ljspeech/high/MODEL_CARD), [Sherpa speech model releases](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models). Kokoro declares Apache 2.0; the Piper model card identifies its voice dataset as public domain. Bundled inference runtime and pronunciation data retain their own license notices.
 
@@ -58,9 +58,9 @@ The [LJ Speech dataset source](https://keithito.com/LJ-Speech-Dataset/) identifi
 
 ## OpenRouter
 
-Open **Providers**, choose **OpenRouter**, and open **Chat model** or tap **Load models**. The list comes from the public OpenRouter catalog and does not need an API key. Search and choose an exact model ID. Saved providers can be edited, favorited, and removed; removing a connection preserves conversations.
+Open **Connections**, choose **OpenRouter**, and open **Chat model** or tap **Load models**. The list comes from the public OpenRouter catalog and does not need an API key. Search and choose an exact model ID. Saved providers can be edited, favorited, and removed; removing a connection preserves conversations.
 
-Enter your own OpenRouter key in the app, tap **Test connection**, then **Save and use provider**. The connection check calls the authenticated key endpoint; the public model list alone cannot validate a key. Native keys use secure storage. Browser keys last for the current tab, while the provider and model selection are saved.
+Enter your own OpenRouter key in the app and choose **Save & chat**. **More actions → Test connection** checks the authenticated key endpoint; the public model list alone cannot validate a key. Native keys use secure storage. Browser keys last for the current tab, while the provider and model selection are saved.
 
 Generation prices and available free models depend on OpenRouter's selected model and account. Apple Developer membership does not pay for cloud inference. This feature makes no generation request when loading the catalog or checking a key.
 

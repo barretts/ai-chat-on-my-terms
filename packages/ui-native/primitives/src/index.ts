@@ -1,4 +1,9 @@
-export { nativeTheme, nativeDarkTheme } from "./theme";
+export {
+  nativeTheme,
+  nativeDarkTheme,
+  phoneTheme,
+  phoneDarkTheme,
+} from "./theme";
 export { NativeDropdown } from "./native-dropdown";
 export { NativeActivity } from "./native-activity";
 export { useWorkspaceLayout } from "./use-workspace-layout";

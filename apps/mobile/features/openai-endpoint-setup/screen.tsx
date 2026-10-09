@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, Platform, ScrollView, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
-import type { SecretStore } from "@locallab/security-secrets";
+import type { SecretRef, SecretStore } from "@locallab/security-secrets";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
+import { describeError } from "../diagnostics/errors";
+import { ErrorNotice } from "../diagnostics/error-notice";
 import {
   NativeButton,
   NativeInput,
@@ -31,6 +33,16 @@ export function OpenAIEndpointSetupScreen(props: {
   const [key, setKey] = useState("");
   const [savedKey, setSavedKey] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const scroll = useRef<ScrollView>(null);
+  const pendingCleanup = useRef(new Set<SecretRef>());
+  useEffect(() => {
+    if (!error) return;
+    Keyboard.dismiss();
+    requestAnimationFrame(() =>
+      scroll.current?.scrollTo({ y: 0, animated: true }),
+    );
+  }, [error]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -40,25 +52,37 @@ export function OpenAIEndpointSetupScreen(props: {
     setModel(defaults.modelId);
     setSavedKey(false);
     setMessage("");
+    setError("");
     void repository
       .get(props.connectionId)
-      .then((setup) => {
+      .then(async (setup) => {
         if (!active || !setup) return;
         setEndpoint(setup.endpointUrl);
         setModel(setup.modelId);
-        setSavedKey(true);
+        await props.secrets.resolveHeaders(new URL(setup.endpointUrl).origin, [
+          setup.apiKeyRef,
+        ]);
+        if (active) setSavedKey(true);
       })
-      .catch(() => {
-        if (active) setMessage("Saved endpoint setup could not be loaded.");
+      .catch((cause) => {
+        if (active)
+          setError(
+            describeError(cause, {
+              operation: "Load saved OpenAI endpoint setup",
+              recovery:
+                "Reopen this page and try again. If the saved key is unavailable, enter it again.",
+            }),
+          );
       });
     return () => {
       active = false;
     };
-  }, [props.connectionId, props.database]);
+  }, [props.connectionId, props.database, props.secrets]);
 
   const save = async () => {
     setBusy(true);
     setMessage("");
+    setError("");
     try {
       await saveOpenAIEndpointSetup({
         connectionId: props.connectionId,
@@ -67,6 +91,22 @@ export function OpenAIEndpointSetupScreen(props: {
         apiKey: key,
         repository,
         secrets: props.secrets,
+        onCleanupFailure: (cause, ref, committed) => {
+          pendingCleanup.current.add(ref);
+          const message = describeError(cause, {
+            operation: committed
+              ? "Remove replaced OpenAI API key"
+              : "Remove unsaved OpenAI API key",
+            recovery:
+              (committed
+                ? "The endpoint was saved. "
+                : "The endpoint was not saved. ") +
+              "Use Retry secure cleanup to remove the pending key.",
+          });
+          setError((current) =>
+            current ? `${current}\n\n${message}` : message,
+          );
+        },
       });
       setKey("");
       setSavedKey(true);
@@ -75,11 +115,40 @@ export function OpenAIEndpointSetupScreen(props: {
           ? "Endpoint saved. The API key lasts for this browser tab."
           : "OpenAI endpoint saved securely on this device.",
       );
-      props.onSaved?.(props.connectionId);
-    } catch {
-      setMessage(
-        "Could not save setup. Check the HTTPS endpoint, model ID, and secure API key.",
-      );
+      if (!pendingCleanup.current.size) props.onSaved?.(props.connectionId);
+    } catch (cause) {
+      const message = describeError(cause, {
+        operation: "Save OpenAI endpoint and model",
+        recovery:
+          "Check the HTTPS endpoint, model ID and API key, then save again.",
+      });
+      setError((current) => (current ? `${current}\n\n${message}` : message));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const retryCleanup = async () => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      for (const ref of pendingCleanup.current) {
+        try {
+          await props.secrets.remove(ref);
+          pendingCleanup.current.delete(ref);
+        } catch (cause) {
+          const message = describeError(cause, {
+            operation: "Retry secure OpenAI-key cleanup",
+            recovery:
+              "Try secure cleanup again and inspect the trace log if secure storage remains unavailable.",
+          });
+          setError((current) =>
+            current ? `${current}\n\n${message}` : message,
+          );
+        }
+      }
+      if (!pendingCleanup.current.size)
+        setMessage("Pending secure keys removed.");
     } finally {
       setBusy(false);
     }
@@ -87,9 +156,20 @@ export function OpenAIEndpointSetupScreen(props: {
 
   return (
     <ScrollView
+      ref={scroll}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.page}
     >
+      {error ? <ErrorNotice message={error} /> : null}
+      {pendingCleanup.current.size ? (
+        <NativeButton
+          accessibilityLabel="Retry secure cleanup"
+          disabled={busy}
+          onPress={() => void retryCleanup()}
+        >
+          Retry secure cleanup
+        </NativeButton>
+      ) : null}
       <NativeSurface
         accessibilityLabel="OpenAI endpoint setup"
         style={styles.card}
@@ -135,7 +215,9 @@ export function OpenAIEndpointSetupScreen(props: {
         >
           {busy ? "Saving…" : "Save endpoint"}
         </NativeButton>
-        {message ? <Text accessibilityRole="alert">{message}</Text> : null}
+        {message ? (
+          <Text accessibilityLiveRegion="polite">{message}</Text>
+        ) : null}
       </NativeSurface>
     </ScrollView>
   );

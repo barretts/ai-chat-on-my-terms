@@ -16,15 +16,185 @@ export type HttpErrorCode =
 
 export class HttpTransportError extends Error {
   readonly name = "HttpTransportError";
+  readonly cause?: unknown;
+  readonly response?: HttpErrorResponse;
 
   constructor(
     readonly code: HttpErrorCode,
     message: string,
     readonly recoverable: boolean,
     readonly status?: number,
+    details?: { cause?: unknown; response?: HttpErrorResponse },
   ) {
     super(message);
+    if (details?.cause !== undefined)
+      Object.defineProperty(this, "cause", {
+        value: details.cause,
+        enumerable: false,
+      });
+    if (details?.response !== undefined)
+      Object.defineProperty(this, "response", {
+        value: details.response,
+        enumerable: false,
+      });
   }
+}
+
+export interface HttpErrorResponse {
+  readonly status: number;
+  readonly statusText: string;
+  readonly contentType?: string;
+  readonly body: string;
+  readonly complete: boolean;
+}
+
+/** Complete failure details for display at a boundary that redacts credentials. */
+export function errorDetails(cause: unknown): string {
+  const visited = new Set<unknown>();
+  const messages: string[] = [];
+  let current = cause;
+  while (current !== undefined && !visited.has(current)) {
+    visited.add(current);
+    let message: string;
+    if (current instanceof Error) {
+      message = current.message || `${current.name}: empty error message`;
+    } else if (typeof current === "string") {
+      message = current || "The operation returned an empty error message.";
+    } else if (current === undefined || current === null) {
+      message = "The operation returned no error details.";
+    } else {
+      const seen = new Set<object>();
+      try {
+        const readableMessage =
+          typeof current === "object" &&
+          "message" in current &&
+          typeof current.message === "string"
+            ? current.message
+            : undefined;
+        const payload =
+          readableMessage === undefined
+            ? current
+            : Object.fromEntries(
+                Object.entries(current).filter(
+                  ([key]) => key !== "message" && key !== "cause",
+                ),
+              );
+        const serialized =
+          JSON.stringify(
+            payload,
+            (key, value: unknown) => {
+              if (typeof value === "bigint") return value.toString();
+              if (value instanceof Error)
+                return { name: value.name, message: value.message };
+              if (value && typeof value === "object") {
+                if (seen.has(value)) return "[Circular or repeated reference]";
+                seen.add(value);
+              }
+              return value;
+            },
+            2,
+          ) ?? String(current);
+        message =
+          readableMessage === undefined
+            ? serialized
+            : `${readableMessage}${serialized === "{}" ? "" : `\nError details:\n${serialized}`}`;
+      } catch {
+        message = String(current);
+      }
+    }
+    if (!messages.some((detail) => detail.includes(message)))
+      messages.push(message);
+    current =
+      current && typeof current === "object" && "cause" in current
+        ? current.cause
+        : undefined;
+  }
+  return (
+    messages.join("\nCaused by: ") || "The operation returned no error details."
+  );
+}
+
+/** Preserve the entire response, including error JSON without a message field. */
+export async function httpResponseError(
+  response: Response,
+  options: {
+    summary?: string;
+    code?: HttpErrorCode;
+    recoverable?: boolean;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  } = {},
+): Promise<HttpTransportError> {
+  const timeoutMs = options.timeoutMs ?? 30_000;
+  validateTimeout(timeoutMs);
+  const controller = new AbortController();
+  const signal = mergeAbortSignals(options.signal, controller);
+  const timer =
+    timeoutMs > 0
+      ? setTimeout(() => {
+          controller.abort(new Error("Reading the error response timed out"));
+        }, timeoutMs)
+      : undefined;
+  let body = "";
+  let complete = true;
+  let readFailure: unknown;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  const decoder = new TextDecoder();
+  try {
+    if (response.body && typeof response.body.getReader === "function") {
+      reader = response.body.getReader();
+      while (true) {
+        const chunk = await readWithAbort(reader, signal);
+        if (chunk.done) break;
+        body += decoder.decode(chunk.value, { stream: true });
+      }
+      body += decoder.decode();
+    } else body = await waitWithAbort(response.text(), signal);
+  } catch (cause) {
+    complete = false;
+    body += decoder.decode();
+    readFailure = signal.reason ?? cause;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    if (reader) {
+      if (!complete) void reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+    }
+  }
+  const contentType = response.headers.get("content-type") ?? undefined;
+  const statusLine = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}`;
+  const details: HttpErrorResponse = {
+    status: response.status,
+    statusText: response.statusText,
+    ...(contentType ? { contentType } : {}),
+    body,
+    complete,
+  };
+  return new HttpTransportError(
+    options.code ??
+      (response.status === 401
+        ? "unauthorized"
+        : response.status === 403
+          ? "forbidden"
+          : "http"),
+    [
+      options.summary,
+      statusLine,
+      contentType ? `Content-Type: ${contentType}` : undefined,
+      `Response body${complete ? "" : " (incomplete)"}:\n${body || "[empty]"}`,
+      complete
+        ? undefined
+        : `Could not read the complete response: ${errorDetails(readFailure)}`,
+    ]
+      .filter((line) => line !== undefined)
+      .join("\n"),
+    options.recoverable ?? response.status >= 500,
+    response.status,
+    {
+      response: details,
+      ...(readFailure !== undefined ? { cause: readFailure } : {}),
+    },
+  );
 }
 
 export type FetchLike = (
@@ -50,7 +220,7 @@ export interface HttpTransportOptions {
 export interface HttpRequestOptions {
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
-  /** Let a provider parse a bounded error body; default preserves typed transport errors. */
+  /** Let a provider classify the error response; default retains its full body. */
   readonly returnHttpErrors?: boolean;
 }
 
@@ -143,57 +313,41 @@ export function createHttpTransport(
         });
         if (!isRedirect(response.status)) {
           if (requestOptions.returnHttpErrors) return response;
-          if (response.status === 401)
-            throw new HttpTransportError(
-              "unauthorized",
-              "HTTP authorization failed",
-              false,
-              401,
-            );
-          if (response.status === 403)
-            throw new HttpTransportError(
-              "forbidden",
-              "HTTP access was denied",
-              false,
-              403,
-            );
           if (!response.ok)
-            throw new HttpTransportError(
-              "http",
-              `HTTP request failed (${response.status})`,
-              response.status >= 500,
-              response.status,
-            );
+            throw await httpResponseError(response, { signal, timeoutMs: 0 });
           return response;
         }
 
         const location = response.headers.get("location");
         if (!location)
-          throw new HttpTransportError(
-            "redirect_rejected",
-            "Redirect did not include a location",
-            false,
-            response.status,
-          );
+          throw await httpResponseError(response, {
+            summary: "Redirect did not include a location",
+            code: "redirect_rejected",
+            recoverable: false,
+            signal,
+            timeoutMs: 0,
+          });
         if (redirects >= maxRedirects)
-          throw new HttpTransportError(
-            "redirect_limit",
-            "HTTP redirect limit exceeded",
-            false,
-            response.status,
-          );
+          throw await httpResponseError(response, {
+            summary: "HTTP redirect limit exceeded",
+            code: "redirect_limit",
+            recoverable: false,
+            signal,
+            timeoutMs: 0,
+          });
         const nextUrl = authorizeUrl(
           new URL(location, currentUrl),
           approved,
           cleartext,
         );
         if (nextUrl.origin !== currentUrl.origin) {
-          throw new HttpTransportError(
-            "redirect_rejected",
-            "Cross-origin redirects are not followed",
-            false,
-            response.status,
-          );
+          throw await httpResponseError(response, {
+            summary: "Cross-origin redirects are not followed",
+            code: "redirect_rejected",
+            recoverable: false,
+            signal,
+            timeoutMs: 0,
+          });
         }
         // Match Fetch redirect method handling for common API redirects. A body
         // is only replayed for 307/308, where the method is preserved.
@@ -213,12 +367,14 @@ export function createHttpTransport(
           body != null &&
           !isReplayableBody(body)
         ) {
-          throw new HttpTransportError(
-            "redirect_rejected",
-            "Redirect requires replaying a non-replayable request body",
-            false,
-            response.status,
-          );
+          throw await httpResponseError(response, {
+            summary:
+              "Redirect requires replaying a non-replayable request body",
+            code: "redirect_rejected",
+            recoverable: false,
+            signal,
+            timeoutMs: 0,
+          });
         }
         currentUrl = nextUrl;
       }
@@ -234,12 +390,36 @@ export function createHttpTransport(
         throw error;
       }
       if (timedOut)
-        throw new HttpTransportError("timeout", "HTTP request timed out", true);
+        throw new HttpTransportError(
+          "timeout",
+          `HTTP request timed out after ${timeoutMs} ms.\n${errorDetails(error)}`,
+          true,
+          undefined,
+          { cause: error },
+        );
       if (requestOptions.signal?.aborted || init.signal?.aborted)
-        throw new HttpTransportError("canceled", "HTTP request canceled", true);
+        throw new HttpTransportError(
+          "canceled",
+          `HTTP request canceled.\n${errorDetails(error)}`,
+          true,
+          undefined,
+          { cause: error },
+        );
       if (controller.signal.aborted)
-        throw new HttpTransportError("canceled", "HTTP request canceled", true);
-      throw new HttpTransportError("offline", "HTTP connection failed", true);
+        throw new HttpTransportError(
+          "canceled",
+          `HTTP request canceled.\n${errorDetails(error)}`,
+          true,
+          undefined,
+          { cause: error },
+        );
+      throw new HttpTransportError(
+        "offline",
+        `HTTP connection failed.\n${errorDetails(error)}`,
+        true,
+        undefined,
+        { cause: error },
+      );
     } finally {
       if (timer !== undefined) clearTimeout(timer);
     }
@@ -280,11 +460,13 @@ export function createHttpTransport(
         ?.trim()
         .toLowerCase();
       if (contentType !== "text/event-stream")
-        throw new HttpTransportError(
-          "malformed_stream",
-          "Response is not an event stream",
-          false,
-        );
+        throw await httpResponseError(response, {
+          summary: "Response is not an event stream",
+          code: "malformed_stream",
+          recoverable: false,
+          signal,
+          timeoutMs: 0,
+        });
       if (!response.body)
         throw new HttpTransportError(
           "malformed_stream",
@@ -379,16 +561,36 @@ export function createHttpTransport(
         throw error;
       }
       if (timedOut)
-        throw new HttpTransportError("timeout", "SSE stream timed out", true);
+        throw new HttpTransportError(
+          "timeout",
+          `SSE stream timed out after ${timeoutMs} ms.\n${errorDetails(error)}`,
+          true,
+          undefined,
+          { cause: error },
+        );
       if (sourceSignal?.aborted)
-        throw new HttpTransportError("canceled", "SSE stream canceled", true);
+        throw new HttpTransportError(
+          "canceled",
+          `SSE stream canceled.\n${errorDetails(error)}`,
+          true,
+          undefined,
+          { cause: error },
+        );
       if (error instanceof TypeError)
         throw new HttpTransportError(
           "malformed_stream",
-          "SSE stream contained invalid UTF-8",
+          `SSE stream contained invalid UTF-8.\n${errorDetails(error)}`,
           false,
+          undefined,
+          { cause: error },
         );
-      throw new HttpTransportError("offline", "SSE connection failed", true);
+      throw new HttpTransportError(
+        "offline",
+        `SSE connection failed.\n${errorDetails(error)}`,
+        true,
+        undefined,
+        { cause: error },
+      );
     } finally {
       if (timer !== undefined) clearTimeout(timer);
       if (!controller.signal.aborted) controller.abort();
@@ -539,6 +741,17 @@ function readWithAbort(
   signal: AbortSignal,
 ): Promise<ReadableStreamReadResult<Uint8Array>> {
   if (signal.aborted) return Promise.reject(new Error("Stream read aborted"));
+  return waitWithAbort(reader.read(), signal);
+}
+
+function waitWithAbort<T>(
+  pending: Promise<T>,
+  signal: AbortSignal,
+): Promise<T> {
+  if (signal.aborted) {
+    void pending.catch(() => undefined);
+    return Promise.reject(signal.reason ?? new Error("Response read aborted"));
+  }
   return new Promise((resolve, reject) => {
     const onAbort = (): void => {
       cleanup();
@@ -546,7 +759,7 @@ function readWithAbort(
     };
     const cleanup = (): void => signal.removeEventListener("abort", onAbort);
     signal.addEventListener("abort", onAbort, { once: true });
-    reader.read().then(
+    pending.then(
       (result) => {
         cleanup();
         resolve(result);

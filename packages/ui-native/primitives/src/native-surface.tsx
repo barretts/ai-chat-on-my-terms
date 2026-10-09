@@ -18,21 +18,29 @@ export function NativeSurface({
   const theme = useTheme();
   return (
     <Surface
-      accessible
+      accessible={theme.roundness === 0}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="summary"
       {...props}
       elevation={0}
       style={[
-        props.style,
-        {
-          borderRadius: 0,
-          borderWidth: 2,
-          borderTopColor: theme.dark ? "#756880" : "#ffffff",
-          borderLeftColor: theme.dark ? "#756880" : "#ffffff",
-          borderRightColor: "#89818d",
-          borderBottomColor: "#89818d",
-        },
+        theme.roundness === 0 ? props.style : undefined,
+        theme.roundness > 0
+          ? {
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: theme.colors.outlineVariant,
+              backgroundColor: theme.colors.surface,
+            }
+          : {
+              borderRadius: 0,
+              borderWidth: 2,
+              borderTopColor: theme.dark ? "#756880" : "#ffffff",
+              borderLeftColor: theme.dark ? "#756880" : "#ffffff",
+              borderRightColor: "#89818d",
+              borderBottomColor: "#89818d",
+            },
+        theme.roundness > 0 ? props.style : undefined,
       ]}
     >
       {children}

@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   createHttpTransport,
+  errorDetails,
   HttpTransportError,
   type FetchLike,
 } from "@locallab/network-http";
@@ -213,8 +214,10 @@ export function createAnthropicEventDecoder(
       let input: unknown;
       try {
         input = JSON.parse(block.json || "{}");
-      } catch {
-        throw malformed("Anthropic tool input was malformed");
+      } catch (cause) {
+        throw malformed(
+          `Anthropic tool input was malformed.\n${errorDetails(cause)}\nServer response:\n${block.json}`,
+        );
       }
       if (block.name && block.id)
         out.push({
@@ -267,8 +270,19 @@ export function createAnthropicProvider(
           },
           { ...(signal ? { signal } : {}) },
         );
-        const data = await response.json();
-        if (!isRecord(data) || !Array.isArray(data.data)) throw malformed();
+        const raw = await response.text();
+        let data: unknown;
+        try {
+          data = JSON.parse(raw);
+        } catch (cause) {
+          throw malformed(
+            `Anthropic model list contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${raw}`,
+          );
+        }
+        if (!isRecord(data) || !Array.isArray(data.data))
+          throw malformed(
+            `Anthropic model list was malformed.\nServer response:\n${raw}`,
+          );
         return {
           ok: true,
           value: data.data.flatMap((m) =>
@@ -359,12 +373,18 @@ export function createAnthropicProvider(
           let value: unknown;
           try {
             value = JSON.parse(frame.data);
-          } catch {
-            throw malformed("Anthropic stream contained invalid JSON");
+          } catch (cause) {
+            throw malformed(
+              `Anthropic stream contained invalid JSON.\n${errorDetails(cause)}\nServer response:\n${frame.data}`,
+            );
           }
-          if (!isRecord(value)) throw malformed();
+          if (!isRecord(value))
+            throw malformed(
+              `Anthropic stream event was malformed.\nServer response:\n${frame.data}`,
+            );
           const kind =
             typeof value.type === "string" ? value.type : frame.event;
+          if (value.error != null) throw apiError(value);
           if (kind === "message_stop") completed = true;
           for (const event of decode({ ...value, type: kind })) {
             if (
@@ -440,15 +460,23 @@ async function auth(
       headers.authorization?.replace(/^(?:Bearer\s+)+/i, "");
     if (!value || /[\r\n]/.test(value)) throw new Error();
     return { "x-api-key": value };
-  } catch {
+  } catch (cause) {
     throw new AnthropicError(
       "unauthorized",
-      "Saved API key is unavailable for this endpoint",
+      `Saved API key is unavailable for this endpoint.\n${errorDetails(cause)}`,
       true,
     );
   }
 }
 function apiError(data: Record<string, unknown>): AnthropicError {
+  const classified = classifyApiError(data);
+  return new AnthropicError(
+    classified.code,
+    `${classified.message}\nServer response:\n${JSON.stringify(data, null, 2)}`,
+    classified.recoverable,
+  );
+}
+function classifyApiError(data: Record<string, unknown>): AnthropicError {
   const error = isRecord(data.error) ? data.error : {};
   const type = typeof error.type === "string" ? error.type : "";
   if (/authentication/i.test(type))
@@ -468,6 +496,17 @@ function apiError(data: Record<string, unknown>): AnthropicError {
   return malformed("Anthropic reported a request error");
 }
 function normalize(error: unknown): AnthropicError {
+  const classified = classify(error);
+  const detail = errorDetails(error);
+  return classified.message.includes(detail)
+    ? classified
+    : new AnthropicError(
+        classified.code,
+        `${classified.message}\n${detail}`,
+        classified.recoverable,
+      );
+}
+function classify(error: unknown): AnthropicError {
   if (error instanceof AnthropicError) return error;
   if (error instanceof HttpTransportError) {
     if (error.code === "unauthorized" || error.code === "forbidden")

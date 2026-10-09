@@ -1,0 +1,98 @@
+{
+  "preparedDate": "2026-10-08",
+  "modelTargetAsSupplied": "Qwen3.8-Flash-Next q3, 128K context",
+  "repository": "C:/code/cht",
+  "gitHead": "23b83afa94e7301267d53e30e4d853edb9553acb",
+  "sourceAudit": {
+    "manifestEntries": 856,
+    "differences": 0,
+    "skipped": 0,
+    "scope": "All files listed in build-14 source-manifest.json; performed during this conversation before handoff creation"
+  },
+  "workingTreeBeforeHandoff": {
+    "statusEntries": 152,
+    "trackedChanges": 94,
+    "untrackedEntries": 58,
+    "individualUntrackedFiles": 72
+  },
+  "latestRecordedNativeBuild": {
+    "id": "2959c28e-fc71-453c-8295-a32d15656eac",
+    "status": "FINISHED",
+    "number": "14",
+    "createdAt": "2026-09-29T18:45:37.576Z",
+    "completedAt": "2026-09-29T18:51:44.277Z",
+    "profile": "preview",
+    "bundleIdentifier": "app.locallab.mobile",
+    "artifactBytes": 26475995,
+    "hermesBundleBytes": 6131020,
+    "bundleChecks": {
+      "automaticContext": true,
+      "nativeWorkspaceFunctions": true,
+      "fileSaveVerification": true,
+      "fileRetention": true,
+      "safeXmlInstruction": true,
+      "ninferThinkingControl": true,
+      "naturalWebIntent": true,
+      "fullErrorBody": true
+    }
+  },
+  "currentSessionChecks": [
+    {
+      "command": "node .\\node_modules\\typescript\\bin\\tsc --noEmit -p .\\apps\\mobile\\tsconfig.json",
+      "result": "passed",
+      "exitCode": 0,
+      "evidenceLevel": "static"
+    },
+    {
+      "command": "node .\\node_modules\\vitest\\vitest.mjs run --root C:/code/cht apps/mobile/composition",
+      "result": "passed",
+      "testFiles": 24,
+      "tests": 206,
+      "evidenceLevel": "local functional fixtures"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed before handoff creation",
+      "evidenceLevel": "whitespace"
+    },
+    {
+      "command": ".\\tools\\run-pnpm.ps1 typecheck / test:chat-composition",
+      "result": "could not launch pnpm; no application failure established"
+    }
+  ],
+  "environmentAtAudit": {
+    "node": "26.8.2",
+    "pnpmOnPath": false,
+    "projectPnpm": "8.15.9",
+    "previewNode": "24.13.1"
+  },
+  "historicalBuildMetadataChecksNotRerun": {
+    "automaticContextTests": 52,
+    "workspaceTests": 96,
+    "webResearchTests": 37,
+    "archiveTests": 7,
+    "compatibleLocalTests": 35,
+    "cloudCompatibleTests": 21,
+    "toolsEngineTests": 28,
+    "expoDoctor": "21/21 passed"
+  },
+  "physicalEvidence": {
+    "buildMetadataAtPackaging": false,
+    "laterUserReport": "Last phone deployment working well",
+    "exactInstalledBuildReadFromDevice": false,
+    "featureMatrixVerified": false
+  },
+  "userDecisions": {
+    "scope": "Full original roadmap, iPhone first",
+    "immediatePriorities": [
+      "automatic web research",
+      "iOS dictation",
+      "tools/MCP"
+    ],
+    "automaticWeb": "Model-native tools only on confirmed tool-capable models; other models keep manual controls",
+    "planningFallback": false,
+    "firstDictationBackend": "iOS system recognition",
+    "arena": "held until user resumes"
+  },
+  "applicationSourceChangedByHandoff": false
+}

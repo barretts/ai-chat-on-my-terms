@@ -1,4 +1,8 @@
 import type { RunEvent } from "@locallab/contracts/run-events";
+import {
+  localFailureCause,
+  retainLocalFailureCause,
+} from "@locallab/contracts/local-failure-details";
 export * from "./features";
 
 export interface IntegratedRunHandle {
@@ -28,10 +32,12 @@ export class ChatIntegrationError extends Error {
       | "context-full"
       | "unauthorized"
       | "network"
+      | "web-research"
       | "feature-failed"
       | "generation-failed",
     message: string,
     readonly recoverable = true,
+    readonly cause?: unknown,
   ) {
     super(message);
     this.name = "ChatIntegrationError";
@@ -89,9 +95,9 @@ export class ChatIntegration<
       terminal = isTerminal(event);
       try {
         await this.features.onEvent?.(conversationId, event);
-      } catch {
+      } catch (cause) {
         featureFailed = true;
-        throw featureError();
+        throw featureError(cause);
       }
     };
     try {
@@ -149,10 +155,12 @@ function isTerminal(event: RunEvent): boolean {
   );
 }
 
-function featureError(): ChatIntegrationError {
+function featureError(cause?: unknown): ChatIntegrationError {
   return new ChatIntegrationError(
     "feature-failed",
     "A chat feature could not update. Reopen the conversation and retry the feature.",
+    true,
+    cause,
   );
 }
 
@@ -169,17 +177,25 @@ export function toRecoverableChatError(error: unknown): ChatIntegrationError {
     typeof error.message === "string"
       ? error.message
       : "";
+  const failure = (code: ChatIntegrationError["code"], message: string) =>
+    new ChatIntegrationError(code, message, true, error);
+  if (code === "web-research")
+    return failure(
+      "web-research",
+      text ||
+        "Web research could not finish. Try again or turn web access off.",
+    );
   if (
     /missing-model|model-required|select-model|model binding is required/i.test(
       `${code} ${text}`,
     )
   )
-    return new ChatIntegrationError(
+    return failure(
       "missing-model",
       "Select or import a compatible model, then retry.",
     );
   if (/host-stopped|runtime-disposed|worker-stopped/i.test(`${code} ${text}`))
-    return new ChatIntegrationError(
+    return failure(
       "host-stopped",
       "The selected runtime stopped. Restart it and retry your saved message.",
     );
@@ -188,40 +204,58 @@ export function toRecoverableChatError(error: unknown): ChatIntegrationError {
       `${code} ${text}`,
     )
   )
-    return new ChatIntegrationError(
+    return failure(
       "context-full",
-      "This conversation exceeds the model context. Shorten or compact it, then retry.",
+      "The persona, message, or history exceeds the input budget. Shorten it, increase context to match your model, or lower the output token limit, then retry.",
+    );
+  const httpStatus = /\bHTTP\s+([45]\d{2})\b/i.exec(text)?.[1];
+  if (httpStatus && httpStatus !== "401" && httpStatus !== "403")
+    return failure(
+      "generation-failed",
+      `The server returned HTTP ${httpStatus}. Review the response details and retry.`,
+    );
+  if (/returned (?:a stream error|an error response)/i.test(text))
+    return failure(
+      "generation-failed",
+      "The server could not complete the request. Review the response details and retry.",
     );
   if (/unauthorized|forbidden|invalid.?key|401|403/i.test(`${code} ${text}`))
-    return new ChatIntegrationError(
+    return failure(
       "unauthorized",
       "The provider rejected its saved credential. Update provider setup and retry.",
     );
   if (/timeout|timed out/i.test(`${code} ${text}`))
-    return new ChatIntegrationError(
+    return failure(
       "network",
       "The provider took too long to respond. It may be busy; retry when ready.",
     );
   if (/network|offline|connection/i.test(`${code} ${text}`))
-    return new ChatIntegrationError(
+    return failure(
       "network",
       "The provider could not be reached. Check the connection and retry.",
     );
-  return new ChatIntegrationError(
+  return failure(
     "generation-failed",
     "The response could not be completed. Retry when ready.",
   );
 }
 
+/** Use with the app's credential-redacting error formatter, never a raw export. */
+export function chatFailureCause(error: object): unknown {
+  return localFailureCause(error);
+}
+
 function normalizeFailureEvent(event: RunEvent): RunEvent {
   if (event.type !== "RunFailed") return event;
   const error = toRecoverableChatError(event.error);
+  const publicFailure = {
+    code: error.code,
+    message: error.message,
+    recoverable: event.error.recoverable,
+  };
+  retainLocalFailureCause(publicFailure, localFailureCause(event.error));
   return {
     ...event,
-    error: {
-      code: error.code,
-      message: error.message,
-      recoverable: event.error.recoverable,
-    },
+    error: publicFailure,
   };
 }

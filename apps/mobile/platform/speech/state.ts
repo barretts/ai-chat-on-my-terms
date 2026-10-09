@@ -1,4 +1,5 @@
 import type { SpeechState } from "./types";
+import { errorDetails } from "@locallab/network-http";
 
 export class SpeechStateStore {
   protected state: SpeechState = {
@@ -26,9 +27,14 @@ export class SpeechStateStore {
     this.update({
       phase: "error",
       progress: null,
-      message: error instanceof Error ? error.message : String(error),
+      message: speechFailureDetails(error),
     });
   }
+}
+
+/** Preserve native/browser failure causes for the visible speech error card. */
+export function speechFailureDetails(cause: unknown): string {
+  return errorDetails(cause);
 }
 
 export function speechRate(value: number): number {

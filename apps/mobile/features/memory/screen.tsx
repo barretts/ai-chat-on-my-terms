@@ -7,8 +7,11 @@ import {
   Switch,
   Text,
   TextInput,
+  useTheme,
 } from "react-native-paper";
-import { NativeButton, NativeSurface } from "@locallab/ui-native-primitives";
+import { NativeButton, NativeSurface, useWorkspaceLayout } from "@locallab/ui-native-primitives";
+import { describeError } from "../diagnostics/errors";
+import { ErrorNotice } from "../diagnostics/error-notice";
 import type {
   LegacyMemory,
   MemoryPreferences,
@@ -22,6 +25,9 @@ import {
 
 /** Data > Memory. The composition root supplies its live, shared SQLite store. */
 export function MemoryScreen(props: MemoryFeatureProps) {
+  const theme = useTheme();
+  const { phone } = useWorkspaceLayout();
+  const scroll = useRef<ScrollView>(null);
   const [memories, setMemories] = useState<SavedMemory[]>([]);
   const [legacyMemories, setLegacyMemories] = useState<LegacyMemory[]>([]);
   const [hasMoreLegacy, setHasMoreLegacy] = useState(false);
@@ -37,12 +43,16 @@ export function MemoryScreen(props: MemoryFeatureProps) {
   const [editedText, setEditedText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState("");
   const [hasMore, setHasMore] = useState(false);
   const [deleting, setDeleting] = useState<{
     id: string;
     legacy: boolean;
   } | null>(null);
+  useEffect(() => {
+    if (phone && error) scroll.current?.scrollTo({ y: 0, animated: true });
+  }, [phone, error]);
 
   const reload = useCallback(async () => {
     const request = ++reloadRequest.current;
@@ -66,35 +76,51 @@ export function MemoryScreen(props: MemoryFeatureProps) {
     setPreferences(settings);
     setLegacyMemories(legacy);
     setHasMoreLegacy(legacy.length === 100);
+    setError("");
+    setLoaded(true);
   }, [props.store, props.scope]);
   useEffect(() => {
-    void reload().catch(() => setError("Could not load saved memory."));
+    void reload().catch((cause) => {
+      setError(describeError(cause, {
+        operation: "Load saved facts and memory preferences",
+        recovery: "Tap Reload saved facts to read memory again.",
+      }));
+      setLoaded(true);
+    });
     return () => {
       reloadRequest.current++;
     };
   }, [reload, query]);
 
-  const run = async (work: () => Promise<void>) => {
+  const run = async (
+    operation: string,
+    work: () => Promise<void>,
+    recovery = "Tap Reload saved facts to check the saved result, then try the action again if needed.",
+  ) => {
     if (busy) return;
     setBusy(true);
     setError("");
+    setStatus("");
     try {
       await work();
-    } catch {
-      setError("Could not update memory. Please try again.");
+    } catch (cause) {
+      setError(describeError(cause, {
+        operation,
+        recovery,
+      }));
     } finally {
       setBusy(false);
     }
   };
   const savePreferences = (next: MemoryPreferences) =>
-    void run(async () => {
+    void run("Save memory preferences", async () => {
       await props.store.savePreferences(next);
       setPreferences(next);
       props.onPreferencesChanged?.(next);
       setStatus("Memory preferences saved");
     });
   const remove = () =>
-    void run(async () => {
+    void run("Delete a saved fact", async () => {
       if (!deleting) return;
       if (deleting.legacy) await props.store.deleteLegacy(deleting.id);
       else await props.store.delete(deleting.id);
@@ -109,17 +135,18 @@ export function MemoryScreen(props: MemoryFeatureProps) {
 
   return (
     <ScrollView
+      ref={scroll}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.heading}>
         <Text accessibilityRole="header" variant="headlineSmall">
-          Data / Memory
+          {phone ? "Saved facts" : "Memory"}
         </Text>
         <NativeButton
           accessibilityLabel="Refresh saved memory"
           disabled={busy}
-          onPress={() => void run(reload)}
+          onPress={() => void run("Reload saved facts", reload)}
         >
           Refresh
         </NativeButton>
@@ -128,7 +155,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
             accessibilityLabel="Close memory"
             onPress={props.onClose}
           >
-            Close
+            Back to chat
           </NativeButton>
         ) : null}
       </View>
@@ -136,11 +163,28 @@ export function MemoryScreen(props: MemoryFeatureProps) {
         Save facts to use in later conversations. You can edit or delete every
         entry and open the message it came from.
       </Text>
+      {error ? (
+        <View style={{ gap: 8 }}>
+          <ErrorNotice message={error} />
+          <NativeButton
+            accessibilityLabel="Reload saved memory"
+            mode="outlined"
+            disabled={busy}
+            onPress={() => void run("Reload saved facts", reload)}
+          >
+            Reload saved facts
+          </NativeButton>
+        </View>
+      ) : null}
+      {status ? <Text accessibilityLiveRegion="polite">{status}</Text> : null}
+      {!loaded ? (
+        <Text accessibilityLiveRegion="polite">Loading saved facts…</Text>
+      ) : null}
       <NativeSurface accessibilityLabel="Memory preferences">
         <View style={styles.card}>
           <View style={styles.toggle}>
             <Text style={styles.toggleLabel}>
-              Extract memory after completed replies
+              Automatically save facts after replies
             </Text>
             <Switch
               accessibilityLabel="Extract memory after completed replies"
@@ -158,7 +202,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
           </Text>
           <View style={styles.toggle}>
             <Text style={styles.toggleLabel}>
-              Use saved facts in future prompts
+              Use saved facts in future messages
             </Text>
             <Switch
               accessibilityLabel="Use saved facts in future prompts"
@@ -169,6 +213,10 @@ export function MemoryScreen(props: MemoryFeatureProps) {
               }
             />
           </View>
+          <Text>
+            Turn this on to include saved facts in your messages. Saving a fact
+            alone does not make the chat model use it.
+          </Text>
         </View>
       </NativeSurface>
       <NativeSurface accessibilityLabel="Add a saved memory fact">
@@ -192,9 +240,10 @@ export function MemoryScreen(props: MemoryFeatureProps) {
           />
           <NativeButton
             accessibilityLabel="Save memory fact"
+            mode="contained"
             disabled={busy || !draft.trim()}
             onPress={() =>
-              void run(async () => {
+              void run("Save a new memory fact", async () => {
                 await props.store.createManual(
                   draft,
                   props.scope ?? { scope: "global", scopeId: null },
@@ -210,6 +259,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
         </View>
       </NativeSurface>
       <Searchbar
+        role="searchbox"
         placeholder="Search saved facts"
         accessibilityLabel="Search saved memory"
         value={query}
@@ -218,13 +268,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
           setQuery(value);
         }}
       />
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {error}
-        </Text>
-      ) : null}
-      {status ? <Text accessibilityLiveRegion="polite">{status}</Text> : null}
-      {!matching.length && !legacyMemories.length ? (
+      {loaded && !error && !matching.length && !legacyMemories.length ? (
         <Text>
           {query.trim()
             ? "No saved facts match your search."
@@ -266,7 +310,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
                         busy || !editedText.trim() || editedText.length > 1024
                       }
                       onPress={() =>
-                        void run(async () => {
+                        void run("Approve an old memory entry for future chats", async () => {
                           await props.store.adoptLegacy(
                             memory.id,
                             { scope: "global", scopeId: null },
@@ -319,7 +363,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
               accessibilityLabel="Load more entries awaiting scope review"
               disabled={busy}
               onPress={() =>
-                void run(async () => {
+                void run("Load more old memory entries", async () => {
                   const entries = await props.store.listLegacy(
                     query,
                     100,
@@ -360,7 +404,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
                     accessibilityLabel="Save memory edit"
                     disabled={busy || !editedText.trim()}
                     onPress={() =>
-                      void run(async () => {
+                      void run("Edit a saved memory fact", async () => {
                         await props.store.edit(memory.entry.id, editedText);
                         setEditing(null);
                         await reload();
@@ -391,21 +435,18 @@ export function MemoryScreen(props: MemoryFeatureProps) {
                   accessibilityLabel="Open source message"
                   disabled={busy}
                   onPress={() =>
-                    void run(async () => {
+                    void run("Open the source message for a saved fact", async () => {
                       const source = await props.store.sourceLink(
                         memory.entry.id,
                       );
                       if (!source) {
-                        setStatus(
-                          "The source message is no longer available on this device.",
-                        );
-                        return;
+                        throw new Error("The source message is no longer available on this device.");
                       }
                       props.onOpenSource?.(
                         source.conversationId,
                         source.messageId,
                       );
-                    })
+                    }, "Open Library to find the original conversation. If it was deleted, the saved fact remains editable here but its source cannot be opened.")
                   }
                 >
                   Open source
@@ -439,7 +480,7 @@ export function MemoryScreen(props: MemoryFeatureProps) {
           accessibilityLabel="Load more saved memory"
           disabled={busy}
           onPress={() =>
-            void run(async () => {
+            void run("Load more saved memory facts", async () => {
               const entries = await props.store.list({
                 ...(props.scope ? { scope: props.scope } : {}),
                 query,
@@ -459,14 +500,20 @@ export function MemoryScreen(props: MemoryFeatureProps) {
           visible={!!deleting}
           dismissable={!busy}
           onDismiss={() => setDeleting(null)}
+          style={{ maxHeight: "85%" }}
         >
           <Dialog.Title>Delete saved memory?</Dialog.Title>
-          <Dialog.Content>
+          <Dialog.ScrollArea style={{ flexShrink: 1 }}>
+            <ScrollView contentContainerStyle={{ gap: 12, paddingVertical: 12 }}>
             <Text>
               This entry will stop being used in future prompts. Your original
               conversation stays in the library.
             </Text>
-          </Dialog.Content>
+            {error ? (
+              <ErrorNotice message={error} />
+            ) : null}
+            </ScrollView>
+          </Dialog.ScrollArea>
           <Dialog.Actions>
             <NativeButton
               accessibilityLabel="Cancel memory deletion"

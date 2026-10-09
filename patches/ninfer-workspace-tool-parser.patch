@@ -1,0 +1,369 @@
+--- a/src/serve/tool_call_parser.cpp
++++ b/src/serve/tool_call_parser.cpp
+@@ -73,19 +73,67 @@ bool parse_parameter(std::string_view inner, std::size_t& pos, Json& args) {
+     if (name_end == std::string_view::npos || name_end == name_begin) { return false; }
+     const std::string key       = std::string(inner.substr(name_begin, name_end - name_begin));
+     pos                         = name_end + 1;
+-    const std::size_t value_end = inner.find(kParamClose, pos);
++    const std::size_t value_begin = pos;
++    std::size_t json_begin = pos;
++    skip_ws(inner, json_begin);
++    std::size_t value_end = std::string_view::npos;
++    if (json_begin < inner.size() &&
++        (inner[json_begin] == '"' || inner[json_begin] == '{' || inner[json_begin] == '[')) {
++        bool in_string = false;
++        bool escaped = false;
++        std::size_t depth = 0;
++        for (std::size_t cursor = json_begin; cursor < inner.size(); ++cursor) {
++            const char current = inner[cursor];
++            if (in_string) {
++                if (escaped) { escaped = false; }
++                else if (current == '\\') { escaped = true; }
++                else if (current == '"') { in_string = false; }
++            } else if (current == '"') {
++                in_string = true;
++            } else if (current == '{' || current == '[') {
++                ++depth;
++            } else if (current == '}' || current == ']') {
++                if (depth == 0) { break; }
++                --depth;
++            }
++            if (!in_string && depth == 0) {
++                std::size_t after_json = cursor + 1;
++                skip_ws(inner, after_json);
++                if (!starts_with_at(inner, after_json, kParamClose)) { break; }
++                Json parsed = Json::parse(inner.substr(json_begin, cursor + 1 - json_begin),
++                                          nullptr, false);
++                if (parsed.is_discarded()) { break; }
++                args[key] = std::move(parsed);
++                pos = after_json + kParamClose.size();
++                return true;
++            }
++        }
++    }
++    value_end = inner.find(kParamClose, value_begin);
+     if (value_end == std::string_view::npos) { return false; }
+-    const std::string raw_value = trim_ascii(inner.substr(pos, value_end - pos));
+-    Json parsed                 = Json::parse(raw_value, nullptr, false);
+-    args[key]                   = parsed.is_discarded() ? Json(raw_value) : parsed;
++    std::string_view raw_value = inner.substr(value_begin, value_end - value_begin);
++    Json parsed = Json::parse(trim_ascii(raw_value), nullptr, false);
++    if (parsed.is_discarded()) {
++        // The template surrounds a raw parameter with one formatting newline.
++        // Remove only that frame; all additional string whitespace is content.
++        if ((raw_value.starts_with("\r\n") || raw_value.starts_with("\n")) &&
++            raw_value.ends_with("\n") && raw_value.size() >= 2) {
++            raw_value.remove_prefix(raw_value.starts_with("\r\n") ? 2 : 1);
++            if (raw_value.ends_with("\r\n")) { raw_value.remove_suffix(2); }
++            else if (raw_value.ends_with("\n")) { raw_value.remove_suffix(1); }
++        }
++        args[key] = std::string(raw_value);
++    } else {
++        args[key] = std::move(parsed);
++    }
+     pos                         = value_end + kParamClose.size();
+     return true;
+ }
+ 
+-bool parse_one_tool_call(std::string_view block, std::size_t max_name_length, ToolCall& out) {
++bool parse_one_tool_call(std::string_view block, std::size_t& pos,
++                         std::size_t max_name_length, ToolCall& out) {
+     constexpr std::string_view kFunctionOpen  = "<function=";
+     constexpr std::string_view kFunctionClose = "</function>";
+-    std::size_t pos                           = 0;
+     skip_ws(block, pos);
+     if (!starts_with_at(block, pos, kFunctionOpen)) { return false; }
+     const std::size_t name_begin = pos + kFunctionOpen.size();
+@@ -95,21 +143,16 @@ bool parse_one_tool_call(std::string_view block, std::size_t max_name_length, To
+     if (!valid_function_name(name, max_name_length)) { return false; }
+     pos = name_end + 1;
+ 
+-    const std::size_t function_end = block.find(kFunctionClose, pos);
+-    if (function_end == std::string_view::npos) { return false; }
+-    const std::string_view params = block.substr(pos, function_end - pos);
+     Json args                     = Json::object();
+-    std::size_t param_pos         = 0;
+     for (;;) {
+-        skip_ws(params, param_pos);
+-        if (param_pos >= params.size()) { break; }
+-        if (!parse_parameter(params, param_pos, args)) { return false; }
++        skip_ws(block, pos);
++        if (starts_with_at(block, pos, kFunctionClose)) {
++            pos += kFunctionClose.size();
++            break;
++        }
++        if (!parse_parameter(block, pos, args)) { return false; }
+     }
+ 
+-    pos = function_end + kFunctionClose.size();
+-    skip_ws(block, pos);
+-    if (pos != block.size()) { return false; }
+-
+     out.id             = new_tool_call_id();
+     out.name           = name;
+     out.arguments_json = args.dump();
+@@ -140,16 +183,15 @@ ParsedToolCallOutput parse_qwen_tool_call_output(const std::string& text,
+         skip_ws(text, pos);
+         if (pos >= text.size()) { break; }
+         if (!starts_with_at(text, pos, kToolOpen)) { return fallback(text); }
+-        const std::size_t inner_begin = pos + kToolOpen.size();
+-        const std::size_t close       = text.find(kToolClose, inner_begin);
+-        if (close == std::string::npos) { return fallback(text); }
++        pos += kToolOpen.size();
+         ToolCall call;
+-        if (!parse_one_tool_call(std::string_view(text).substr(inner_begin, close - inner_begin),
+-                                 max_tool_name_length, call)) {
++        if (!parse_one_tool_call(text, pos, max_tool_name_length, call)) {
+             return fallback(text);
+         }
++        skip_ws(text, pos);
++        if (!starts_with_at(text, pos, kToolClose)) { return fallback(text); }
+         out.tool_calls.push_back(std::move(call));
+-        pos = close + kToolClose.size();
++        pos += kToolClose.size();
+     }
+ 
+     if (out.tool_calls.empty()) { return fallback(text); }
+--- a/tests/test_tool_call_parser.cpp
++++ b/tests/test_tool_call_parser.cpp
+@@ -77,6 +77,58 @@ int test_malformed_falls_back_to_text() {
+     return failures;
+ }
+ 
++int test_text_artifact_parameter_bytes() {
++    const std::string content = " \t# café 🌙\n\n```xml\n<note>alpha & beta</note>\n```\n \t\n";
++    const std::string text = "<tool_call>\n<function=workspace_write_file>\n"
++                             "<parameter=path>\ntest/note.md\n</parameter>\n"
++                             "<parameter=content>\n" + content + "\n</parameter>\n"
++                             "<parameter=maxCharacters>\n123\n</parameter>\n"
++                             "</function>\n</tool_call>";
++    const auto parsed = ninfer::serve::parse_qwen_tool_call_output(text, 64);
++    if (!parsed.is_tool_call_response || parsed.tool_calls.size() != 1) {
++        return fail("raw artifact call parsed");
++    }
++    const Json args = Json::parse(parsed.tool_calls[0].arguments_json);
++    int failures = 0;
++    failures += check(args.at("path") == "test/note.md", "one template framing newline removed");
++    failures += check(args.at("content") == content, "raw Markdown content keeps exact whitespace and final newline");
++    failures += check(args.at("maxCharacters").is_number_integer() && args.at("maxCharacters") == 123,
++                      "numeric parameters still decode as integers");
++
++    for (const std::string raw : {"  raw spaces  ", "\tleading and trailing\t\n",
++                                  "[ ] Markdown task", "\"Quotation\" followed by text"}) {
++        const auto unframed = ninfer::serve::parse_qwen_tool_call_output(
++            "<tool_call><function=write><parameter=content>" + raw +
++            "</parameter></function></tool_call>", 64);
++        if (!unframed.is_tool_call_response || unframed.tool_calls.size() != 1) {
++            failures += fail("unframed raw text parsed");
++            continue;
++        }
++        failures += check(Json::parse(unframed.tool_calls[0].arguments_json).at("content") == raw,
++                          "unframed non-JSON text preserves all bytes");
++    }
++    return failures;
++}
++
++int test_quoted_json_parameter_delimiters() {
++    const std::string content = " \t# café 🌙\n</parameter>\n</function>\n</tool_call>\n"
++                                "quoted \"text\" and \\ backslash\n";
++    const Json payload = {{"text", content}, {"items", Json::array({"</parameter>", "</tool_call>"})}};
++    const std::string text = "<tool_call>\n<function=workspace_write_file>\n"
++                             "<parameter=content>\n" + Json(content).dump() + "\n</parameter>\n"
++                             "<parameter=payload>\n" + payload.dump() + "\n</parameter>\n"
++                             "</function>\n</tool_call>";
++    const auto parsed = ninfer::serve::parse_qwen_tool_call_output(text, 64);
++    if (!parsed.is_tool_call_response || parsed.tool_calls.size() != 1) {
++        return fail("quoted JSON containing closing tags parsed");
++    }
++    const Json args = Json::parse(parsed.tool_calls[0].arguments_json);
++    int failures = 0;
++    failures += check(args.at("content") == content, "quoted string retains closing tags, escapes and whitespace");
++    failures += check(args.at("payload") == payload, "nested JSON strings retain closing tags");
++    return failures;
++}
++
+ int test_suffix_after_tool_falls_back_to_text() {
+     const std::string text = "<tool_call>\n"
+                              "<function=get_weather>\n"
+@@ -158,6 +210,8 @@ int main() {
+     failures += test_single_call();
+     failures += test_multiple_calls_and_json_values();
+     failures += test_malformed_falls_back_to_text();
++    failures += test_text_artifact_parameter_bytes();
++    failures += test_quoted_json_parameter_delimiters();
+     failures += test_suffix_after_tool_falls_back_to_text();
+     failures += test_configured_name_limit();
+     failures += test_incremental_filter_valid_tool();
+--- a/docs/serving.md
++++ b/docs/serving.md
+@@ -102,6 +102,14 @@ The request `model` must equal the public model ID: the artifact `identity.model
+ the explicit `--model-id` override. Reasoning is returned separately as `reasoning_content`; answer
+ text remains in `content`.
+ 
++Generated Qwen XML function parameters may contain JSON values or raw text. Quoted JSON strings
++preserve whitespace, escapes, and literal `</parameter>`, `</function>`, or `</tool_call>` text.
++For raw text, the parser removes only one template framing newline at each boundary when both
++boundaries have a newline; all additional spaces, tabs, and newlines remain content. Raw values
++that are valid JSON decode to that JSON type, so a string such as `123` must be quoted to remain
++a string. Raw `</parameter>` text is a delimiter and must instead be carried in a quoted JSON
++string. Function calls return arguments as a JSON-object string; NInfer does not execute tools.
++
+ Message roles retain their input order through schema translation. The Qwen family frontend maps
+ both `system` and `developer` to system-class ChatML blocks at their original positions; it does not
+ move later instructions to the beginning of the conversation. A leading instruction keeps the
+--- a/src/targets/qwen3_6/impl/frontend/chat_template.cpp
++++ b/src/targets/qwen3_6/impl/frontend/chat_template.cpp
+@@ -133,12 +133,10 @@ constexpr std::string_view kToolInstructions =
+     "<tool_call>\n"
+     "<function=example_function_name>\n"
+     "<parameter=example_parameter_1>\n"
+-    "value_1\n"
++    "\"value_1\"\n"
+     "</parameter>\n"
+     "<parameter=example_parameter_2>\n"
+-    "This is the value for the second parameter\n"
+-    "that can span\n"
+-    "multiple lines\n"
++    "\"This is the value for the second parameter\\nthat can span\\nmultiple lines\\n\"\n"
+     "</parameter>\n"
+     "</function>\n"
+     "</tool_call>\n\n"
+@@ -147,6 +145,11 @@ constexpr std::string_view kToolInstructions =
+     "- Function calls MUST follow the specified format: an inner <function=...></function> block "
+     "must be nested within <tool_call></tool_call> XML tags\n"
+     "- Required parameters MUST be specified\n"
++    "- Encode EVERY string parameter as a quoted JSON string, escaping newlines and quotes. "
++    "Inside JSON strings encode every less-than character as the literal six-character escape "
++    "\\u003c. JSON decoding restores the exact text; literal XML closing tags remain data.\n"
++    "- Encode numbers, booleans, arrays and objects as JSON values. Keep strings nested inside "
++    "arrays or objects JSON-quoted and escape their less-than characters as \\u003c too.\n"
+     "- You may provide optional reasoning for your function call in natural language BEFORE the "
+     "function call, but NOT after\n"
+     "- If there is no function call available, answer the question like normal with your current "
+@@ -168,19 +171,20 @@ std::string tojson_text(const OrderedJson& value) {
+         std::size_t index    = 0;
+         for (auto it = value.begin(); it != value.end(); ++it, ++index) {
+             if (index != 0) { rendered += ", "; }
+-            rendered += OrderedJson(it.key()).dump();
++            rendered += tojson_text(OrderedJson(it.key()));
+             rendered += ": ";
+             rendered += tojson_text(it.value());
+         }
+         rendered += "}";
+         return rendered;
+     }
+-    return value.dump();
+-}
+-
+-std::string parameter_text(const OrderedJson& value) {
+-    if (value.is_string()) { return value.get<std::string>(); }
+-    return tojson_text(value);
++    const std::string json = value.dump();
++    std::string rendered;
++    for (const char byte : json) {
++        if (byte == '<') { rendered += "\\u003c"; }
++        else { rendered += byte; }
++    }
++    return rendered;
+ }
+ 
+ std::string render_tool_call(const ToolCall& call, bool allow_empty_arguments) {
+@@ -200,7 +204,7 @@ std::string render_tool_call(const ToolCall& call, bool allow_empty_arguments) {
+         rendered += "<parameter=";
+         rendered += it.key();
+         rendered += ">\n";
+-        rendered += parameter_text(it.value());
++        rendered += tojson_text(it.value());
+         rendered += "\n</parameter>\n";
+     }
+     rendered += "</function>\n</tool_call>";
+@@ -392,7 +396,8 @@ RenderedChat CompiledChatTemplate::render(const std::vector<ChatMessage>& messag
+                 i + 1 == messages.size() || messages[i + 1].role != ChatRole::Tool;
+             if (opens_group) { rendered += "<|im_start|>user"; }
+             rendered += "\n<tool_response>\n";
+-            rendered += content;
++            const OrderedJson response = OrderedJson::parse(content, nullptr, false);
++            rendered += tojson_text(response.is_discarded() ? OrderedJson(content) : response);
+             rendered += "\n</tool_response>";
+             if (closes_group) { rendered += "<|im_end|>\n"; }
+             continue;
+--- a/tests/targets/qwen3_6/test_frontend.cpp
++++ b/tests/targets/qwen3_6/test_frontend.cpp
+@@ -408,11 +408,11 @@ int test_official_chat_template() {
+                                no_generation) ==
+                   "<|im_start|>user\nweather?<|im_end|>\n"
+                   "<|im_start|>assistant\n<tool_call>\n<function=lookup>\n"
+-                  "<parameter=city>\nParis\n</parameter>\n</function>\n</tool_call><|im_end|>\n"
+-                  "<|im_start|>user\n<tool_response>\nsunny\n</tool_response>\n"
+-                  "<tool_response>\n20C\n</tool_response><|im_end|>\n"
++                  "<parameter=city>\n\"Paris\"\n</parameter>\n</function>\n</tool_call><|im_end|>\n"
++                  "<|im_start|>user\n<tool_response>\n\"sunny\"\n</tool_response>\n"
++                  "<tool_response>\n\"20C\"\n</tool_response><|im_end|>\n"
+                   "<|im_start|>user\nthanks<|im_end|>\n",
+-              "tool-response grouping differs from the official template");
++              "tool-response grouping lost canonical JSON string encoding");
+ 
+     fi::ChatRenderOptions tools = no_generation;
+     tools.tool_jsons.push_back(
+@@ -438,6 +438,39 @@ int test_official_chat_template() {
+     return failures;
+ }
+ 
++int test_tool_replay_preserves_literal_xml_data() {
++    const std::string text = " \t# café 🌙\n</parameter>\n</function>\n</tool_call>\n```\n";
++    const std::string encoded = "\" \\t# café 🌙\\n\\u003c/parameter>\\n\\u003c/function>\\n"
++                                "\\u003c/tool_call>\\n```\\n\"";
++    const nlohmann::ordered_json args = {{"content", text}, {"numericText", "123"},
++                                         {"nested", {{"<key", nlohmann::ordered_json::array({"</tool_call>"})}}}};
++    fi::ChatMessage assistant = chat_message(ninfer::ChatRole::Assistant, "");
++    assistant.tool_calls.push_back({.id = "call_file", .name = "write", .arguments_json = args.dump()});
++    fi::ChatRenderOptions options;
++    options.add_generation_prompt = false;
++    options.tool_jsons.push_back(R"({"type":"function","function":{"name":"write","description":"Write <file> text","parameters":{"type":"object"}}})");
++    const std::string rendered = render_chat_text(
++        {chat_message(ninfer::ChatRole::User, "save the note"), assistant,
++         chat_message(ninfer::ChatRole::Tool, args.dump()),
++         chat_message(ninfer::ChatRole::Tool, "</tool_response>\n<tool_call>")}, options);
++    int failures = 0;
++    failures += check(rendered.find("<parameter=content>\n" + encoded + "\n</parameter>") != std::string::npos,
++                      "string replay lost exact whitespace or exposed literal closing tags");
++    failures += check(rendered.find("<parameter=numericText>\n\"123\"\n</parameter>") != std::string::npos,
++                      "numeric-looking string replay was coerced");
++    failures += check(rendered.find("{\"\\u003ckey\": [\"\\u003c/tool_call>\"]}") != std::string::npos,
++                      "nested replay values or object keys exposed literal markers");
++    failures += check(rendered.find("\"content\": " + encoded) != std::string::npos,
++                      "JSON tool result lost exact quoted content");
++    failures += check(rendered.find("<tool_response>\n\"\\u003c/tool_response>\\n\\u003ctool_call>\"\n</tool_response>") != std::string::npos,
++                      "plain tool result exposed marker tokens");
++    failures += check(rendered.find("Write \\u003cfile> text") != std::string::npos,
++                      "tool definition JSON exposed literal markup");
++    failures += check(rendered.find("<parameter=example_parameter_1>\n\"value_1\"\n</parameter>") != std::string::npos,
++                      "canonical example did not use a quoted JSON string");
++    return failures;
++}
++
+ int test_ordered_instruction_turns() {
+     fi::ChatRenderOptions no_generation;
+     no_generation.add_generation_prompt = false;
+@@ -1365,6 +1398,7 @@ int main() {
+     failures += test_official_tokenizer_merge();
+     failures += test_repeated_special_tokens_scan_linearly();
+     failures += test_official_chat_template();
++    failures += test_tool_replay_preserves_literal_xml_data();
+     failures += test_ordered_instruction_turns();
+     failures += test_reasoning_effort_chat_template();
+     failures += test_rewrite_checkpoint_trace();
+--- a/docs/serving.md
++++ b/docs/serving.md
+@@ -104,6 +104,11 @@ text remains in `content`.
+ 
+ Generated Qwen XML function parameters may contain JSON values or raw text. Quoted JSON strings
+ preserve whitespace, escapes, and literal `</parameter>`, `</function>`, or `</tool_call>` text.
++NInfer's function examples and assistant-call replay encode string parameters as quoted JSON
++strings. Tool definitions, argument replay (including nested values), and tool-result JSON escape
++`<` as `\u003c`, so file text containing XML markers remains data in the rendered prompt. Plain
++text tool results are JSON-quoted. Generated string parameters should use the same quoted JSON
++form and escape `<` as `\u003c`; JSON decoding restores the exact file text.
+ For raw text, the parser removes only one template framing newline at each boundary when both
+ boundaries have a newline; all additional spaces, tabs, and newlines remain content. Raw values
+ that are valid JSON decode to that JSON type, so a string such as `123` must be quoted to remain

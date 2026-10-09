@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { usePathname, useRouter } from "expo-router";
-import { Text, useTheme } from "react-native-paper";
+import { Appbar, Text, useTheme } from "react-native-paper";
 import { useWorkspaceLayout } from "@locallab/ui-native-primitives";
 import { useAppTheme } from "./provider";
 
@@ -19,6 +19,11 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const settings = useAppTheme();
   const layout = useWorkspaceLayout();
+  const collapsed = settings.layout.windowCollapsed;
+  const focused =
+    collapsed &&
+    settings.layout.chatCollapsed &&
+    settings.layout.composerCollapsed;
   const opacity = useRef(new Animated.Value(0)).current;
   const [clock, setClock] = useState(new Date());
   const [menu, setMenu] = useState(false);
@@ -41,15 +46,45 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
     };
   }, [opacity]);
   const destination = pathname.includes("models")
-    ? "Model downloads"
+    ? "Models"
     : pathname.includes("speech")
-      ? "Voice studio"
+      ? "Voices"
       : pathname.includes("connections")
         ? "Connections"
         : pathname.includes("onboarding")
           ? "Welcome"
           : "Messenger";
   const desktop = theme.dark ? "#123638" : "#267a7c";
+  if (layout.phone) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          minHeight: 0,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        {destination !== "Messenger" && destination !== "Welcome" ? (
+          <Appbar.Header
+            statusBarHeight={0}
+            mode="small"
+            style={{ backgroundColor: theme.colors.background }}
+          >
+            <Appbar.BackAction
+              accessibilityLabel="Back to chat"
+              style={{ width: 44, height: 44, margin: 4 }}
+              onPress={() => router.navigate("/chat")}
+            />
+            <Appbar.Content
+              title={destination}
+              titleStyle={{ fontSize: 18, fontWeight: "600" }}
+            />
+          </Appbar.Header>
+        ) : null}
+        <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
+      </View>
+    );
+  }
   return (
     <View
       style={[
@@ -73,7 +108,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
         <View
           style={[
             styles.titlebar,
-            layout.compact && { minHeight: 44, padding: 6 },
+            (layout.compact || collapsed) && { minHeight: 44, padding: 6 },
           ]}
         >
           <View style={styles.appIcon}>
@@ -85,12 +120,34 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
             <Text numberOfLines={1} style={styles.title}>
               LocalLab Messenger
             </Text>
-            {!layout.compact ? (
+            {!layout.compact && !collapsed ? (
               <Text style={styles.subtitle}>
                 {destination} · A little nostalgia. A lot of possibility.
               </Text>
             ) : null}
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              focused ? "Show all controls" : "Focus conversation"
+            }
+            accessibilityState={{ expanded: !focused }}
+            onPress={() => {
+              setMenu(false);
+              void settings
+                .setLayoutPreferences({
+                  windowCollapsed: !focused,
+                  chatCollapsed: !focused,
+                  composerCollapsed: !focused,
+                })
+                .catch(() => {});
+            }}
+            style={styles.focusButton}
+          >
+            <Text style={{ color: "white", fontSize: 16 }}>
+              {focused ? "▤" : "▣"}
+            </Text>
+          </Pressable>
           {layout.keyboardVisible ? (
             <Pressable
               accessibilityRole="button"
@@ -105,13 +162,9 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
             >
               <Text style={{ color: "white", fontSize: 20 }}>▾</Text>
             </Pressable>
-          ) : (
-            <View style={styles.decoration} accessibilityElementsHidden>
-              <Text style={{ color: "#fff", fontSize: 18 }}>▰</Text>
-            </View>
-          )}
+          ) : null}
         </View>
-        {!layout.keyboardVisible ? (
+        {!layout.keyboardVisible && !collapsed ? (
           <View
             style={[
               styles.menuBar,
@@ -131,7 +184,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
             </Pressable>
           </View>
         ) : null}
-        {menu && !layout.keyboardVisible ? (
+        {menu && !layout.keyboardVisible && !collapsed ? (
           <View
             style={{
               padding: 10,
@@ -168,7 +221,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           </View>
         ) : null}
         <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
-        {!layout.compact ? (
+        {!layout.compact && !collapsed ? (
           <View
             style={[
               styles.status,
@@ -180,7 +233,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           </View>
         ) : null}
       </Animated.View>
-      {!layout.keyboardVisible ? (
+      {!layout.keyboardVisible && !collapsed ? (
         <View
           style={[styles.taskbar, { backgroundColor: theme.colors.surface }]}
         >
@@ -273,7 +326,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   subtitle: { color: "#e5d8f8", fontSize: 10, marginTop: 3 },
-  decoration: { padding: 5, borderWidth: 1, borderColor: "#a489c5" },
+  focusButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#a489c5",
+  },
   menuBar: {
     paddingHorizontal: 12,
     minHeight: 36,

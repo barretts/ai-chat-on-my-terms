@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme, type MD3Theme } from "react-native-paper";
 import {
   markdownCopyPayload,
@@ -12,11 +12,27 @@ export interface RichMarkdownProps {
   testID?: string;
   accessibilityLabel?: string;
   onCopyMarkdown?: (markdown: string) => void;
+  /** Phone messages use more generous reading typography. */
+  phoneLayout?: boolean;
+  /** A surrounding message action row can own the copy control. */
+  showCopyAction?: boolean;
 }
 
-function Inline({ nodes, style }: { nodes: InlineNode[]; style?: object }) {
+function Inline({
+  nodes,
+  style,
+  phoneLayout = false,
+}: {
+  nodes: InlineNode[];
+  style?: object;
+  phoneLayout?: boolean;
+}) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme.colors), [theme.colors]);
+  const styles = useMemo(
+    () =>
+      createStyles(theme.colors, phoneLayout, theme.fonts.bodyLarge.fontFamily),
+    [theme.colors, phoneLayout, theme.fonts.bodyLarge.fontFamily],
+  );
   return (
     <Text style={[styles.body, style]}>
       {nodes.map((node, index) =>
@@ -90,20 +106,35 @@ export const RichMarkdown = memo(function RichMarkdown({
   testID,
   accessibilityLabel,
   onCopyMarkdown,
+  phoneLayout = false,
+  showCopyAction = true,
 }: RichMarkdownProps) {
   const theme = useTheme();
-  const styles = useMemo(() => createStyles(theme.colors), [theme.colors]);
+  const styles = useMemo(
+    () =>
+      createStyles(theme.colors, phoneLayout, theme.fonts.bodyLarge.fontFamily),
+    [theme.colors, phoneLayout, theme.fonts.bodyLarge.fontFamily],
+  );
   const blocks = useMemo(() => parseMarkdown(markdown), [markdown]);
   return (
     <View
       testID={testID}
-      accessible={Boolean(accessibilityLabel && !onCopyMarkdown)}
+      accessible={Boolean(
+        accessibilityLabel && (!onCopyMarkdown || !showCopyAction),
+      )}
       accessibilityLabel={accessibilityLabel}
     >
       {blocks.map((block, index) => {
+        const blockSpacing =
+          phoneLayout &&
+          block.type !== "heading" &&
+          index > 0 &&
+          blocks[index - 1]?.type !== "heading"
+            ? styles.blockSpacing
+            : undefined;
         if (block.type === "code")
           return (
-            <View key={`code${index}`} style={styles.codeBlock}>
+            <View key={`code${index}`} style={[styles.codeBlock, blockSpacing]}>
               {block.language ? (
                 <Text style={styles.language}>{block.language}</Text>
               ) : null}
@@ -121,7 +152,7 @@ export const RichMarkdown = memo(function RichMarkdown({
               key={`math${index}`}
               accessible
               accessibilityLabel={`Math expression: ${block.value}`}
-              style={styles.mathBlock}
+              style={[styles.mathBlock, blockSpacing]}
             >
               <Text selectable style={styles.mathText}>
                 {block.value}
@@ -130,35 +161,56 @@ export const RichMarkdown = memo(function RichMarkdown({
           );
         if (block.type === "list")
           return (
-            <View key={`list${index}`} style={styles.list}>
+            <View key={`list${index}`} style={[styles.list, blockSpacing]}>
               {block.items.map((item, itemIndex) => (
                 <View key={itemIndex} style={styles.listItem}>
-                  <Text style={styles.body}>
+                  <Text style={[styles.body, phoneLayout && styles.listMarker]}>
                     {block.ordered ? `${itemIndex + (block.start ?? 1)}.` : "•"}
                   </Text>
-                  <Inline nodes={item} />
+                  <Inline
+                    nodes={item}
+                    phoneLayout={phoneLayout}
+                    {...(phoneLayout ? { style: styles.listContent } : {})}
+                  />
                 </View>
               ))}
             </View>
           );
         if (block.type === "quote")
           return (
-            <View key={`quote${index}`} style={styles.quote}>
-              <Inline nodes={block.value} />
+            <View key={`quote${index}`} style={[styles.quote, blockSpacing]}>
+              <Inline nodes={block.value} phoneLayout={phoneLayout} />
             </View>
           );
         return (
           <View
             key={`block${index}`}
-            style={block.type === "heading" ? styles.heading : undefined}
+            style={[
+              block.type === "heading" ? styles.heading : blockSpacing,
+              phoneLayout &&
+                block.type === "heading" &&
+                index === 0 && { marginTop: 0 },
+            ]}
           >
             <Inline
               nodes={block.value}
+              phoneLayout={phoneLayout}
               {...(block.type === "heading"
                 ? {
                     style: {
-                      fontSize: Math.max(16, 26 - (block.level ?? 1) * 2),
-                      fontWeight: "700",
+                      fontSize: Math.max(
+                        phoneLayout ? 18 : 16,
+                        26 - (block.level ?? 1) * 2,
+                      ),
+                      ...(phoneLayout
+                        ? {
+                            lineHeight: Math.max(
+                              25,
+                              32 - (block.level ?? 1) * 2,
+                            ),
+                          }
+                        : {}),
+                      fontWeight: phoneLayout ? "600" : "700",
                     },
                   }
                 : {})}
@@ -166,7 +218,7 @@ export const RichMarkdown = memo(function RichMarkdown({
           </View>
         );
       })}
-      {onCopyMarkdown ? (
+      {onCopyMarkdown && showCopyAction ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Copy Markdown"
@@ -180,13 +232,31 @@ export const RichMarkdown = memo(function RichMarkdown({
   );
 });
 
-const createStyles = (colors: MD3Theme["colors"]) =>
+const codeFont =
+  Platform.OS === "ios"
+    ? "Menlo"
+    : Platform.OS === "web"
+      ? "ui-monospace, SFMono-Regular, Consolas, monospace"
+      : "monospace";
+const createStyles = (
+  colors: MD3Theme["colors"],
+  phoneLayout = false,
+  fontFamily = "System",
+) =>
   StyleSheet.create({
-    body: { color: colors.onSurface, fontSize: 16, lineHeight: 23 },
-    bold: { fontWeight: "700" },
+    body: {
+      color: colors.onSurface,
+      fontSize: phoneLayout ? 17 : 16,
+      lineHeight: phoneLayout ? 25 : 23,
+      ...(phoneLayout
+        ? { fontFamily, fontWeight: "400" as const, letterSpacing: 0 }
+        : {}),
+    },
+    blockSpacing: { marginTop: 12 },
+    bold: { fontWeight: phoneLayout ? "600" : "700" },
     italic: { fontStyle: "italic" },
     inlineCode: {
-      fontFamily: "monospace",
+      fontFamily: phoneLayout ? codeFont : "monospace",
       backgroundColor: colors.surfaceVariant,
       color: colors.onSurfaceVariant,
     },
@@ -209,9 +279,9 @@ const createStyles = (colors: MD3Theme["colors"]) =>
     },
     codeText: {
       color: colors.onSurface,
-      fontFamily: "monospace",
-      fontSize: 13,
-      lineHeight: 19,
+      fontFamily: phoneLayout ? codeFont : "monospace",
+      fontSize: phoneLayout ? 14 : 13,
+      lineHeight: phoneLayout ? 21 : 19,
     },
     language: {
       color: colors.onSurfaceVariant,
@@ -223,9 +293,19 @@ const createStyles = (colors: MD3Theme["colors"]) =>
       borderLeftColor: colors.outline,
       paddingLeft: 10,
     },
-    list: { gap: 4 },
+    list: { gap: phoneLayout ? 6 : 4 },
     listItem: { flexDirection: "row", gap: 8 },
-    heading: { marginVertical: 2 },
-    copy: { alignSelf: "flex-end", paddingHorizontal: 8, paddingVertical: 4 },
-    copyLabel: { color: colors.primary, fontSize: 12 },
+    listMarker: { minWidth: 20, flexShrink: 0 },
+    listContent: { flex: 1, minWidth: 0 },
+    heading: phoneLayout
+      ? { marginTop: 20, marginBottom: 8 }
+      : { marginVertical: 2 },
+    copy: {
+      alignSelf: "flex-end",
+      paddingHorizontal: 12,
+      minWidth: 44,
+      minHeight: 44,
+      justifyContent: "center",
+    },
+    copyLabel: { color: colors.primary, fontSize: 14 },
   });

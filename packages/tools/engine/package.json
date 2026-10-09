@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@locallab/contracts": "workspace:*",
+    "@locallab/context": "workspace:*",
     "@locallab/storage-sqlite-core": "workspace:*"
   },
   "devDependencies": {

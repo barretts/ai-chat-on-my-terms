@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { describe, it } from "vitest";
 import { AdvancedChatEngine } from "@locallab/chat-engine-advanced";
+import { ChatIntegration, chatFailureCause } from "@locallab/chat-integration";
+import { describeError } from "../../features/diagnostics/errors";
+import { registerDiagnosticSecret } from "../../features/diagnostics/sanitization";
 import { SQLiteChatHistory } from "@locallab/chat-history";
 import { HostScopedSecretStore } from "@locallab/security-secrets";
 import type { FetchLike } from "@locallab/network-http";
@@ -134,6 +137,73 @@ function responses(text: string) {
 }
 
 describe("saved chat provider composition", () => {
+  for (const thrown of [false, true]) {
+    it(`keeps complete ${thrown ? "thrown" : "HTTP"} failure details across provider, schema validation and integration without persisting them`, async () => {
+      const f = await fixture();
+      try {
+        const sentinel = "LAST-COMPOSED-FAILURE-FIELD";
+        const body = JSON.stringify({
+          failure: {
+            reason: "full failure with no message",
+            details: "diagnostic ".repeat(1500),
+            cause: "underlying server cause",
+          },
+          echo: secret,
+          sentinel,
+        });
+        registerDiagnosticSecret(secret);
+        const registration: ChatProviderRegistration = {
+          id: createChatId(),
+          label: "Full error fixture",
+          kind: "compatible",
+          modelId: "exact-fixture-model",
+          endpoint: "https://full-error.fixture.example/v1",
+        };
+        const port = createRegisteredChatProvider(registration, {
+          secrets: secrets(),
+          fetch: async () => {
+            if (thrown) throw new Error(body);
+            return new Response(body, {
+              status: 422,
+              headers: { "content-type": "application/problem+json" },
+            });
+          },
+        });
+        const engine = new AdvancedChatEngine({ db: f.db, context });
+        const integration = new ChatIntegration(
+          (input: Parameters<typeof engine.send>[0]) => engine.send(input),
+          { async retainAttachments() {} },
+        );
+        const handle = await integration.send({
+          conversationId: f.conversationId,
+          text: "Retain the complete failure",
+          binding: binding(f, registration, port),
+        });
+        const events = await collect(handle.events);
+        const failure = events.find((event) => event.type === "RunFailed");
+        assert.ok(failure && failure.type === "RunFailed");
+        const displayed = describeError(chatFailureCause(failure.error), {
+          operation: "Generate response",
+          recovery: "Retry the message.",
+        });
+        assert.ok(displayed.includes(body.replaceAll(secret, "[REDACTED]")));
+        assert.ok(displayed.length > 12_000);
+        assert.match(displayed, /LAST-COMPOSED-FAILURE-FIELD/);
+        assert.equal(displayed.includes(secret), false);
+        assert.equal(JSON.stringify(events).includes(sentinel), false);
+        assert.equal(JSON.stringify(events).includes(secret), false);
+        const persisted = JSON.stringify({
+          runs: await f.db.getAllAsync("SELECT * FROM runs"),
+          messages: await f.db.getAllAsync("SELECT * FROM messages"),
+          projection: await engine.getProjection(f.conversationId),
+        });
+        assert.equal(persisted.includes(sentinel), false);
+        assert.equal(persisted.includes(secret), false);
+      } finally {
+        f.native.close();
+      }
+    });
+  }
   it("keeps favorites first after reopening and editing the saved address book", async () => {
     const f = await fixture();
     try {
@@ -276,7 +346,7 @@ describe("saved chat provider composition", () => {
       assert.equal(calls, 1);
       await assert.rejects(
         store.resolveHeaders("https://another.example", [descriptor.ref]),
-        /host-mismatch/,
+        { code: "host-mismatch" },
       );
       await port.dispose?.();
     });

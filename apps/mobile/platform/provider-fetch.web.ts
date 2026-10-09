@@ -1,6 +1,7 @@
 /** The local preview can relay explicitly configured servers that reject browser CORS. */
+import { tracedFetch } from "../features/diagnostics/trace-fetch";
 let previewOrigins: Promise<readonly string[]> | undefined;
-export const providerFetch: typeof fetch = async (input, init) => {
+const previewProviderFetch: typeof fetch = async (input, init) => {
   const url = new URL(
     input instanceof Request ? input.url : String(input),
     window.location.href,
@@ -39,3 +40,7 @@ export const providerFetch: typeof fetch = async (input, init) => {
   Object.defineProperty(response, "url", { value: url.toString() });
   return response;
 };
+export const providerFetch = tracedFetch(
+  previewProviderFetch,
+  "Model HTTP request",
+);

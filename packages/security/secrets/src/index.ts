@@ -33,8 +33,20 @@ export class SecretStoreError extends Error {
     | "host-mismatch"
     | "missing"
     | "secure-store";
-  constructor(code: SecretStoreError["code"]) {
-    super(`Secret operation failed (${code})`);
+  readonly cause?: unknown;
+  constructor(code: SecretStoreError["code"], cause?: unknown) {
+    const messages: Record<SecretStoreError["code"], string> = {
+      "invalid-host": "Enter a complete HTTP or HTTPS server address.",
+      "invalid-header": "Enter a valid HTTP header name.",
+      "host-mismatch":
+        "This credential belongs to a different server. Enter a key for this server address.",
+      missing:
+        "The saved credential is unavailable. Enter the key again in connection settings.",
+      "secure-store":
+        "The credential could not be stored or read securely. Try entering and saving it again.",
+    };
+    super(messages[code]);
+    Object.defineProperty(this, "cause", { value: cause, enumerable: false });
     this.name = "SecretStoreError";
     this.code = code;
   }
@@ -83,6 +95,30 @@ function defaultRandomUUID(): string {
 
 type IndexEntry = { readonly host: string; readonly headerName: string };
 
+function readIndex(serialized: string): IndexEntry {
+  try {
+    const entry: unknown = JSON.parse(serialized);
+    if (
+      !entry ||
+      typeof entry !== "object" ||
+      Array.isArray(entry) ||
+      !("host" in entry) ||
+      !("headerName" in entry) ||
+      typeof entry.host !== "string" ||
+      typeof entry.headerName !== "string"
+    )
+      throw new Error(
+        "Saved credential ownership metadata is invalid. Enter and save the key again.",
+      );
+    return {
+      host: normalizeHost(entry.host),
+      headerName: validateHeaderName(entry.headerName),
+    };
+  } catch (cause) {
+    throw new SecretStoreError("secure-store", cause);
+  }
+}
+
 /** Values and the small ownership index share an OS-protected store. The index contains no values. */
 export class HostScopedSecretStore implements SecretStore {
   private readonly prefix: string;
@@ -110,13 +146,13 @@ export class HostScopedSecretStore implements SecretStore {
     try {
       await this.secureStore.set(this.valueKey(ref), value);
       await this.secureStore.set(this.indexKey(ref), JSON.stringify(entry));
-    } catch {
-      try {
-        await this.secureStore.delete(this.valueKey(ref));
-      } catch {
-        /* best effort cleanup */
-      }
-      throw new SecretStoreError("secure-store");
+    } catch (cause) {
+      // Either native write may have committed before returning an error.
+      await Promise.allSettled([
+        this.secureStore.delete(this.valueKey(ref)),
+        this.secureStore.delete(this.indexKey(ref)),
+      ]);
+      throw new SecretStoreError("secure-store", cause);
     }
     return Object.freeze({ ref, host, headerName });
   }
@@ -126,8 +162,8 @@ export class HostScopedSecretStore implements SecretStore {
     try {
       await this.secureStore.delete(this.valueKey(ref));
       await this.secureStore.delete(this.indexKey(ref));
-    } catch {
-      throw new SecretStoreError("secure-store");
+    } catch (cause) {
+      throw new SecretStoreError("secure-store", cause);
     }
   }
 
@@ -142,19 +178,21 @@ export class HostScopedSecretStore implements SecretStore {
     >;
     for (const rawRef of refs) {
       const ref = refKey(rawRef);
-      let index: IndexEntry | null;
+      let index: IndexEntry;
       let value: string | null;
       try {
         const storedIndex = await this.secureStore.get(this.indexKey(ref));
-        index = storedIndex ? (JSON.parse(storedIndex) as IndexEntry) : null;
-        if (!index || normalizeHost(index.host) !== host)
-          throw new SecretStoreError("host-mismatch");
+        if (storedIndex === null) throw new SecretStoreError("missing");
+        index = readIndex(storedIndex);
+        if (index.host !== host) throw new SecretStoreError("host-mismatch");
         value = await this.secureStore.get(this.valueKey(ref));
       } catch (error) {
         if (error instanceof SecretStoreError) throw error;
-        throw new SecretStoreError("secure-store");
+        throw new SecretStoreError("secure-store", error);
       }
       if (value === null) throw new SecretStoreError("missing");
+      if (typeof value !== "string" || !value || /[\r\n]/.test(value))
+        throw new SecretStoreError("secure-store");
       const name = validateHeaderName(index.headerName);
       if (name in headers) throw new SecretStoreError("invalid-header");
       headers[name] = value;
