@@ -1,5 +1,7 @@
 ﻿# Architecture and delivery shape
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 ## Product and platforms
 
 Project name: **LocalLab**. First target: iPhone on iOS 17+. The required macOS 14+ companion hosts remote models/voice, encrypted relay routes, USB and sync. A native iPad layout and Pencil workstream starts after the working iPhone milestone, as do Android API 29+ and full Mac/Windows/Linux desktop clients. Own LocalLab pairing works between the project's clients/companion; interoperability with the original app is not assumed.

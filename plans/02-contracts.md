@@ -1,5 +1,7 @@
 # Frozen contracts for parallel implementation
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 T002 publishes these TypeScript types, matching Zod schemas and fixture JSON before feature branches begin. Shared exports are subpath imports; only T002 changes a published type after a coordinator-approved migration. Do not import a feature's concrete implementation from another feature package.
 
 ## Identity and storage rules

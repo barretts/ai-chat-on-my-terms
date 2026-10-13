@@ -1,5 +1,7 @@
 ﻿# Task status and evidence template
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../POWERSHELL.md).
+
 The coordinator alone edits status. Duplicate this template per card or keep an equivalent manifest. Implementation success and deep verification are separate fields.
 
 - Task ID / phase / owner / branch / commit:

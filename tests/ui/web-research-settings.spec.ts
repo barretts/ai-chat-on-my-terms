@@ -115,3 +115,85 @@ test("Brave settings save securely, test only on request, recover missing browse
   ).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test("SearXNG saves its address without probing the network and survives reopening", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 440, height: 956 });
+  const errors: string[] = [];
+  const probes: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route("http://127.0.0.1:39114/**", (route) => {
+    probes.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto("/chat?panel=research");
+  await expect(async () => {
+    const skip = page.getByRole("button", {
+      name: "Continue without a model",
+      exact: true,
+    });
+    if (await skip.isVisible()) await skip.click();
+    await expect(
+      page.getByRole("button", { name: "Search service", exact: true }),
+    ).toBeVisible();
+  }).toPass({ timeout: 30_000 });
+  await page
+    .getByRole("button", { name: "Search service", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Choose SearXNG server", exact: true })
+    .click();
+  const save = page.getByRole("button", {
+    name: "Save web search settings",
+    exact: true,
+  });
+  await expect(save).toBeDisabled();
+  const address = page.getByRole("textbox", {
+    name: "SearXNG server address",
+    exact: true,
+  });
+  await address.fill("http://127.0.0.1:39114/");
+  const accessKey = page.getByRole("textbox", {
+    name: "SearXNG access key",
+    exact: true,
+  });
+  await expect(accessKey).toHaveAttribute("type", "password");
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(
+    page.getByText("Web search settings saved.", { exact: true }),
+  ).toBeVisible();
+  expect(probes).toHaveLength(0);
+  await page.reload();
+  await expect(async () => {
+    const skip = page.getByRole("button", {
+      name: "Continue without a model",
+      exact: true,
+    });
+    if (await skip.isVisible()) await skip.click();
+    await expect(
+      page.getByRole("button", { name: "Search service", exact: true }),
+    ).toBeVisible();
+  }).toPass({ timeout: 30_000 });
+  await expect(
+    page.getByRole("textbox", {
+      name: "SearXNG server address",
+      exact: true,
+    }),
+  ).toHaveValue("http://127.0.0.1:39114");
+  await page
+    .getByRole("textbox", { name: "SearXNG access key", exact: true })
+    .fill("searxng-ui-fixture-key");
+  await page
+    .getByRole("button", { name: "Save web search settings", exact: true })
+    .click();
+  await expect(
+    page.getByText("Web search settings saved.", { exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => JSON.stringify(Object.entries(localStorage))),
+  ).not.toContain("searxng-ui-fixture-key");
+  expect(probes).toHaveLength(0);
+  expect(errors).toEqual([]);
+});

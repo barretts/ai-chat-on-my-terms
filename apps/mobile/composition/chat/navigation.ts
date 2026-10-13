@@ -11,6 +11,7 @@ export const chatPageLabels = {
   history: "Recent chats",
   research: "Web research",
   diagnostics: "Trace log",
+  tools: "Tools",
 } as const;
 
 export type ChatPage = keyof typeof chatPageLabels;

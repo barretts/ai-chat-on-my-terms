@@ -1,5 +1,7 @@
 # C10 — Priority-feature integration checkpoint
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependencies: C02,C05,C07,C08,C09. Next: first ready subsequent batch in TASK_QUEUE.md.
 Partial checkpoints correspond to T070/T083/T049 integration work, not their full aggregate completion.
 

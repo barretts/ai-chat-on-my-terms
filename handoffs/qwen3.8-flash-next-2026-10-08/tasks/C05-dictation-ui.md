@@ -1,5 +1,7 @@
 # C05 — Dictation composer and voice preferences
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependency: C04. Related original: T072/VO-07/VO-10 and T080. Next: C06.
 
 ## Goal and owned areas

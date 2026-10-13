@@ -1,5 +1,7 @@
 ﻿# Rules for 64k-context workers and parallel coordination
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 ## Implement first, verify deeply second
 
 An implementation card delivers working code through its frozen port and a **small functional/contract smoke check**. It does not wait for every paid vendor, physical OS variant, signing certificate or exhaustive failure scenario. Record those as named later verification work. T158 is the earliest real-model offline and configured OpenAI remote iPhone run; a Responses-compatible network fixture can provide bounded remote smoke when no live key is available, labeled as fixture evidence. T128 is the complete working iPhone build. T122/T123/T159A–H then run deep iPhone device/service/performance/security checks, including live OpenAI proof. T157, T129–T132 and T134 are later working platform builds; T160–T169 verify their OS/backend differences. T159 and T135 are release gates, never synonyms for T128.

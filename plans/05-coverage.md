@@ -1,5 +1,7 @@
 ﻿# Feature coverage and verification ledger
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 This ledger maps all **231** records in the [source inventory](../docs/lm-mini-features.md) to implementation cards, a working-build milestone and a later deep-verification shard. The sequence is **working code first, deep testing second**. T158 proves the first offline and OpenAI remote chat; T128 integrates the iPhone feature routes. Domain shards T159A–H then verify real iPhone/device/service behavior for T159. T157/Android T129–T132/desktop T134 are later working builds; T160–T169 check their platform differences before T121/T135.
 
 A feature row is *implemented* when its card and working route pass a bounded smoke check. It is *verified* only when the listed deep shard has real applicable evidence and T121 accepts later-platform parity. Hardware-inapplicable behavior needs an explicit reason, never a dummy control. Coordinator status links proof artifacts to each ID **and platform**.

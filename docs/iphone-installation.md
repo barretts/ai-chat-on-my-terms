@@ -1,5 +1,17 @@
 # Install LocalLab on an iPhone
 
+## Latest internal build: 15 (October 10, 2026)
+
+[Install LocalLab build 15](https://expo.dev/accounts/barrett/projects/locallab/builds/fb3288a3-42f8-4586-8572-4363cca77035) from Safari on the registered iPhone.
+
+- Published with Expo EAS using the `preview` profile and existing ad hoc signing credentials.
+- Strata defaults: `http://192.168.1.213:1234/v1`, `qwen3.8-flash-next-iq3_s-128k`. The existing API key is included with the user's explicit approval for this personal test build. The key is not in committed source.
+- Keep the iPhone on the same LAN as the Strata PC for this endpoint.
+- Verified the downloaded IPA: build 15, bundle `app.locallab.mobile`, one provisioned device including the registered iPhone, profile valid until September 27, 2027, bundled LAN/model/key defaults, linked native SpeechSystem bridge and microphone/speech permission descriptions.
+- Evidence: `tmp/iphone-build15/artifact-verification.json`, `source-metadata.json`, `build-status.json`, and `locallab-build15.ipa` (local, gitignored).
+- Physical iPhone install, chat and dictation checks remain user-side.
+
+
 The phone must run iOS 17 or later. The `preview` profile in `apps/mobile/eas.json` creates a signed internal Release build with its JavaScript bundle included. It runs without a Metro development server. The profile pins Node 24.13.1 and pnpm 8.15.9, matching the local verification environment.
 
 ## Cloud build from Windows

@@ -1,5 +1,7 @@
 ﻿# Coordinator handoff: start and finish the program
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 Start [T001](tasks/P00/T001.md), then [T002](tasks/P00/T002.md) after T001 passes. T001A builds Mac/API shells in parallel with core T003/T004/T006/T007 lanes; T005A–D run concurrently after their direct prerequisites. Assign the ready queue from the [dependency waves](04-schedule.md), not a whole phase. Run [T021A](tasks/P02/T021A.md) beside the GGUF lane, then prioritize [T158](tasks/P04/T158.md) so a physical iPhone can chat offline and through a configured OpenAI endpoint early. [T128](tasks/P11/T128.md) is the full working iPhone build. The phone's Mac companion supports the later remote/sync/voice routes.
 
 Every assignment gets one task card, its dependency handoffs, the named feature rows, a branch/worktree and a reviewer. Workers stay within owned paths, run the card's quick check, then report commit/changed paths/commands/results/known defects. The coordinator merges one branch at a time, updates [status](status/TEMPLATE.md) and routes contract/schema changes through T002/T003.

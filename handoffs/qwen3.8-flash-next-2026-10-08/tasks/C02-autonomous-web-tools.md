@@ -1,5 +1,7 @@
 # C02 — Autonomous native web research
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependency: C01. Next: C03. Original related behavior: TL-09/TL-10/TL-11 and ER-03.
 
 ## Goal and owned areas

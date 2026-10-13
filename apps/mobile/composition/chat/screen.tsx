@@ -37,6 +37,7 @@ import {
   type ChatPage,
 } from "./navigation";
 import { openConnectionCatalog } from "./connection-catalog";
+import { seedDefaultChatConnection } from "./default-chat-connection";
 import {
   discoverRegisteredModelContext,
   modelContextKey,
@@ -122,6 +123,25 @@ import {
   SQLiteComposerPreferenceStore,
   type ComposerSendPayload,
 } from "../../features/composer/advanced";
+import {
+  DEFAULT_DICTATION_PREFERENCES,
+  DictationController,
+  SQLiteDictationPreferenceStore,
+  resolveDictationPreferences,
+  type DictationPreferences,
+} from "./dictation";
+import { dictationInput } from "../audio/dictation-input";
+import {
+  SQLiteToolSettingsStore,
+  resolveToolPolicy,
+} from "../../features/tool-settings/settings";
+import { ToolSettingsPanel } from "../../features/tool-settings/screen";
+import { createCurrentTimeTool } from "@locallab/tools-builtins";
+import {
+  SQLiteMcpServerStore,
+  collectMcpTools,
+} from "../../features/tool-settings/mcp-servers";
+import { SQLiteLmStudioIntegrationStore } from "../../features/tool-settings/lmstudio-integrations";
 import { Transcript } from "../../features/transcript/core/transcript";
 import { OpenAIEndpointSetupScreen } from "../../features/openai-endpoint-setup/screen";
 import {
@@ -197,14 +217,18 @@ import { braveSearchFetch } from "../../platform/brave-search-fetch";
 import {
   SQLiteWebResearchSettings,
   createConfiguredWebResearchClient,
+  resolveEffectiveWebResearchMode,
+  resolveWebResearchPolicy,
 } from "./web-research-settings";
 import { WebResearchSettingsPanel } from "./web-research-settings-panel";
 import {
   createWebResearchClient,
-  resolveWebResearchIntent,
+  offlineInstructionRequested,
   withWebResearch,
   WEB_FETCH_TOOL,
 } from "./web-research";
+import { createWebResearchTools } from "./web-research-tools";
+import { withWebResearchToolSources } from "./web-research-tool-sources";
 import {
   EMPTY_PRESETS,
   resolveSettings,
@@ -229,6 +253,10 @@ type ChatRuntime = {
   registry: SQLiteChatProviderRegistry;
   webSettings: SQLiteWebResearchSettings;
   preferences: SQLiteComposerPreferenceStore;
+  dictation: SQLiteDictationPreferenceStore;
+  toolSettings: SQLiteToolSettingsStore;
+  mcpServers: SQLiteMcpServerStore;
+  lmStudioIntegrations: SQLiteLmStudioIntegrationStore;
   toolInvocations: SQLiteToolInvocationStore;
   identities: Awaited<ReturnType<typeof initializePersonaMemoryChat>>;
 };
@@ -503,6 +531,11 @@ export default function CompleteChatScreen() {
           lifecycle,
         });
         const registry = await openConnectionCatalog(database);
+        await seedDefaultChatConnection(database, secretStore, {
+          apiKey: process.env.EXPO_PUBLIC_STRATA_API_KEY,
+          baseUrl: process.env.EXPO_PUBLIC_STRATA_BASE_URL,
+          modelId: process.env.EXPO_PUBLIC_STRATA_MODEL_ID,
+        });
         const webSettings = new SQLiteWebResearchSettings(database);
         await database.execAsync(
           "CREATE TABLE IF NOT EXISTS phone_model_choice_local (singleton INTEGER PRIMARY KEY CHECK(singleton=1), provider_id TEXT NOT NULL)",
@@ -557,6 +590,10 @@ export default function CompleteChatScreen() {
           registry,
           webSettings,
           preferences: new SQLiteComposerPreferenceStore(database),
+          dictation: new SQLiteDictationPreferenceStore(database),
+          toolSettings: new SQLiteToolSettingsStore(database),
+          mcpServers: new SQLiteMcpServerStore(database),
+          lmStudioIntegrations: new SQLiteLmStudioIntegrationStore(database),
           toolInvocations,
           identities,
         });
@@ -607,6 +644,80 @@ export default function CompleteChatScreen() {
   useEffect(() => {
     liveRuntime.current = runtime;
   }, [runtime]);
+  const dictation = useMemo(
+    () => new DictationController(dictationInput, mobileSpeech),
+    [],
+  );
+  const [dictationPrefs, setDictationPrefs] =
+    useState<DictationPreferences>(DEFAULT_DICTATION_PREFERENCES);
+  const dictationPrefsRef = useRef(dictationPrefs);
+  dictationPrefsRef.current = dictationPrefs;
+  const [dictationAvailability, setDictationAvailability] = useState<
+    "ready" | "permission" | "unavailable" | "unknown"
+  >("unknown");
+  const [dictationLocales, setDictationLocales] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    void dictationInput
+      .getAvailability()
+      .then((result) => {
+        if (active) setDictationAvailability(result.ok ? result.value : "unavailable");
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setError(
+            describeError(cause, {
+              operation: "Check dictation availability",
+              recovery: "Dictation stays unavailable until you reopen chat.",
+            }),
+          );
+      });
+    void dictationInput
+      .getLocales()
+      .then((result) => {
+        if (active && result.ok) setDictationLocales(result.value);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!runtime) return;
+    let active = true;
+    void runtime.dictation
+      .load()
+      .then((stored) => {
+        if (active && stored) setDictationPrefs(stored);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [runtime]);
+  const saveDictationPrefs = useCallback(
+    (update: Partial<DictationPreferences>) => {
+      const next = { ...dictationPrefsRef.current, ...update };
+      setDictationPrefs(next);
+      const store = liveRuntime.current?.dictation;
+      if (!store) return;
+      void store.save(next).catch((cause: unknown) =>
+        setError(
+          describeError(cause, {
+            operation: "Save dictation preference",
+            recovery:
+              "Choose the option again to retry. It may reset after reopening the app.",
+          }),
+        ),
+      );
+    },
+    [],
+  );
+  const startDictation = useCallback(
+    (handlers: { onPartial: (text: string) => void }) =>
+      dictation.start(handlers, dictationPrefsRef.current.locale),
+    [dictation],
+  );
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") return;
@@ -615,6 +726,8 @@ export default function CompleteChatScreen() {
           errorName: cause instanceof Error ? cause.name : "Error",
         });
       });
+      // Backgrounding releases the microphone before anything else runs.
+      dictation.cancel();
       foregroundAdmission.suspend();
       const currentRuntime = liveRuntime.current;
       if (!currentRuntime) return;
@@ -646,6 +759,15 @@ export default function CompleteChatScreen() {
     });
     return () => subscription.remove();
   }, []);
+  useEffect(
+    () => () =>
+      void dictation.dispose().catch((cause: unknown) => {
+        traceLog.event("Close dictation session", "failed", {
+          errorName: cause instanceof Error ? cause.name : "Error",
+        });
+      }),
+    [dictation],
+  );
 
   const loadModels = useCallback(async () => {
     if (!runtime) return;
@@ -932,6 +1054,7 @@ export default function CompleteChatScreen() {
       runSettled.current = new Promise<void>((resolve) => {
         finishRun = resolve;
       });
+      let mcpFinalize: (() => Promise<void>) | null = null;
       try {
         await pendingSettingsWrites.current;
         runtime.generationSession.assertActive();
@@ -991,18 +1114,27 @@ export default function CompleteChatScreen() {
           !!fileIntent ||
           requestsWorkspaceTools(text) ||
           payload.toolIds.includes(WORKSPACE_FILES_TOOL);
+        const savedWebSettings = await runtime.webSettings.read();
+        const savedWebOverride =
+          await runtime.webSettings.readConversationOverride(
+            runtime.conversationId,
+          );
+        // Autonomous research needs the adapter built with tool support, so
+        // the saved Auto policy must be consulted before the port is created.
+        const webAutoRequested =
+          detectedContext?.toolsSupported === true &&
+          resolveEffectiveWebResearchMode(
+            savedWebSettings.mode ?? "auto",
+            savedWebOverride,
+          ) === "auto" &&
+          !offlineInstructionRequested(text);
         const toolsEnabled =
-          detectedContext?.toolsSupported === true && wantsFiles;
+          detectedContext?.toolsSupported === true &&
+          (wantsFiles || webAutoRequested);
         const fileStore = workspaceFiles!;
         const existingFile = fileIntent
           ? await fileStore.read(validateWorkspacePath(fileIntent.path))
           : undefined;
-        const webPlan = resolveWebResearchIntent({
-          text,
-          searchEnabled: payload.searchEnabled,
-          fetchPagesEnabled: payload.toolIds.includes(WEB_FETCH_TOOL),
-          previousUserMessages: users.map((message) => message.text),
-        });
         if (selected) {
           if (selected.modelId === "model-discovery") {
             setError("Choose a model in Connections before sending.");
@@ -1045,6 +1177,7 @@ export default function CompleteChatScreen() {
               ninferThinkingControl,
               fetch: providerFetch as FetchLike,
               secrets: runtime.secrets,
+              lmStudioIntegrations: () => runtime.lmStudioIntegrations.load(),
               nativePort: (value) =>
                 value.kind === "local-gguf"
                   ? createLocalChatPort(runtime.blobs)
@@ -1135,6 +1268,23 @@ export default function CompleteChatScreen() {
           "chat.systemPrompt": "yes" as const,
           "parameter.contextWindow": "yes" as const,
         };
+        const toolPolicy = resolveToolPolicy({
+          global: await runtime.toolSettings.load(),
+          conversation: await runtime.toolSettings.loadConversation(
+            runtime.conversationId,
+          ),
+          capabilities: providerCapabilities,
+        });
+        const webPolicy = resolveWebResearchPolicy({
+          appWideMode: savedWebSettings.mode ?? "auto",
+          conversationOverride: savedWebOverride,
+          capabilities: providerCapabilities,
+          text,
+          searchEnabled: payload.searchEnabled,
+          fetchPagesEnabled: payload.toolIds.includes(WEB_FETCH_TOOL),
+          previousUserMessages: users.map((message) => message.text),
+        });
+        const webPlan = webPolicy.intent;
         setCapabilities(appCapabilities);
         const settingsStore = runtime.composition.settingsForConversation(
           runtime.conversationId,
@@ -1173,8 +1323,49 @@ export default function CompleteChatScreen() {
         const nativeGguf =
           selected?.kind === "local-gguf" || (!selected && mode === "local");
         const webEnabled = webPlan.search || webPlan.fetchPages;
-        const fileTools = toolsEnabled ? createWorkspaceTools(fileStore) : [];
-        const toolReservation = fileTools.length
+        const fileTools = toolsEnabled
+          ? createWorkspaceTools(fileStore).filter(
+              (tool) => toolPolicy.tools[tool.name] !== false,
+            )
+          : [];
+        // One autonomous turn owns its research client so search/read counts
+        // and the configured provider stay per answer.
+        const researchClient =
+          webEnabled || webPolicy.automaticTools
+            ? await createConfiguredWebResearchClient({
+                settings: runtime.webSettings,
+                secrets: runtime.secrets,
+                publicFetch: webAccessFetch,
+                searchApiFetch: braveSearchFetch,
+                providerFetch,
+              })
+            : createWebResearchClient(webAccessFetch);
+        const webTools = webPolicy.automaticTools
+          ? createWebResearchTools(researchClient).filter(
+              (tool) => toolPolicy.tools[tool.name] !== false,
+            )
+          : [];
+        const timeTools = toolsEnabled
+          ? [createCurrentTimeTool()].filter(
+              (tool) => toolPolicy.tools[tool.name] !== false,
+            )
+          : [];
+        const mcpDeadline = new AbortController();
+        const mcpTimer = setTimeout(() => mcpDeadline.abort(), 15_000);
+        const mcpCollected = await collectMcpTools(
+          runtime.mcpServers,
+          runtime.secrets,
+          mcpDeadline.signal,
+        );
+        clearTimeout(mcpTimer);
+        mcpFinalize = mcpCollected.finalize;
+        const loopTools = [
+          ...fileTools,
+          ...webTools,
+          ...timeTools,
+          ...mcpCollected.tools,
+        ];
+        const toolReservation = loopTools.length
           ? conservativeTokenCount([
               {
                 id: "workspace-tool-definitions",
@@ -1183,7 +1374,7 @@ export default function CompleteChatScreen() {
                   {
                     type: "text",
                     text: JSON.stringify(
-                      fileTools.map(({ name, description, parameters }) => ({
+                      loopTools.map(({ name, description, parameters }) => ({
                         name,
                         description,
                         parameters,
@@ -1208,9 +1399,10 @@ export default function CompleteChatScreen() {
           requestedBudget,
           detectedContext?.contextWindowTokens ?? requestedBudget,
         );
-        const webReservation = webEnabled
-          ? Math.min(2000, Math.floor(budget / 3))
-          : 0;
+        const webReservation =
+          webEnabled && !webPolicy.automaticTools
+            ? Math.min(2000, Math.floor(budget / 3))
+            : 0;
         const chatBudget = budget - webReservation - toolReservation;
         if (chatBudget < 2)
           throw new ContextBudgetError(
@@ -1231,17 +1423,17 @@ export default function CompleteChatScreen() {
                 chatBudget - 1,
               );
         let documentPort = port;
-        if (fileTools.length) {
+        if (loopTools.length) {
           const registry = new ToolRegistry();
-          for (const tool of fileTools) registry.register(tool);
+          for (const tool of loopTools) registry.register(tool);
           documentPort = new ToolLoopEngine({
             registry,
             store: runtime.toolInvocations,
             createId: createChatId,
           }).wrap(port, () => ({
-            globalEnabled: true,
+            globalEnabled: toolPolicy.engaged,
             capabilities: providerCapabilities,
-            roundLimit: 6,
+            roundLimit: toolPolicy.roundLimit,
             maxToolCalls: 12,
             deadlineMs: 300_000,
             maxArgumentBytes: 1_000_000,
@@ -1270,15 +1462,9 @@ export default function CompleteChatScreen() {
             "This model has not reported support for reading or listing workspace files. Open Files to preview them, or select a model with file tool support. You can still ask this model to write a Markdown or text file.",
           );
         }
+        if (webTools.length) documentPort = withWebResearchToolSources(documentPort);
         const generationPort = withWebResearch(documentPort, {
-          client: webEnabled
-            ? await createConfiguredWebResearchClient({
-                settings: runtime.webSettings,
-                secrets: runtime.secrets,
-                publicFetch: webAccessFetch,
-                searchApiFetch: braveSearchFetch,
-              })
-            : createWebResearchClient(webAccessFetch),
+          client: researchClient,
           text,
           search: webPlan.search,
           fetchPages: webPlan.fetchPages,
@@ -1366,8 +1552,8 @@ export default function CompleteChatScreen() {
             },
             userParts: prepared.userParts,
             attachmentRefs: prepared.attachmentRefs,
-            ...(fileTools.length
-              ? { permittedTools: fileTools.map((tool) => tool.name) }
+            ...(loopTools.length
+              ? { permittedTools: loopTools.map((tool) => tool.name) }
               : {}),
             contextParts: prepared.contextParts,
             pendingContext: prepared.providerContext,
@@ -1384,6 +1570,9 @@ export default function CompleteChatScreen() {
                   : undefined,
               fileIntent && existingFile && !toolsEnabled
                 ? `Existing file ${JSON.stringify(existingFile.path)} (revision ${existingFile.revision}) to update:\n${existingFile.content}`
+                : undefined,
+              webTools.length
+                ? "You can use web_search and web_fetch for current, changing or uncertain facts. Run them instead of guessing, cite the pages they return, and answer directly when no fresh information is needed. Stay within two searches and four page reads per answer."
                 : undefined,
             ]
               .filter(Boolean)
@@ -1534,6 +1723,7 @@ export default function CompleteChatScreen() {
           await loadTranscript();
         }
       } finally {
+        if (mcpFinalize !== null) await mcpFinalize().catch(() => undefined);
         sendPending.current = false;
         setWorking(false);
         finishRun();
@@ -2176,6 +2366,7 @@ export default function CompleteChatScreen() {
                   "settings",
                   "search",
                   "research",
+                  "tools",
                   "diagnostics",
                   "archives",
                   "personas",
@@ -2186,7 +2377,7 @@ export default function CompleteChatScreen() {
                   (value) =>
                     setupStyle === "power" ||
                     showAdvancedTools ||
-                    ["library", "files", "settings"].includes(value),
+                    ["library", "files", "settings", "tools"].includes(value),
                 )
                 .map((value) => (
                   <List.Item
@@ -2206,6 +2397,7 @@ export default function CompleteChatScreen() {
                               diagnostics: "bug-outline",
                               archives: "archive-outline",
                               personas: "account-outline",
+                              tools: "wrench-outline",
                               memory: "bookmark-outline",
                             } as const
                           )[value]
@@ -2378,6 +2570,7 @@ export default function CompleteChatScreen() {
                     "settings",
                     "search",
                     "research",
+                    "tools",
                     "diagnostics",
                     "archives",
                     "providers",
@@ -2396,6 +2589,7 @@ export default function CompleteChatScreen() {
                         "settings",
                         "providers",
                         "voices",
+                        "tools",
                       ].includes(value),
                   )
                   .map((value) =>
@@ -2672,10 +2866,26 @@ export default function CompleteChatScreen() {
         <WebResearchSettingsPanel
           settings={runtime.webSettings}
           secrets={runtime.secrets}
+          conversationId={runtime.conversationId}
         />
       ) : panel === "voices" ? (
         <SpeechPanel
           {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
+          dictation={{
+            statusText:
+              dictationAvailability === "ready"
+                ? "Dictation is ready. Tap Dictate above the message box."
+                : dictationAvailability === "permission"
+                  ? "Dictation needs microphone and speech recognition access. Tap Dictate to try again, or allow it in Settings."
+                  : dictationAvailability === "unavailable"
+                    ? "Dictation uses the iPhone's system speech recognizer, which this platform does not expose."
+                    : "Checking dictation availability…",
+            locales: dictationLocales,
+            selectedLocale: dictationPrefs.locale,
+            autosend: dictationPrefs.autosend,
+            onLocaleChange: (locale) => saveDictationPrefs({ locale }),
+            onAutosendChange: (autosend) => saveDictationPrefs({ autosend }),
+          }}
         />
       ) : panel === "providers" ? (
         <ProviderSetupPanel
@@ -2795,6 +3005,15 @@ export default function CompleteChatScreen() {
             </Pressable>
           ) : null}
         </View>
+      ) : panel === "tools" ? (
+        <ToolSettingsPanel
+          store={runtime.toolSettings}
+          conversationId={runtime.conversationId}
+          servers={runtime.mcpServers}
+          lmStudio={runtime.lmStudioIntegrations}
+          secrets={runtime.secrets}
+          {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
+        />
       ) : panel && panel !== "archives" && panel !== "files" ? (
         <ChatPanels
           panel={panel}
@@ -3080,6 +3299,17 @@ export default function CompleteChatScreen() {
           key={runtime.conversationId}
           initialDraft={drafts.get(runtime.conversationId)}
           onDraftChange={(draft) => drafts.put(runtime.conversationId, draft)}
+          {...(dictationAvailability === "unavailable"
+            ? {
+                dictationUnavailableReason:
+                  "Dictation uses the iPhone's system speech recognizer, which this platform does not expose.",
+              }
+            : {
+                onDictate: startDictation,
+                onDictateStop: () => dictation.stop(),
+                onDictateCancel: () => dictation.cancel(),
+              })}
+          dictationAutosend={dictationPrefs.autosend}
           onSend={send}
           onSendError={setError}
           toolsCollapsed={workspace.layout.composerCollapsed}

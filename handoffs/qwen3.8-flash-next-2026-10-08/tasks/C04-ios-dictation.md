@@ -1,5 +1,7 @@
 # C04 — iOS system speech recognition
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependency: C03. Original: [T072](../../../plans/tasks/P07/T072.md). Next: C05.
 
 ## Goal and owned areas

@@ -532,21 +532,25 @@ function needsPreviousTopic(topic: string): boolean {
   );
 }
 
+/** A direct offline/no-web instruction in prose; quoted text and code examples are stripped first. */
+export function offlineInstructionRequested(text: string): boolean {
+  return /\b(?:do\s+not|don't|dont|never|avoid|without|skip|no)\s+(?:(?:use|using|access|accessing|search|searching|browse|browsing|check|checking|look(?:s|ed|ing)?|fetch(?:es|ing)?|open(?:s|ing)?|read|reads|reading)\s+)?(?:(?:this|that|it|these|those|the|any)\s+)?(?:up\s+)?(?:on\s+(?:the\s+)?)?(?:web(?:\s+search)?|internet|online)\b|\b(?:answer|respond|stay|work)\s+(?:strictly\s+)?offline\b/i.test(
+    actionableProse(text),
+  );
+}
+
 /** Explicit requests work without model function calling or changing manual switches. */
 export function resolveWebResearchIntent(options: {
   text: string;
-  searchEnabled?: boolean;
-  fetchPagesEnabled?: boolean;
+  searchEnabled?: boolean | undefined;
+  fetchPagesEnabled?: boolean | undefined;
   /** An explicit off choice suppresses automatic search; default false is neutral. */
-  searchOverride?: boolean;
-  previousUserMessages?: readonly string[];
+  searchOverride?: boolean | undefined;
+  previousUserMessages?: readonly string[] | undefined;
 }): WebResearchIntent {
   const prose = actionableProse(options.text);
-  const denied =
-    /\b(?:do\s+not|don't|dont|never|avoid|without|skip|no)\s+(?:(?:use|using|access|accessing|search|searching|browse|browsing|check|checking)\s+)?(?:(?:the|any)\s+)?(?:web(?:\s+search)?|internet|online)\b|\b(?:answer|respond|stay|work)\s+(?:strictly\s+)?offline\b/i.test(
-      prose,
-    );
-  if (denied) return { search: false, fetchPages: false };
+  if (offlineInstructionRequested(options.text))
+    return { search: false, fetchPages: false };
   const commands = searchCommands(options.text);
   const search =
     options.searchOverride !== false &&

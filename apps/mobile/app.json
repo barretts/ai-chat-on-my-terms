@@ -14,11 +14,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "14",
+      "buildNumber": "15",
       "deploymentTarget": "17.0",
       "bundleIdentifier": "app.locallab.mobile",
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "LocalLab connects to model servers on your local network when you choose a host.",
+        "NSMicrophoneUsageDescription": "LocalLab listens for dictation only while you start a recognition action.",
+        "NSSpeechRecognitionUsageDescription": "LocalLab converts your dictated speech into text, on-device whenever the language supports it.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }

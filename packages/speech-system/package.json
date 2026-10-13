@@ -1,0 +1,25 @@
+{
+  "name": "@locallab/speech-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./expo": "./src/expo.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@locallab/audio-session": "workspace:*"
+  },
+  "peerDependencies": {
+    "expo": ">=57 <58"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

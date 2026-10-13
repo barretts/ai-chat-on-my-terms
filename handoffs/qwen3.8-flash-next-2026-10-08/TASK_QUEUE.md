@@ -1,5 +1,7 @@
 # Ordered continuation queue
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../plans/POWERSHELL.md).
+
 Next task: **C01**. Initial audit/checkpoint C00 is complete; see CURRENT_STATE.md and evidence/baseline.json. Recheck it only if source/environment changed.
 
 ## Immediate sequence

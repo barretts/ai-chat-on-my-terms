@@ -1,5 +1,7 @@
 ﻿# Verification after working builds
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 ## Two levels of evidence
 
 **Implementation smoke** is a quick contract/local check run with each feature card. T158, T128, T157, T129–T132 and T134 add bounded real-build smoke paths to prove the app actually works. A fixture may prove wiring, but it is marked `fixture`. **Deep verification** begins after the relevant working build. T159A–H, T122 and T123 prove the iPhone release on real hardware/services; T160–T169 prove later-platform differences. T121 reconciles all 231 rows, and T135/T127 make the final release/audit decision.

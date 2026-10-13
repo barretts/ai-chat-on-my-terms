@@ -218,4 +218,111 @@ describe("LM Studio native and compatible adapters", () => {
     );
     expect(requests).toEqual(["http://127.0.0.1:1234/api/v1/chat"]);
   });
+
+  it("sends integrated references to native requests only, re-read each run", async () => {
+    const chatEnd =
+      'event: chat.end\ndata: {"type":"chat.end","result":{"output":[{"type":"message","content":"ok"}],"response_id":"resp_int"}}';
+    const fake = fakeHttp([chatEnd]);
+    const scripted: string[][] = [["mcp/playwright"], ["mcp/filesystem"]];
+    let runs = 0;
+    const adapter = createLMStudioAdapter({
+      baseUrl: "http://127.0.0.1:1234",
+      http: fake.http,
+      integrations: () => scripted[runs++] ?? [],
+    });
+    const first = await collect(
+      adapter.startRun(
+        request([{ kind: "user", value: "Open the site" }]),
+        new AbortController().signal,
+      ),
+    );
+    expect(first.at(-1)?.type).toBe("RunCompleted");
+    const firstBody = JSON.parse(String(fake.calls[0]?.init?.body)) as Record<
+      string,
+      unknown
+    >;
+    expect(firstBody.integrations).toEqual(["mcp/playwright"]);
+    adapter.clearConversation(uuid);
+    await collect(
+      adapter.startRun(
+        request([{ kind: "user", value: "Again" }]),
+        new AbortController().signal,
+      ),
+    );
+    const secondBody = JSON.parse(String(fake.calls[1]?.init?.body)) as Record<
+      string,
+      unknown
+    >;
+    expect(secondBody.integrations).toEqual(["mcp/filesystem"]);
+    adapter.clearConversation(uuid);
+    await collect(
+      adapter.startRun(
+        request([
+          { kind: "system", value: "ctx" },
+          { kind: "user", value: "stateless" },
+        ]),
+        new AbortController().signal,
+      ),
+    );
+    expect(fake.calls[2]?.url).toBe("http://127.0.0.1:1234/v1/chat/completions");
+    const thirdBody = JSON.parse(String(fake.calls[2]?.init?.body)) as Record<
+      string,
+      unknown
+    >;
+    expect("integrations" in thirdBody).toBe(false);
+    adapter.dispose();
+  });
+
+  it("keeps continuation alive with integrations and explains a missing one", async () => {
+    const frames = [
+      'event: chat.end\ndata: {"type":"chat.end","result":{"output":[{"type":"message","content":"done"}],"response_id":"resp_keep"}}',
+    ];
+    const fake = fakeHttp(frames);
+    const adapter = createLMStudioAdapter({
+      baseUrl: "http://127.0.0.1:1234",
+      http: fake.http,
+      integrations: () => ["mcp/playwright"],
+    });
+    const context = [{ kind: "user" as const, value: "First" }];
+    await collect(
+      adapter.startRun(request(context), new AbortController().signal),
+    );
+    const second = await collect(
+      adapter.startRun(
+        request([
+          ...context,
+          { kind: "assistant", value: "done" },
+          { kind: "user", value: "Next" },
+        ]),
+        new AbortController().signal,
+      ),
+    );
+    expect(second.at(-1)?.type).toBe("RunCompleted");
+    const body = JSON.parse(String(fake.calls[1]?.init?.body)) as Record<
+      string,
+      unknown
+    >;
+    expect(body.previous_response_id).toBe("resp_keep");
+    expect(body.integrations).toEqual(["mcp/playwright"]);
+    const missing = fakeHttp([
+      'event: error\ndata: {"type":"error","error":{"message":"Plugin mcp/playwright was not found"}}',
+    ]);
+    const failing = createLMStudioAdapter({
+      baseUrl: "http://127.0.0.1:1234",
+      http: missing.http,
+      integrations: () => ["mcp/playwright"],
+    });
+    const events = await collect(
+      failing.startRun(
+        request([{ kind: "user", value: "Open it" }]),
+        new AbortController().signal,
+      ),
+    );
+    const failed = events.find((event) => event.type === "RunFailed");
+    expect(failed?.type).toBe("RunFailed");
+    if (failed?.type !== "RunFailed") return;
+    expect(failed.error.message).toContain("does not have the integration");
+    expect(failed.error.message).toContain("mcp/playwright");
+    expect(failed.error.message).toContain("mcp.json");
+  });
 });

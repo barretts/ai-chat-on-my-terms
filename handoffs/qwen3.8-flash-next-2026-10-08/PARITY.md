@@ -1,5 +1,7 @@
 # Original feature parity ? continuation audit
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../plans/POWERSHELL.md).
+
 Prepared October 8, 2026. Exactly 231 original records; original IDs/task mappings/milestones/deep shards are retained.
 
 This is a conservative source-based continuation ledger, not a certification or a completion percentage. Implemented means an existing code/app route and scoped evidence; physical/live proof remains separate. Partial means foundations or some subcontrols exist. Needs focused audit identifies a specific unresolved subcontrol, not permission to rebuild the whole feature.

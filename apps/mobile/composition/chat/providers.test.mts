@@ -901,4 +901,97 @@ describe("saved chat provider composition", () => {
       f.native.close();
     }
   });
+
+  it("sends configured integration names to LM Studio native requests only", async () => {
+    const f = await fixture();
+    try {
+      const lmStudio: ChatProviderRegistration = {
+        id: createChatId(),
+        label: "LM Studio",
+        kind: "lmstudio",
+        modelId: "model-a",
+        endpoint: "http://127.0.0.1:1234",
+        cleartextAuthorized: true,
+      };
+      const bodies: Record<string, unknown>[] = [];
+      const port = createRegisteredChatProvider(lmStudio, {
+        secrets: secrets(),
+        fetch: async (_input, init) => {
+          bodies.push(
+            JSON.parse(String(init?.body)) as Record<string, unknown>,
+          );
+          return new Response(
+            'event: chat.end\ndata: {"type":"chat.end","result":{"output":[{"type":"message","content":"ok"}],"response_id":"resp_int"}}\n\n',
+            { headers: { "content-type": "text/event-stream" } },
+          );
+        },
+        lmStudioIntegrations: async () => [
+          {
+            id: createChatId(),
+            name: "mcp/playwright",
+            label: "pw",
+            enabled: true,
+          },
+          { id: createChatId(), name: "mcp/ghost", label: "ghost", enabled: false },
+        ],
+      });
+      const engine = new AdvancedChatEngine({ db: f.db, context });
+      const run = await engine.send({
+        conversationId: f.conversationId,
+        text: "Open the site",
+        binding: binding(f, lmStudio, port),
+      });
+      const events = await collect(run.events);
+      assert.equal(events.at(-1)?.type, "RunCompleted");
+      assert.deepEqual(bodies[0]?.integrations, ["mcp/playwright"]);
+    } finally {
+      f.native.close();
+    }
+  });
+
+  it("never sends integration names to Ollama requests", async () => {
+    const f = await fixture();
+    try {
+      const ollama: ChatProviderRegistration = {
+        id: createChatId(),
+        label: "Ollama",
+        kind: "ollama",
+        modelId: "llama3",
+        endpoint: "http://127.0.0.1:11434",
+        cleartextAuthorized: true,
+      };
+      const bodies: Record<string, unknown>[] = [];
+      const port = createRegisteredChatProvider(ollama, {
+        secrets: secrets(),
+        fetch: async (_input, init) => {
+          bodies.push(
+            JSON.parse(String(init?.body)) as Record<string, unknown>,
+          );
+          return new Response(JSON.stringify({ response: "ok", done: true }), {
+            headers: { "content-type": "application/json" },
+          });
+        },
+        lmStudioIntegrations: async () => [
+          {
+            id: createChatId(),
+            name: "mcp/playwright",
+            label: "pw",
+            enabled: true,
+          },
+        ],
+      });
+      const engine = new AdvancedChatEngine({ db: f.db, context });
+      const run = await engine.send({
+        conversationId: f.conversationId,
+        text: "Hello",
+        binding: binding(f, ollama, port),
+      });
+      await collect(run.events);
+      assert.ok(bodies.length > 0);
+      for (const body of bodies)
+        assert.equal("integrations" in body, false, JSON.stringify(body));
+    } finally {
+      f.native.close();
+    }
+  });
 });

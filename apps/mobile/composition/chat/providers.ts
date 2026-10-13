@@ -10,6 +10,11 @@ import type { SecretRef, SecretStore } from "@locallab/security-secrets";
 import { createHttpTransport, type FetchLike } from "@locallab/network-http";
 import { createOllamaChatProvider } from "@locallab/provider-ollama-chat";
 import { createLMStudioAdapter } from "@locallab/provider-lmstudio";
+import {
+  enabledLmStudioIntegrationRefs,
+  supportsLmStudioIntegratedMcp,
+  type LmStudioIntegration,
+} from "@locallab/tools-mcp-lmstudio";
 import { createCompatibleLocalProvider } from "@locallab/provider-compatible-local";
 import { createOpenAIAdvancedProvider } from "@locallab/provider-openai-advanced";
 import { createAnthropicProvider } from "@locallab/provider-anthropic";
@@ -188,6 +193,10 @@ export interface ChatProviderFactoryOptions {
   nativePort?: (
     registration: ChatProviderRegistration,
   ) => ProviderPort | undefined;
+  /** Configured LM Studio integrated MCP names. Consulted only for LM
+   * Studio registrations, and re-read per run so enablement applies to the
+   * next send. */
+  lmStudioIntegrations?: () => Promise<readonly LmStudioIntegration[]>;
   resolveMedia?: (id: string) => Promise<{ mimeType: string; base64: string }>;
 }
 
@@ -306,6 +315,15 @@ export function createRegisteredChatProvider(
                 : {};
             native = createLMStudioAdapter({
               baseUrl: endpoint.toString(),
+              ...(supportsLmStudioIntegratedMcp(r.kind) &&
+              options.lmStudioIntegrations
+                ? {
+                    integrations: async () =>
+                      enabledLmStudioIntegrationRefs(
+                        await options.lmStudioIntegrations!(),
+                      ),
+                  }
+                : {}),
               http: {
                 request: (url, init, policy) =>
                   transport.request(

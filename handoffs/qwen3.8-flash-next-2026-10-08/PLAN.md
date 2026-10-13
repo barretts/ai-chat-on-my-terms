@@ -1,5 +1,7 @@
 # LocalLab continuation handoff — Qwen3.8-Flash-Next q3, 128K
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../plans/POWERSHELL.md).
+
 Approved direction recorded October 8, 2026. Start with [START_HERE.md](START_HERE.md).
 
 ## Resume point and goal

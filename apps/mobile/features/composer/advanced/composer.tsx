@@ -38,6 +38,7 @@ import {
 import {
   DEFAULT_COMPOSER_PREFERENCES,
   makeComposerPayload,
+  mergeDictationText,
   resolveComposerPreferences,
   sendWasAccepted,
 } from "./index";
@@ -47,6 +48,7 @@ import type {
   ComposerPreferenceStore,
   ComposerPreferences,
   ComposerSendIntent,
+  DictationOutcome,
 } from "./index";
 
 export interface ComposerStarter {
@@ -70,7 +72,15 @@ export interface AdvancedComposerProps {
   onPickAttachment?: () => Promise<ComposerAttachment | null>;
   onRemoveAttachment?: (attachment: ComposerAttachment) => Promise<void> | void;
   searchUnavailableReason?: string;
-  onDictate?: () => Promise<string | null>;
+  onDictate?: (handlers: {
+    onPartial: (text: string) => void;
+  }) => Promise<DictationOutcome>;
+  onDictateStop?: () => void;
+  onDictateCancel?: () => void;
+  /** Persisted explicit choice; finalized text sends exactly once. */
+  dictationAutosend?: boolean;
+  /** Shown instead of a recording control when dictation is not possible. */
+  dictationUnavailableReason?: string;
   onStop?: () => void | Promise<void>;
   isWorking?: boolean;
   errorMessage?: string;
@@ -94,6 +104,10 @@ export function AdvancedComposer({
   onRemoveAttachment,
   searchUnavailableReason,
   onDictate,
+  onDictateStop,
+  onDictateCancel,
+  dictationAutosend,
+  dictationUnavailableReason,
   onStop,
   isWorking = false,
   errorMessage,
@@ -112,6 +126,8 @@ export function AdvancedComposer({
   );
   const [preferencesLoaded, setPreferencesLoaded] = useState(!preferences);
   const [draft, setDraft] = useState(initialDraft);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   const draftListener = useRef(onDraftChange);
   draftListener.current = onDraftChange;
   useEffect(() => {
@@ -127,6 +143,9 @@ export function AdvancedComposer({
   const [phoneToolsOpen, setPhoneToolsOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [phoneInputHeight, setPhoneInputHeight] = useState(46);
+  const [dictating, setDictating] = useState(false);
+  const [dictationPreview, setDictationPreview] = useState("");
+  const [dictationError, setDictationError] = useState("");
   const phoneInputRef = useRef<TextInput>(null);
   useLayoutEffect(() => {
     if (!layout.phone) return;
@@ -262,10 +281,26 @@ export function AdvancedComposer({
   }, [busy, onPickAttachment]);
 
   const dictate = useCallback(async () => {
-    if (!onDictate || busy) return;
-    const text = await onDictate();
-    if (text) setDraft((current) => (current ? `${current} ${text}` : text));
-  }, [busy, onDictate]);
+    if (!onDictate || busy || dictating) return;
+    setDictating(true);
+    setDictationPreview("");
+    setDictationError("");
+    const outcome = await onDictate({
+      onPartial: (text) => setDictationPreview(text),
+    });
+    setDictating(false);
+    setDictationPreview("");
+    if (outcome.status === "final") {
+      const merged = mergeDictationText(draftRef.current, outcome.text);
+      if (merged !== draftRef.current) {
+        setDraft(merged);
+        // Autosend is an explicit persisted choice; send guards double sends.
+        if (dictationAutosend) void send(merged);
+      }
+    } else if (outcome.status === "error") {
+      setDictationError(outcome.message);
+    }
+  }, [busy, dictating, dictationAutosend, onDictate, send]);
 
   const selectMode = (mode: ComposerMode) => updatePreferences({ mode });
   const sendStarter = (prompt: string) => {
@@ -496,11 +531,32 @@ export function AdvancedComposer({
           />
         ) : null}
         {onDictate ? (
-          <ActionChip
-            label="Dictate"
-            disabled={busy}
-            onPress={() => void dictate()}
-          />
+          dictating ? (
+            <View style={styles.chips}>
+              <ActionChip
+                label="Stop"
+                icon="stop-circle-outline"
+                onPress={() => onDictateStop?.()}
+                testID="advanced-composer-dictation-stop"
+              />
+              <ActionChip
+                label="Cancel"
+                icon="close"
+                onPress={() => onDictateCancel?.()}
+                testID="advanced-composer-dictation-cancel"
+              />
+            </View>
+          ) : (
+            <ActionChip
+              label="Dictate"
+              disabled={busy}
+              onPress={() => void dictate()}
+              testID="advanced-composer-dictate"
+            />
+          )
+        ) : null}
+        {!onDictate && dictationUnavailableReason ? (
+          <Text style={styles.actionText}>{dictationUnavailableReason}</Text>
         ) : null}
         {!searchUnavailableReason ? (
           <ToolToggle
@@ -548,6 +604,20 @@ export function AdvancedComposer({
         ) : null}
       </ComposerToolsPanel>
 
+      {dictating ? (
+        <Text
+          style={styles.preview}
+          accessibilityLiveRegion="polite"
+          testID="advanced-composer-dictation-preview"
+        >
+          {dictationPreview || "Listening…"}
+        </Text>
+      ) : null}
+      {dictationError ? (
+        <Text style={styles.error} testID="advanced-composer-dictation-error">
+          {dictationError}
+        </Text>
+      ) : null}
       {errorMessage || sendError ? (
         <ErrorNotice message={errorMessage || sendError} />
       ) : null}
@@ -908,10 +978,14 @@ function ActionChip({
   label,
   disabled = false,
   onPress,
+  icon,
+  testID,
 }: {
   label: string;
   disabled?: boolean;
   onPress: () => void;
+  icon?: string;
+  testID?: string;
 }) {
   const theme = useTheme();
   const { phone } = useWorkspaceLayout();
@@ -922,7 +996,8 @@ function ActionChip({
         style={{ minHeight: 44 }}
         disabled={disabled}
         onPress={onPress}
-        icon={label === "Attach" ? "paperclip" : "microphone"}
+        {...(testID === undefined ? {} : { testID })}
+        icon={icon ?? (label === "Attach" ? "paperclip" : "microphone")}
       >
         {label}
       </Chip>
@@ -932,6 +1007,7 @@ function ActionChip({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
+      {...(testID === undefined ? {} : { testID })}
       style={[styles.chip, disabled && styles.disabled]}
     >
       <Text style={styles.chipText}>{label}</Text>
@@ -984,6 +1060,12 @@ const createStyles = (colors: MD3Theme["colors"]) =>
     chipText: { color: colors.onSurface },
     selectedText: { color: colors.onSecondaryContainer },
     chips: { flexDirection: "row", gap: 6 },
+    preview: {
+      color: colors.onSurfaceVariant,
+      fontSize: 14,
+      fontStyle: "italic",
+      paddingHorizontal: 8,
+    },
     chip: {
       borderWidth: 1,
       borderColor: colors.outline,

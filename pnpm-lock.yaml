@@ -83,6 +83,9 @@ importers:
       '@locallab/attachments':
         specifier: workspace:*
         version: link:../../packages/attachments
+      '@locallab/audio-session':
+        specifier: workspace:*
+        version: link:../../packages/audio/session
       '@locallab/capabilities':
         specifier: workspace:*
         version: link:../../packages/capabilities
@@ -188,15 +191,30 @@ importers:
       '@locallab/security-secrets':
         specifier: workspace:*
         version: link:../../packages/security/secrets
+      '@locallab/speech-system':
+        specifier: workspace:*
+        version: link:../../packages/speech-system
       '@locallab/storage-blobs':
         specifier: workspace:*
         version: link:../../packages/storage/blobs
       '@locallab/storage-sqlite-core':
         specifier: workspace:*
         version: link:../../packages/storage/sqlite/core
+      '@locallab/tools-builtins':
+        specifier: workspace:*
+        version: link:../../packages/tools/builtins
       '@locallab/tools-engine':
         specifier: workspace:*
         version: link:../../packages/tools/engine
+      '@locallab/tools-mcp-http':
+        specifier: workspace:*
+        version: link:../../packages/tools/mcp-http
+      '@locallab/tools-mcp-lmstudio':
+        specifier: workspace:*
+        version: link:../../packages/tools/mcp-lmstudio
+      '@locallab/tools-searxng':
+        specifier: workspace:*
+        version: link:../../packages/tools/searxng
       '@locallab/ui-native-primitives':
         specifier: workspace:*
         version: link:../../packages/ui-native/primitives
@@ -475,6 +493,18 @@ importers:
         specifier: 4.1.12
         version: 4.1.12
     devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
+  packages/audio/session:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -1059,6 +1089,9 @@ importers:
       '@locallab/network-http':
         specifier: workspace:*
         version: link:../../network/http
+      '@locallab/tools-mcp-lmstudio':
+        specifier: workspace:*
+        version: link:../../tools/mcp-lmstudio
     devDependencies:
       '@types/node':
         specifier: 24.0.10
@@ -1189,6 +1222,25 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/speech-system:
+    dependencies:
+      '@locallab/audio-session':
+        specifier: workspace:*
+        version: link:../audio/session
+      expo:
+        specifier: '>=57 <58'
+        version: 57.0.26(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(react-native@0.86.3)(react@19.2.3)(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
   packages/storage/blobs:
     dependencies:
       '@locallab/storage-sqlite-core':
@@ -1252,6 +1304,25 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
 
+  packages/tools/builtins:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/tools-engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
   packages/tools/engine:
     dependencies:
       '@locallab/context':
@@ -1270,6 +1341,56 @@ importers:
       '@locallab/provider-ollama-chat':
         specifier: workspace:*
         version: link:../../providers/ollama/chat
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
+  packages/tools/mcp-http:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/network-http':
+        specifier: workspace:*
+        version: link:../../network/http
+      '@locallab/tools-engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
+  packages/tools/mcp-lmstudio:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
+  packages/tools/searxng:
+    dependencies:
+      '@locallab/network-http':
+        specifier: workspace:*
+        version: link:../../network/http
+    devDependencies:
       '@types/node':
         specifier: 24.0.10
         version: 24.0.10

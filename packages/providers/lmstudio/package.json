@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@locallab/contracts": "workspace:*",
-    "@locallab/network-http": "workspace:*"
+    "@locallab/network-http": "workspace:*",
+    "@locallab/tools-mcp-lmstudio": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.0.10",

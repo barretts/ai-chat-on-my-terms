@@ -1,4 +1,5 @@
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
+import { translateLmStudioIntegrationError } from "@locallab/tools-mcp-lmstudio";
 import {
   createHttpTransport,
   type FetchLike,
@@ -17,6 +18,12 @@ export interface LMStudioOptions {
   fetch?: FetchLike;
   http?: HttpTransport;
   policy?: HttpAuthorizationPolicy;
+  /**
+   * Integrated MCP plugin references for the native v1 body (e.g.
+   * "mcp/playwright"), re-read for every run so enablement changes apply
+   * to the next send. Never included in compatible requests.
+   */
+  integrations?: () => readonly string[] | Promise<readonly string[]>;
 }
 
 export interface LMStudioAdapter {
@@ -130,11 +137,16 @@ export function createLMStudioAdapter(
       if (canContinue) continuations.delete(key);
     }
     const authHeaders = new Headers(headers);
+    const integrations =
+      useNative && options.integrations
+        ? [...(await options.integrations())]
+        : [];
     const body = useNative
       ? nativeBody(
           request,
           canContinue ? history.at(-1)!.content : (history[0]?.content ?? ""),
           canContinue ? saved.responseId : undefined,
+          integrations,
         )
       : compatibleBody(request, history);
     let final: Record<string, unknown> | undefined;
@@ -269,7 +281,7 @@ export function createLMStudioAdapter(
         type: "RunFailed",
         error: {
           code: signal.aborted ? "canceled" : "provider_error",
-          message: safeError(error),
+          message: failureMessage(safeError(error)),
           recoverable: signal.aborted,
         },
       });
@@ -291,7 +303,8 @@ export function createLMStudioAdapter(
 function nativeBody(
   request: RunRequest,
   input: string,
-  previousResponseId?: string,
+  previousResponseId: string | undefined,
+  integrations: readonly string[],
 ): Record<string, unknown> {
   return {
     model: request.modelId,
@@ -299,6 +312,7 @@ function nativeBody(
     stream: true,
     store: true,
     ...(previousResponseId ? { previous_response_id: previousResponseId } : {}),
+    ...(integrations.length > 0 ? { integrations: [...integrations] } : {}),
     ...parameters(request.parameters),
     ...(request.reasoning ? { reasoning: "on" } : {}),
   };
@@ -441,4 +455,8 @@ function extractNativeText(final: Record<string, unknown> | undefined): string {
 }
 function safeError(error: unknown): string {
   return error instanceof Error ? error.message : "LM Studio request failed";
+}
+function failureMessage(raw: string): string {
+  const translated = translateLmStudioIntegrationError(raw);
+  return translated ? `${translated.message} ${translated.recovery}` : raw;
 }

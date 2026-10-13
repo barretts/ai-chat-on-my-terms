@@ -204,6 +204,8 @@ it("persists provider and opaque reference in SQLite while raw key material stay
     expect(await settings.read()).toEqual({
       provider: "public",
       credentialRef: null,
+      endpoint: null,
+      mode: "auto",
     });
     await saveWebResearchConfiguration({
       settings,
@@ -213,7 +215,12 @@ it("persists provider and opaque reference in SQLite while raw key material stay
     });
     expect(
       await new SQLiteWebResearchSettings(sqlitePort(database)).read(),
-    ).toEqual({ provider: "brave", credentialRef: ref });
+    ).toEqual({
+      provider: "brave",
+      credentialRef: ref,
+      endpoint: null,
+      mode: "auto",
+    });
     const rows = database
       .prepare("SELECT * FROM web_research_settings_local")
       .all();
@@ -236,6 +243,8 @@ it("persists provider and opaque reference in SQLite while raw key material stay
     expect(await settings.read()).toEqual({
       provider: "public",
       credentialRef: null,
+      endpoint: null,
+      mode: "auto",
     });
     await expect(
       secure.resolveHeaders(BRAVE_SEARCH_ORIGIN, [ref]),
@@ -353,7 +362,12 @@ it("reports committed settings separately from failed previous-key removal", asy
     provider: "brave",
     newKey: "fixture-key",
   });
-  expect(committed).toEqual({ provider: "brave", credentialRef: ref });
+  expect(committed).toEqual({
+    provider: "brave",
+    credentialRef: ref,
+    endpoint: null,
+    mode: "auto",
+  });
   expect(result.replacedKeyRemoved).toBe(false);
   expect(result.cleanupError).toBe(cleanupCause);
   expect(result.pendingCleanupRef).toBe(previousRef);

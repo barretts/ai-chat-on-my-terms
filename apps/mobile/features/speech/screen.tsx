@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Linking, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Icon, List, ProgressBar, Text, useTheme } from "react-native-paper";
+import { Icon, List, ProgressBar, Switch, Text, useTheme } from "react-native-paper";
 import {
   NativeButton,
   NativeInput,
@@ -18,14 +18,26 @@ import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
 import { traceLog } from "../diagnostics/trace-log";
 
+/** Voice Studio surface for system dictation; the chat screen owns the state. */
+export interface SpeechDictationProps {
+  statusText: string;
+  locales: readonly string[];
+  selectedLocale: string;
+  autosend: boolean;
+  onLocaleChange(locale: string): void;
+  onAutosendChange(value: boolean): void;
+}
+
 export interface SpeechPanelProps {
   onClose?: () => void;
   initialText?: string;
+  dictation?: SpeechDictationProps;
 }
 
 export function SpeechPanel({
   onClose,
   initialText = "Hello. This voice is generated locally on your device. Your words stay private.",
+  dictation,
 }: SpeechPanelProps) {
   const theme = useTheme();
   const { phone } = useWorkspaceLayout();
@@ -417,6 +429,47 @@ export function SpeechPanel({
             </List.Accordion>
           </NativeSurface>
         ))}
+        {dictation ? (
+          <NativeSurface
+            accessibilityLabel="Dictation settings"
+            style={styles.phoneHelpCard}
+          >
+            <View style={styles.phonePackHeader}>
+              <Text variant="titleMedium">Dictation</Text>
+            </View>
+            <Text variant="bodyMedium" testID="speech-dictation-status">
+              {dictation.statusText}
+            </Text>
+            {dictation.locales.length > 0 ? (
+              <NativeDropdown
+                label="Recognition language"
+                value={dictation.selectedLocale || "system"}
+                options={[
+                  { value: "system", label: "System default" },
+                  ...dictation.locales.map((locale) => ({
+                    value: locale,
+                    label: locale,
+                  })),
+                ]}
+                onChange={(value) =>
+                  dictation.onLocaleChange(value === "system" ? "" : value)
+                }
+              />
+            ) : null}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Switch
+                value={dictation.autosend}
+                onValueChange={dictation.onAutosendChange}
+                accessibilityLabel="Send the dictated message automatically"
+              />
+              <Text variant="bodyMedium">Send after dictation</Text>
+            </View>
+            <Text variant="bodySmall">
+              Dictation uses the iPhone system speech recognizer. Sending
+              after dictation is off unless you turn it on here.
+            </Text>
+          </NativeSurface>
+        ) : null}
         <NativeSurface
           accessibilityLabel="Offline voice help"
           style={styles.phoneHelpCard}
@@ -628,6 +681,39 @@ export function SpeechPanel({
           </View>
         </NativeSurface>
       ))}
+      {dictation ? (
+        <NativeSurface
+          accessibilityLabel="Dictation settings"
+          style={styles.card}
+        >
+          <Text variant="titleMedium">Dictation</Text>
+          <Text testID="speech-dictation-status">{dictation.statusText}</Text>
+          {dictation.locales.length > 0 ? (
+            <NativeDropdown
+              label="Recognition language"
+              value={dictation.selectedLocale || "system"}
+              options={[
+                { value: "system", label: "System default" },
+                ...dictation.locales.map((locale) => ({
+                  value: locale,
+                  label: locale,
+                })),
+              ]}
+              onChange={(value) =>
+                dictation.onLocaleChange(value === "system" ? "" : value)
+              }
+            />
+          ) : null}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Switch
+              value={dictation.autosend}
+              onValueChange={dictation.onAutosendChange}
+              accessibilityLabel="Send the dictated message automatically"
+            />
+            <Text>Send after dictation</Text>
+          </View>
+        </NativeSurface>
+      ) : null}
       <Text>
         Keep this panel open while downloading or reading. Browser downloads
         stay in this browser profile; native downloads stay in the app.

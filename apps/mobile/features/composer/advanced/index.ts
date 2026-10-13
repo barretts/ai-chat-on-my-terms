@@ -129,3 +129,25 @@ export type ReturnKeyAction = { type: "send" } | { type: "insert-newline" };
 export function returnKeyAction(returnSends: boolean): ReturnKeyAction {
   return returnSends ? { type: "send" } : { type: "insert-newline" };
 }
+
+/**
+ * Result of one composer dictation run. `final` carries what was recognized;
+ * `canceled` means the user discarded it; `error` is the honest failure to
+ * show near the control.
+ */
+export type DictationOutcome =
+  | {
+      status: "final";
+      text: string;
+      locale: string | null;
+      onDevice: boolean | null;
+    }
+  | { status: "canceled" }
+  | { status: "error"; code: string; message: string };
+
+/** Appends finalized dictation to the existing draft with one space. */
+export function mergeDictationText(draft: string, text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return draft;
+  return draft ? `${draft} ${trimmed}` : trimmed;
+}

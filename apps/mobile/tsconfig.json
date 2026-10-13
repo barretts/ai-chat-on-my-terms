@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2024", "DOM", "DOM.Iterable", "ScriptHost"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

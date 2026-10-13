@@ -1,5 +1,7 @@
 # C01 — Persistent automatic web policy
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependencies: C00 audit. Next: C02. Requested extension mapped to TL-09/TL-11; do not change original IDs.
 
 ## Goal and owned areas

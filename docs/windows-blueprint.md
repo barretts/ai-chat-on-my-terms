@@ -1,5 +1,7 @@
 # Windows implementation blueprint
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../plans/POWERSHELL.md).
+
 This is a proposed design for your learning project, not a description of LM Mini's internal code. The [feature inventory](lm-mini-features.md) is the source of parity requirements. The stages below change implementation order, not the final scope.
 
 ## Product shape

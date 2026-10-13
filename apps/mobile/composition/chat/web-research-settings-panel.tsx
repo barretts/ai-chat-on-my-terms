@@ -10,12 +10,15 @@ import {
 import type { SecretRef, SecretStore } from "@locallab/security-secrets";
 import { braveSearchFetch } from "../../platform/brave-search-fetch";
 import { webAccessFetch } from "../../platform/web-access";
+import { providerFetch } from "../../platform/provider-fetch";
 import {
   createConfiguredWebResearchClient,
+  resolveEffectiveWebResearchMode,
   saveWebResearchConfiguration,
   WebResearchCleanupError,
   type WebResearchSettingsStore,
   type WebResearchSettings,
+  type WebResearchMode,
 } from "./web-research-settings";
 import { BRAVE_SEARCH_ORIGIN } from "./brave-web-search";
 import { describeError } from "../../features/diagnostics/errors";
@@ -24,10 +27,12 @@ import { ErrorNotice } from "../../features/diagnostics/error-notice";
 export function WebResearchSettingsPanel({
   settings,
   secrets,
+  conversationId,
   onChanged,
 }: {
   settings: WebResearchSettingsStore;
   secrets: SecretStore;
+  conversationId: string;
   onChanged?(): void;
 }) {
   const [provider, setProvider] =
@@ -35,13 +40,17 @@ export function WebResearchSettingsPanel({
   const [saved, setSaved] = useState<WebResearchSettings>({
     provider: "public",
     credentialRef: null,
+    endpoint: null,
   });
+  const [endpoint, setEndpoint] = useState("");
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [missingKey, setMissingKey] = useState(false);
+  const [mode, setMode] = useState<WebResearchMode>("auto");
+  const [override, setOverride] = useState<WebResearchMode | null>(null);
   const mounted = useRef(true);
   const operation = useRef(false);
   const active = useRef<AbortController | null>(null);
@@ -62,19 +71,26 @@ export function WebResearchSettingsPanel({
         if (!mounted.current) return;
         setSaved(value);
         setProvider(value.provider);
+        setMode(value.mode ?? "auto");
+        setEndpoint(value.endpoint ?? "");
         if (value.credentialRef) {
+          const keyOrigin =
+            value.provider === "searxng" && value.endpoint !== null
+              ? new URL(value.endpoint).origin
+              : BRAVE_SEARCH_ORIGIN;
           try {
-            await secrets.resolveHeaders(BRAVE_SEARCH_ORIGIN, [
-              value.credentialRef,
-            ]);
+            await secrets.resolveHeaders(keyOrigin, [value.credentialRef]);
           } catch (cause) {
             if (mounted.current) {
               setMissingKey(true);
               setError(
                 describeError(cause, {
-                  operation: "Read saved Brave Search key",
+                  operation:
+                    value.provider === "searxng"
+                      ? "Read saved SearXNG key"
+                      : "Read saved Brave Search key",
                   recovery:
-                    "The saved key is unavailable. Enter and save it again, or choose Public search.",
+                    "The saved key is unavailable. Enter and save it again, or choose another search service.",
                 }),
               );
             }
@@ -97,7 +113,51 @@ export function WebResearchSettingsPanel({
       mounted.current = false;
       active.current?.abort();
     };
-  }, [settings, secrets]);
+  }, [settings, secrets, conversationId]);
+  useEffect(() => {
+    void settings
+      .readConversationOverride(conversationId)
+      .then((value) => {
+        if (mounted.current) setOverride(value);
+      })
+      .catch((cause) => {
+        if (mounted.current)
+          setError(
+            describeError(cause, {
+              operation: "Load web search override for this chat",
+              recovery: "Reopen this page and try again.",
+            }),
+          );
+      });
+  }, [settings, conversationId]);
+  const applyOverride = async (value: "inherit" | WebResearchMode) => {
+    setError("");
+    setStatus("");
+    try {
+      if (value === "inherit") {
+        await settings.removeConversationOverride(conversationId);
+        if (mounted.current) {
+          setOverride(null);
+          setStatus("This chat follows the app-wide mode.");
+        }
+      } else {
+        await settings.saveConversationOverride(conversationId, value);
+        if (mounted.current) {
+          setOverride(value);
+          setStatus(`This chat now uses ${value} web research.`);
+        }
+      }
+      onChanged?.();
+    } catch (cause) {
+      if (mounted.current)
+        setError(
+          describeError(cause, {
+            operation: "Save web search policy for this chat",
+            recovery: "Try again. Your other settings are unchanged.",
+          }),
+        );
+    }
+  };
   const persist = async (clear = false) => {
     if (operation.current) return;
     operation.current = true;
@@ -109,18 +169,26 @@ export function WebResearchSettingsPanel({
         settings,
         secrets,
         provider: clear ? "public" : provider,
+        mode,
+        ...(provider === "searxng" && !clear ? { endpoint } : {}),
         ...(clear
           ? { clearKey: true }
-          : provider === "brave" && key.trim()
+          : (provider === "brave" || provider === "searxng") && key.trim()
             ? { newKey: key }
             : {}),
       });
       if (!mounted.current) return;
       setSaved(result.value);
       setProvider(result.value.provider);
+      setMode(result.value.mode ?? "auto");
       setKey("");
+      setEndpoint(result.value.endpoint ?? "");
       setMissingKey(
-        clear || (provider === "brave" && key.trim()) ? false : missingKey,
+        clear ||
+        (provider === "brave" && key.trim()) ||
+        (provider === "searxng" && key.trim())
+          ? false
+          : missingKey,
       );
       setStatus(
         result.replacedKeyRemoved
@@ -134,7 +202,7 @@ export function WebResearchSettingsPanel({
           pendingCleanup.current.add(result.pendingCleanupRef);
         setError(
           describeError(result.cleanupError, {
-            operation: "Remove previous Brave Search key",
+            operation: "Remove previous search key",
             recovery:
               "The settings were saved, but the previous key could not be removed. Use Retry secure cleanup to remove it.",
           }),
@@ -148,7 +216,7 @@ export function WebResearchSettingsPanel({
         setError(
           describeError(cause, {
             operation: clear
-              ? "Remove Brave Search key"
+              ? "Remove saved search key"
               : "Save web search settings",
             recovery: "Check the selected service and key, then save again.",
           }),
@@ -202,6 +270,7 @@ export function WebResearchSettingsPanel({
         secrets,
         publicFetch: webAccessFetch,
         searchApiFetch: braveSearchFetch,
+        providerFetch,
       });
       const results = await client.search(
         "Expo documentation",
@@ -231,7 +300,11 @@ export function WebResearchSettingsPanel({
       if (mounted.current) setBusy(false);
     }
   };
-  const unsaved = key.trim().length > 0 || provider !== saved.provider;
+  const unsaved =
+    key.trim().length > 0 ||
+    provider !== saved.provider ||
+    (provider === "searxng" && endpoint.trim() !== (saved.endpoint ?? "")) ||
+    mode !== (saved.mode ?? "auto");
   return (
     <ScrollView
       ref={scroll}
@@ -271,6 +344,29 @@ export function WebResearchSettingsPanel({
           options={[
             { value: "public", label: "Public search · DuckDuckGo" },
             { value: "brave", label: "Brave Search API" },
+            { value: "searxng", label: "SearXNG server" },
+          ]}
+          disabled={loading || busy}
+        />
+        <Text variant="titleMedium" accessibilityRole="header">
+          When to browse
+        </Text>
+        <Text variant="bodyMedium">
+          Auto browses when you ask or when a tool-capable model needs fresh
+          information. Manual browses only when you ask. Off never browses.
+        </Text>
+        <NativeDropdown
+          label="App-wide mode"
+          value={mode}
+          onChange={(value) => {
+            setMode(value as WebResearchMode);
+            setStatus("");
+            setError("");
+          }}
+          options={[
+            { value: "auto", label: "Auto · with capable models" },
+            { value: "manual", label: "Manual · only when you ask" },
+            { value: "off", label: "Off · never browse" },
           ]}
           disabled={loading || busy}
         />
@@ -279,6 +375,49 @@ export function WebResearchSettingsPanel({
             Public search may be blocked by browser verification or rate limits.
             No key needed. Choose Brave for a supported API.
           </Text>
+        ) : provider === "searxng" ? (
+          <>
+            <Text variant="bodyMedium">
+              Queries and any access key go only to this SearXNG server. The
+              server must allow the JSON search API: enable format=json in its
+              settings.
+            </Text>
+            <NativeInput
+              label="SearXNG server address"
+              accessibilityLabel="SearXNG server address"
+              value={endpoint}
+              onChangeText={setEndpoint}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading && !busy}
+            />
+            <NativeInput
+              label={
+                saved.provider === "searxng" && saved.credentialRef
+                  ? "Replace access key (optional)"
+                  : "Access key (optional)"
+              }
+              accessibilityLabel="SearXNG access key"
+              value={key}
+              onChangeText={setKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading && !busy}
+            />
+            <Text variant="bodySmall">
+              {Platform.OS === "web"
+                ? "A key is kept in this tab only. Re-enter after reload. On iPhone, the key uses system secure storage."
+                : "A key is saved in your phone's system secure storage."}
+            </Text>
+            {!missingKey &&
+            saved.provider === "searxng" &&
+            saved.credentialRef ? (
+              <Text variant="bodySmall">
+                Key saved. Leave blank to keep it.
+              </Text>
+            ) : null}
+          </>
         ) : (
           <>
             <Text variant="bodyMedium">
@@ -338,7 +477,8 @@ export function WebResearchSettingsPanel({
               busy ||
               (provider === "brave" &&
                 !key.trim() &&
-                (!saved.credentialRef || missingKey))
+                (!saved.credentialRef || missingKey)) ||
+              (provider === "searxng" && !endpoint.trim())
             }
             onPress={() => void persist()}
           >
@@ -366,7 +506,11 @@ export function WebResearchSettingsPanel({
           ) : null}
           {saved.credentialRef ? (
             <NativeButton
-              accessibilityLabel="Remove saved Brave Search key"
+              accessibilityLabel={
+                saved.provider === "searxng"
+                  ? "Remove saved SearXNG key"
+                  : "Remove saved Brave Search key"
+              }
               disabled={loading || busy}
               onPress={() => void persist(true)}
             >
@@ -388,6 +532,36 @@ export function WebResearchSettingsPanel({
           </Text>
         ) : null}
         {status ? <Text accessibilityLiveRegion="polite">{status}</Text> : null}
+      </NativeSurface>
+      <NativeSurface
+        style={{ margin: 12, padding: 16, gap: 12 }}
+        accessibilityLabel="Web research for this chat"
+      >
+        <Text variant="titleMedium" accessibilityRole="header">
+          This chat
+        </Text>
+        <Text variant="bodyMedium">
+          This chat currently uses{" "}
+          {resolveEffectiveWebResearchMode(saved.mode ?? "auto", override)}{" "}
+          {override ? "(set for this chat)" : "(the app-wide mode)"}.
+        </Text>
+        <NativeDropdown
+          label="Mode for this chat"
+          value={override ?? "inherit"}
+          onChange={(value) =>
+            void applyOverride(value as "inherit" | WebResearchMode)
+          }
+          options={[
+            { value: "inherit", label: "Use the app-wide mode" },
+            { value: "auto", label: "Auto · with capable models" },
+            { value: "manual", label: "Manual · only when you ask" },
+            { value: "off", label: "Off · never browse" },
+          ]}
+          disabled={loading}
+        />
+        <Text variant="bodySmall">
+          Overrides apply to this chat only and are kept until you remove them.
+        </Text>
       </NativeSurface>
     </ScrollView>
   );

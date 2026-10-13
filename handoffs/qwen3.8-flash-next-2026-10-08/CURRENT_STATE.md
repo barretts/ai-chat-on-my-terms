@@ -1,5 +1,7 @@
 # Current state — October 8, 2026
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../plans/POWERSHELL.md).
+
 ## Reliable resume point
 
 - Project: LocalLab. Repository root: C:/code/cht.

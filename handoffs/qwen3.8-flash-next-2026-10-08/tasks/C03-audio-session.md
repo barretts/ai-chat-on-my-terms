@@ -1,5 +1,7 @@
 # C03 — Shared audio/session ownership
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../plans/POWERSHELL.md).
+
 Dependency: C00. Priority order follows C02; independent if C02 has an external blocker.
 Original: [T071](../../../plans/tasks/P07/T071.md). Next: C04.
 

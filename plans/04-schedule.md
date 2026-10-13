@@ -1,5 +1,7 @@
 ﻿# Execution-first concurrency schedule
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 A phase groups related cards; it is not a barrier. Assign a ready card when its direct dependencies are implemented and its owned paths are free. Implementation cards need quick functional/contract smoke checks. **Deep device, service, performance and security campaigns start after a working build**, in T122/T123/T159A–H/T160–T169. The waves below assume unlimited workers; actual throughput is constrained by devices, credentials, signing and test services.
 
 ## Milestones in order

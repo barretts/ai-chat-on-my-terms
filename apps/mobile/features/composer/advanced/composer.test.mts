@@ -2,11 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_COMPOSER_PREFERENCES,
   makeComposerPayload,
+  mergeDictationText,
   resolveComposerPreferences,
   returnKeyAction,
   sendWasAccepted,
   SQLiteComposerPreferenceStore,
 } from "./index.ts";
+
+  it("appends finalized dictation with one space without disturbing the draft", () => {
+    expect(mergeDictationText("", "hello there")).toBe("hello there");
+    expect(mergeDictationText("keep this", " said out loud ")).toBe(
+      "keep this said out loud",
+    );
+    expect(mergeDictationText("keep this", "   ")).toBe("keep this");
+  });
 
 describe("advanced composer contract", () => {
   it("restores saved mode and both preferences while defaulting invalid values", () => {

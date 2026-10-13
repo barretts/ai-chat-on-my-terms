@@ -1,5 +1,7 @@
 ﻿# LocalLab: execution-first iPhone plan
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 This is an independent, cross-platform mobile app plan based on the [231-record feature inventory](../docs/lm-mini-features.md). It has **202 bounded task cards**. The first target is **iPhone**. A Mac companion is built where the phone needs remote model, speech, USB or sync routes. iPad, Android and full Mac/Windows/Linux desktop clients follow the working iPhone milestone. Original product branding, artwork, prompts and pairing protocol are not reused; the official OpenAI API is an explicitly supported provider endpoint.
 
 **Build before deep testing.** [T158](tasks/P04/T158.md) is the first real iPhone chat with both offline GGUF and an [OpenAI Responses remote endpoint](tasks/P02/T021A.md). A user can enter a key and model ID, select the OpenAI path, and stream a reply without an account or hosted app proxy. [T128](tasks/P11/T128.md) integrates the full iPhone feature set into a working development build. Cards before these milestones use quick contract/functional smoke checks. After T128, eight independent iPhone domain shards, performance and security audits feed the [deep-verified internal iPhone release](tasks/P11/T159.md). Later platform builds and their separate verification shards converge at T121/T135/T127. Functional milestones never claim production verification.

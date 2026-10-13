@@ -1,5 +1,7 @@
 # Start here: LocalLab continuation for Qwen
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../plans/POWERSHELL.md).
+
 Target model supplied by the user: Qwen3.8-Flash-Next q3 with 128K context.
 Prepared October 8, 2026. Run your coding agent from C:/code/cht.
 
@@ -8,6 +10,14 @@ Prepared October 8, 2026. Run your coding agent from C:/code/cht.
 Paste the following into your Qwen coding agent:
 
 > Continue LocalLab in the current C:/code/cht workspace. Read handoffs/qwen3.8-flash-next-2026-10-08/START_HERE.md, CURRENT_STATE.md, TASK_QUEUE.md and PROGRESS.md. Follow PLAN.md and the active task card. Start with C01 unless progress records a later task. Implement the next ready card, run its focused checks, and update PROGRESS.md with changed paths, exact results and the next action. Preserve existing uncommitted work. Automatic web research, iOS dictation and tools/MCP are the priorities. Arena is held by the user: do not build or activate it. Use model-native automatic web tools only when the selected model confirms tool support; do not add an extra planning call for other models. Do not restart the whole project or re-plan all 231 features.
+
+## C01-C10 goal run (OMP)
+
+For the authorized persistent run, follow [GOAL-C01-C10.md](GOAL-C01-C10.md). It resumes from current progress and stops at the priority integration checkpoint.
+
+```text
+/goal set Continue LocalLab in C:/code/cht and finish the C01-C10 priority queue. Read and follow C:/code/cht/handoffs/qwen3.8-flash-next-2026-10-08/GOAL-C01-C10.md. Use PowerShell, preserve existing work, and keep Arena held.
+```
 
 ## Read in this order
 

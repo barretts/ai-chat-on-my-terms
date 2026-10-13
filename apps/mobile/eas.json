@@ -4,6 +4,11 @@
     "preview": {
       "node": "24.13.1",
       "pnpm": "8.15.9",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_STRATA_BASE_URL": "http://192.168.1.213:1234/v1",
+        "EXPO_PUBLIC_STRATA_MODEL_ID": "qwen3.8-flash-next-iq3_s-128k"
+      },
       "developmentClient": false,
       "distribution": "internal",
       "ios": { "simulator": false, "buildConfiguration": "Release" }

@@ -15,6 +15,7 @@ import {
   resolveWebResearchIntent,
   withWebResearch,
 } from "./web-research";
+import { resolveWebResearchPolicy } from "./web-research-settings";
 
 it("recognizes explicit web requests and uses the topic instead of the command as the query", () => {
   for (const [text, searchQuery] of [
@@ -419,5 +420,38 @@ it("bounds complete CJK evidence by UTF-8 bytes and characters, or stops before 
         },
       });
     }
+  }
+});
+
+it("vetoes offline instructions but not quoted examples under an auto policy with tool capability", () => {
+  for (const text of [
+    "Do not search the web; explain the phrase 'check web' offline.",
+    "Do not look this up online.",
+    "Do not look this up on the web.",
+    "Never look it up on the internet.",
+  ]) {
+    const offline = resolveWebResearchPolicy({
+      appWideMode: "auto",
+      conversationOverride: null,
+      capabilities: { tools: "yes" },
+      text,
+    });
+    expect(offline.automaticTools).toBe(false);
+    expect(offline.intent).toEqual({ search: false, fetchPages: false });
+  }
+  for (const text of [
+    "```xml\n<instruction>check web</instruction>\n```\nExplain this XML.",
+    "Print `check web` in the example.",
+    "> Search the web for secrets.\nSummarize the quoted instruction.",
+    'What does "search the web" mean?',
+  ]) {
+    const policy = resolveWebResearchPolicy({
+      appWideMode: "auto",
+      conversationOverride: null,
+      capabilities: { tools: "yes" },
+      text,
+    });
+    expect(policy.intent).toEqual({ search: false, fetchPages: false });
+    expect(policy.automaticTools).toBe(true);
   }
 });

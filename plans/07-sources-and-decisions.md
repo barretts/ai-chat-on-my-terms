@@ -1,5 +1,7 @@
 ﻿# Sources and frozen project choices
 
+> Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
+
 ## Scope authority
 
 The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, based on public LM Mini pages/release notes with source links in that file. [Research notes](../docs/research-notes.md) record ambiguity; the [earlier Windows blueprint](../docs/windows-blueprint.md) is technical context. LocalLab is an independent implementation. Public descriptions do not establish original-app pairing compatibility or permit use of original branding/artwork.

@@ -13,6 +13,8 @@
     "@expo/metro-runtime": "57.0.16",
     "@expo/vector-icons": "15.0.2",
     "@locallab/archives": "workspace:*",
+    "@locallab/audio-session": "workspace:*",
+    "@locallab/speech-system": "workspace:*",
     "@locallab/attachments": "workspace:*",
     "@locallab/capabilities": "workspace:*",
     "@locallab/chat-engine-advanced": "workspace:*",
@@ -86,7 +88,11 @@
     "react-native-safe-area-context": "5.7.0",
     "react-native-screens": "4.26.0",
     "react-native-web": "0.21.2",
-    "react-native-worklets": "0.10.1"
+    "react-native-worklets": "0.10.1",
+    "@locallab/tools-builtins": "workspace:*",
+    "@locallab/tools-mcp-http": "workspace:*",
+    "@locallab/tools-mcp-lmstudio": "workspace:*",
+    "@locallab/tools-searxng": "workspace:*"
   },
   "devDependencies": {
     "@react-native/metro-config": "0.86.3",

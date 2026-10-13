@@ -197,9 +197,14 @@ test("phone native file tools save, continue, preview, export and persist until 
   const fixture = await setup(page, testInfo, true);
   await writeAndPreview(page, testInfo);
   expect(fixture.requests).toHaveLength(2);
-  expect(fixture.requests[0]!.tools!.map((tool) => tool.function.name)).toEqual(
-    ["workspace_list_files", "workspace_read_file", "workspace_write_file"],
-  );
+  expect(fixture.requests[0]!.tools!.map((tool) => tool.function.name)).toEqual([
+    "workspace_list_files",
+    "workspace_read_file",
+    "workspace_write_file",
+    "web_search",
+    "web_fetch",
+    "current_time",
+  ]);
   expect(fixture.requests[0]!.max_tokens).toBe(2048);
   expect(fixture.requests[0]!.enable_thinking).toBe(false);
   const toolMessage = fixture.requests[1]!.messages.find(
