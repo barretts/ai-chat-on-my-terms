@@ -204,8 +204,8 @@ export class SQLiteGroupConfigStore {
       if (participant.providerConnectionId !== null)
         EntityIdSchema.parse(participant.providerConnectionId);
     }
-    await dbTransaction(this.db, async () => {
-      await this.db.runAsync(
+    await dbTransaction(this.db, async (transaction) => {
+      await transaction.runAsync(
         `INSERT INTO group_rooms(id,name,conversation_id,scenario,user_display_name)
          VALUES(?,?,?,?,?)
          ON CONFLICT(id) DO UPDATE SET
@@ -217,12 +217,12 @@ export class SQLiteGroupConfigStore {
         draft.scenario,
         draft.userDisplayName,
       );
-      await this.db.runAsync(
+      await transaction.runAsync(
         "DELETE FROM group_participants WHERE group_room_id=?",
         roomId,
       );
       for (const [index, participant] of draft.participants.entries()) {
-        await this.db.runAsync(
+        await transaction.runAsync(
           `INSERT INTO group_participants(
              id,group_room_id,persona_id,provider_connection_id,model_id,
              display_name,accent_color,system_prompt,voice_json,tools_enabled,turn_order)
@@ -288,11 +288,11 @@ export class SQLiteGroupConfigStore {
 
 async function dbTransaction(
   db: SQLiteDatabasePort,
-  work: () => Promise<void>,
+  work: (transaction: SQLiteDatabasePort) => Promise<void>,
 ): Promise<void> {
   if (db.withTransactionAsync) {
-    await db.withTransactionAsync(work);
+    await db.withTransactionAsync((transaction) => work(transaction ?? db));
     return;
   }
-  await work();
+  await work(db);
 }

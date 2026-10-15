@@ -203,3 +203,81 @@ test("saved rooms reopen intact with turn order and opaque voice", async () => {
   assert.equal(again!.participants.length, 2);
   database.close();
 });
+
+/**
+ * Mirrors apps/mobile/platform/database.ts (sharedMobileDatabase): every
+ * operation on the shared native connection runs through one FIFO queue,
+ * withTransactionAsync holds the queue for the whole transaction and hands
+ * the callback a transaction-scoped port. Writing through the OUTER adapter
+ * inside the callback would queue behind the open transaction forever.
+ */
+function sharedConnectionQueue(base: SQLiteDatabasePort): SQLiteDatabasePort {
+  let operations: Promise<unknown> = Promise.resolve();
+  const enqueue = <T>(work: () => Promise<T>): Promise<T> => {
+    const next = operations.then(work);
+    operations = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    return next;
+  };
+  return {
+    execAsync: (sql) => enqueue(() => base.execAsync(sql)),
+    runAsync: (sql, ...params) => enqueue(() => base.runAsync(sql, ...params)),
+    getFirstAsync: <T>(sql: string, ...params: SqliteBindValue[]) =>
+      enqueue(() => base.getFirstAsync<T>(sql, ...params)),
+    getAllAsync: <T>(sql: string, ...params: SqliteBindValue[]) =>
+      enqueue(() => base.getAllAsync<T>(sql, ...params)),
+    withTransactionAsync: (work) =>
+      enqueue(async () => {
+        await base.execAsync("BEGIN IMMEDIATE");
+        try {
+          await work({
+            execAsync: (sql) => base.execAsync(sql),
+            runAsync: (sql, ...params) => base.runAsync(sql, ...params),
+            getFirstAsync: <T>(sql: string, ...params: SqliteBindValue[]) =>
+              base.getFirstAsync<T>(sql, ...params),
+            getAllAsync: <T>(sql: string, ...params: SqliteBindValue[]) =>
+              base.getAllAsync<T>(sql, ...params),
+            withTransactionAsync: async () => {
+              throw new Error("Nested SQLite transactions are not supported");
+            },
+          });
+          await base.execAsync("COMMIT");
+        } catch (error) {
+          await base.execAsync("ROLLBACK").catch(() => undefined);
+          throw error;
+        }
+      }),
+  };
+}
+
+function within<T>(label: string, promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`${label} deadlocked behind the transaction`)),
+        1000,
+      ).unref();
+    }),
+  ]);
+}
+
+test("saveRoom resolves on a shared connection that queues every operation", async () => {
+  const database = new DatabaseSync(":memory:");
+  const queued = sharedConnectionQueue(adapter(database));
+  await SQLiteGroupConfigStore.initialize(queued);
+  const config = new SQLiteGroupConfigStore(queued);
+  const seats: GroupParticipantDraft[] = [
+    { ...emptyGroupParticipant(), personaId: id(4101), displayName: "Alpha" },
+    { ...emptyGroupParticipant(), modelId: "gpt-test", displayName: "Beta" },
+  ];
+  const roomId = await within(
+    "saveRoom",
+    config.saveRoom(room(seats), createId),
+  );
+  const reopened = await within("loadRoom", config.loadRoom(roomId));
+  assert.equal(reopened?.participants.length, 2);
+  database.close();
+});
