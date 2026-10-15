@@ -48,7 +48,21 @@ private final class Worker {
 
     func run() async {
         event("WorkerReady", runId: nil, capability: MLXMacPlatform.capability())
-        while let line = readLine() {
+        // readLine blocks until the next line. On MainActor it would starve
+        // the load/generate Tasks dispatched below: they inherit this actor
+        // and could only run if another input line happened to arrive. A
+        // dedicated reader thread feeds commands through an AsyncStream so
+        // the actor stays free to run Tasks between commands; EOF finishes
+        // the stream, ending the loop like the old while-let did.
+        let commands = AsyncStream<String> { continuation in
+            Thread.detachNewThread {
+                while let line = readLine() {
+                    continuation.yield(line)
+                }
+                continuation.finish()
+            }
+        }
+        for await line in commands {
             guard let data = line.data(using: .utf8), let command = try? JSONDecoder().decode(Command.self, from: data) else {
                 event("WorkerError", runId: nil, code: "invalid-request", message: "Command must be a JSON object.")
                 continue
