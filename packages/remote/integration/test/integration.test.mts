@@ -328,8 +328,12 @@ test("700 KB image streams mobile -> companion sealed; assembled sha256 matches"
 test("one conversation syncs: transport drains to idle and the merge store applies all three", async () => {
   const companionStore = new MergeStore();
   const ackedIds: string[] = [];
+  let syncedBatchId = "";
   const session = await pairedRelaySession((live, payload) => {
-    if (payload.tag === "sync-batch") ackedIds.push(...ackSyncBatch(live.companionHandle, payload, companionStore));
+    if (payload.tag === "sync-batch") {
+      syncedBatchId = payload.batchId;
+      ackedIds.push(...ackSyncBatch(live.companionHandle, payload, companionStore));
+    }
   });
   try {
     const records = [
@@ -349,7 +353,11 @@ test("one conversation syncs: transport drains to idle and the merge store appli
     session.mobileHandle.onPayload((payload) => {
       if (payload.tag === "sync-ack") secondAckSeen.resolve(payload);
     });
-    session.companionHandle.send({ tag: "sync-ack", recordIds: records.map((record) => record.id) });
+    session.companionHandle.send({
+      tag: "sync-ack",
+      batchId: syncedBatchId,
+      recordIds: records.map((record) => record.id),
+    });
     const echoed = await secondAckSeen.promise;
     transport.handleAck(echoed);
     assert.equal(transport.status().state, "idle");

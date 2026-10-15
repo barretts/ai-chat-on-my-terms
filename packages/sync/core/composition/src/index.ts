@@ -199,7 +199,7 @@ export class SyncEngine {
       this.opts.store.apply(record); // throws unsupported/malformed fail-closed
       accepted.push(record.id);
     }
-    await this.opts.sendAck(syncAckPayload(accepted));
+    await this.opts.sendAck(syncAckPayload(batch.batchId, accepted));
   }
 
   /** SY-08 seam: host wake or Sync off/on toggle reschedules the queue. */

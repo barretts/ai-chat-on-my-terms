@@ -210,11 +210,22 @@ describe("remoteSyncPorts", () => {
     assert.equal(batch.records.length, 1);
 
     // inbound sync-ack on the session lands in the transport's ack set
-    session.deliver({ tag: "sync-ack", recordIds: batch.records.map((record) => record.id) });
+    session.deliver({
+      tag: "sync-ack",
+      batchId: batch.batchId,
+      recordIds: batch.records.map((record) => record.id),
+    });
     assert.equal(transport.status().pendingRecords, 0);
 
     // handleAck validates a raw frame object and routes acks too
-    assert.equal(ports.handleAck({ tag: "sync-ack", recordIds: [createTestRecordId(2)] }), true);
+    assert.equal(
+      ports.handleAck({
+        tag: "sync-ack",
+        batchId: createTestRecordId(2),
+        recordIds: [createTestRecordId(2)],
+      }),
+      true,
+    );
     assert.equal(ports.handleAck({ tag: "close" }), false);
     assert.equal(ports.handleAck("not-an-object"), false);
   });
@@ -223,7 +234,7 @@ describe("remoteSyncPorts", () => {
     const session = fakeSession();
     const ports = remoteSyncPorts(session, "route-x", () => false, () => {});
     await assert.rejects(
-      () => ports.send({ tag: "sync-batch", records: [] }, "request-1"),
+      () => ports.send({ tag: "sync-batch", batchId: createTestRecordId(9), records: [] }, "request-1"),
       /not allowed/,
     );
     assert.equal(session.sent.length, 0);
@@ -239,7 +250,7 @@ describe("remoteSyncPorts", () => {
     });
     assert.equal(session.closeReason, "sync-refused");
     await assert.rejects(
-      () => ports.send({ tag: "sync-batch", records: [] }, "request-2"),
+      () => ports.send({ tag: "sync-batch", batchId: createTestRecordId(9), records: [] }, "request-2"),
       /refused/,
     );
   });

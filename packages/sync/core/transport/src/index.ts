@@ -10,10 +10,13 @@
  *   for a pair that has not opted in (`allowed()` is consulted on every
  *   enqueue AND every pump step — a disabled pair never queues or sends).
  * - At-least-once delivery with a resume cursor: a batch leaves the queue
- *   only once every record id in it has been acked; the cursor advances
- *   monotonically, so dropped, reordered or duplicated frames (sends or
- *   acks) resume idempotently — replays collapse in the receiver's
- *   revision merge (T098B) and stale acks are ignored here.
+ *   only once every record in the batch has been acked FOR THAT BATCH
+ *   (`sync-ack {batchId}` names the batch it answers), so an entity id
+ *   re-enqueued under a newer revision is never suppressed by an old
+ *   acknowledgement and stale acks of drained batches are rejected here;
+ *   the cursor advances monotonically, so dropped, reordered or duplicated
+ *   frames (sends or acks) resume idempotently — replays collapse in the
+ *   receiver's revision merge (T098B).
  * - Retries are BOUNDED per batch (SY-08): after `maxAttempts` the
  *   transport suspends with a user-visible failure note ("toggle Sync
  *   chats off and on to retry" copy lives in the mobile feature) and
@@ -85,7 +88,7 @@ export class SyncTransport {
     onStatus?: (status: SyncTransportStatus) => void;
   };
   private queue: SyncBatchPayload[] = [];
-  private readonly ackedIds = new Set<string>();
+  private ackedWindow: { batchId: string; ids: Set<string> } | null = null;
   private cursor = 0;
   private attempts = 0;
   private suspended = false;
@@ -118,28 +121,32 @@ export class SyncTransport {
       changes.push(parsed.data);
     }
     for (let i = 0; i < changes.length; i += MAX_SYNC_RECORDS_PER_BATCH) {
-      this.queue.push({ tag: "sync-batch", records: changes.slice(i, i + MAX_SYNC_RECORDS_PER_BATCH) });
+      this.queue.push({
+        tag: "sync-batch",
+        batchId: createUuidV7(),
+        records: changes.slice(i, i + MAX_SYNC_RECORDS_PER_BATCH),
+      });
     }
     this.publish();
     return changes.length;
   }
 
-  /** Apply a `sync-ack {recordIds}` frame; idempotent under replay/reorder. */
+  /** Apply a `sync-ack {batchId, recordIds}` frame. Acknowledgements are
+   * scoped to the batch they answer: with the window one batch wide, an
+   * ack naming any other batch (stale, duplicated from an already-drained
+   * one) is dropped, while repeated acks of the live batch drain its head
+   * exactly once and stay idempotent under replay/reorder. */
   handleAck(frame: unknown): void {
     const parsed = EncryptedPayloadSchema.safeParse(frame);
     if (!parsed.success || parsed.data.tag !== "sync-ack")
       throw new SyncTransportError("malformed", "not a sync-ack payload");
     const ack = parsed.data as SyncAckPayload;
-    for (const id of ack.recordIds) this.ackedIds.add(id);
-    while (this.queue.length > 0 && this.isFullyAcked(this.queue[0]!)) {
-      this.queue.shift();
-      this.cursor += 1;
-      this.attempts = 0;
-      if (this.queue.length === 0 && !this.suspended) {
-        this.noteText = "";
-        this.state = "idle";
-      }
-    }
+    const head = this.queue[0];
+    if (head === undefined || head.batchId !== ack.batchId) return;
+    if (this.ackedWindow === null)
+      this.ackedWindow = { batchId: ack.batchId, ids: new Set() };
+    for (const id of ack.recordIds) this.ackedWindow.ids.add(id);
+    if (this.isFullyAcked(head)) this.drainAckedHead();
     this.publish();
   }
 
@@ -154,9 +161,7 @@ export class SyncTransport {
       if (!this.opts.allowed() || this.suspended) return;
       const head = this.queue[0]!;
       if (this.isFullyAcked(head)) {
-        this.queue.shift();
-        this.cursor += 1;
-        this.attempts = 0;
+        this.drainAckedHead();
         continue;
       }
       try {
@@ -165,7 +170,10 @@ export class SyncTransport {
         // Acks arrive asynchronously on the receive socket; stop this pass
         // (window of one in flight) so we never spin — the composition
         // re-invokes sendPending on ack timeout / reconnect / host wake.
-        if (!this.isFullyAcked(head)) return;
+        // The head also counts as settled when its ack arrived DURING its
+        // own send: handleAck already retired it, so it is no longer the
+        // head and there is nothing left to wait for.
+        if (this.queue[0] === head && !this.isFullyAcked(head)) return;
         this.attempts = 0;
       } catch {
         this.attempts += 1;
@@ -211,21 +219,43 @@ export class SyncTransport {
   }
 
   private isFullyAcked(batch: SyncBatchPayload): boolean {
-    return batch.records.every((record) => this.ackedIds.has(record.id));
+    return (
+      this.ackedWindow !== null &&
+      this.ackedWindow.batchId === batch.batchId &&
+      batch.records.every((record) => this.ackedWindow!.ids.has(record.id))
+    );
+  }
+
+  /** Retire the fully acknowledged head batch together with its
+   * acknowledgement bookkeeping, so completed-window state never
+   * accumulates (bounded by one batch by construction). */
+  private drainAckedHead(): void {
+    this.queue.shift();
+    this.ackedWindow = null;
+    this.cursor += 1;
+    this.attempts = 0;
+    if (this.queue.length === 0 && !this.suspended) {
+      this.noteText = "";
+      this.state = "idle";
+    }
   }
 }
 
 /**
  * Receiver helper the composition runs on the peer side: ack ONLY the
- * record ids the local store accepted (malformed records in a batch are
- * dropped, never acked, and a replayed batch re-acks harmlessly).
+ * record ids the local store accepted, under the batchId of the batch
+ * being answered (malformed records in a batch are dropped, never acked,
+ * and a replayed batch re-acks the live batch harmlessly).
  */
-export function syncAckPayload(recordIds: readonly string[]): SyncAckPayload {
+export function syncAckPayload(
+  batchId: string,
+  recordIds: readonly string[],
+): SyncAckPayload {
   const parsed = z
-    .object({ tag: z.literal("sync-ack"), recordIds: z.array(z.string().regex(/^[0-9a-f-]{36}$/i)).max(MAX_SYNC_RECORDS_PER_BATCH) })
+    .object({ tag: z.literal("sync-ack"), batchId: z.string().regex(/^[0-9a-f-]{36}$/i), recordIds: z.array(z.string().regex(/^[0-9a-f-]{36}$/i)).max(MAX_SYNC_RECORDS_PER_BATCH) })
     .strict()
-    .safeParse({ tag: "sync-ack", recordIds: [...recordIds] });
+    .safeParse({ tag: "sync-ack", batchId, recordIds: [...recordIds] });
   if (!parsed.success)
-    throw new SyncTransportError("malformed", "ack ids exceed the batch contract");
+    throw new SyncTransportError("malformed", "ack does not match the batch contract");
   return parsed.data as SyncAckPayload;
 }

@@ -270,7 +270,8 @@ export function ackSyncBatch(
       // Dropped per the transport contract: never ack what the store rejected.
     }
   }
-  if (accepted.length > 0) handle.send({ tag: "sync-ack", recordIds: accepted });
+  if (accepted.length > 0)
+    handle.send({ tag: "sync-ack", batchId: payload.batchId, recordIds: accepted });
   return accepted;
 }
 

@@ -57,6 +57,7 @@ export const EncryptedPayloadSchema = z.discriminatedUnion("tag", [
   z
     .object({
       tag: z.literal("sync-batch"),
+      batchId: EntityIdSchema,
       records: z
         .array(z.union([SyncRecordSchema, TombstoneSchema]))
         .max(MAX_SYNC_RECORDS_PER_BATCH),
@@ -65,6 +66,7 @@ export const EncryptedPayloadSchema = z.discriminatedUnion("tag", [
   z
     .object({
       tag: z.literal("sync-ack"),
+      batchId: EntityIdSchema,
       recordIds: z.array(EntityIdSchema).max(MAX_SYNC_RECORDS_PER_BATCH),
     })
     .strict(),

@@ -55,7 +55,11 @@ test("batches are chunked to the frozen cap and drained by acks", async () => {
       assert.match(requestId, UUID7, "requestIds follow the pairing wire contract");
       sent.push({ ids: payload.records.map((r) => r.id), requestId });
       // The receiver acks every record it applied.
-      transport.handleAck({ tag: "sync-ack", recordIds: payload.records.map((r) => r.id) });
+      transport.handleAck({
+        tag: "sync-ack",
+        batchId: payload.batchId,
+        recordIds: payload.records.map((r) => r.id),
+      });
     },
   });
   assert.equal(transport.enqueue(records(0, 600)), 600);
@@ -109,7 +113,11 @@ test("dropped frames retry bounded then resume via wake without resending acked 
         failCount += 1;
         throw new Error("socket dropped");
       }
-      transport.handleAck({ tag: "sync-ack", recordIds: ids });
+      transport.handleAck({
+        tag: "sync-ack",
+        batchId: payload.batchId,
+        recordIds: ids,
+      });
     },
   });
   transport.enqueue(records(0, 600));
@@ -132,7 +140,7 @@ test("dropped frames retry bounded then resume via wake without resending acked 
 });
 
 test("duplicated and stale acks resume idempotently", async () => {
-  const batches: { tag: "sync-batch"; records: { id: string }[] }[] = [];
+  const batches: { tag: "sync-batch"; batchId: string; records: { id: string }[] }[] = [];
   const transport = new SyncTransport({
     routeId: ROUTE,
     allowed: () => true,
@@ -145,13 +153,20 @@ test("duplicated and stale acks resume idempotently", async () => {
   await transport.sendPending();
   assert.equal(batches.length, 1, "window of one in flight");
 
-  // A stale/unknown ack must not move the cursor.
-  transport.handleAck({ tag: "sync-ack", recordIds: [id(99_999)] });
+  // A correct-id ack naming the wrong (unknown) batch must not move the
+  // cursor, and an ack on the right batch carrying an unknown id must not
+  // either: only per-batch bookkeeping drains.
+  transport.handleAck({
+    tag: "sync-ack",
+    batchId: id(42_424),
+    recordIds: batches[0]!.records.map((r) => r.id),
+  });
+  transport.handleAck({ tag: "sync-ack", batchId: batches[0]!.batchId, recordIds: [id(99_999)] });
   assert.equal(transport.status().resumeCursor, 0);
   assert.equal(transport.status().pendingRecords, 600);
 
   // Duplicated acks drain the head exactly once.
-  const one = syncAckPayload(batches[0]!.records.map((r) => r.id));
+  const one = syncAckPayload(batches[0]!.batchId, batches[0]!.records.map((r) => r.id));
   transport.handleAck(one);
   transport.handleAck(one);
   assert.equal(transport.status().resumeCursor, 1);
@@ -160,7 +175,7 @@ test("duplicated and stale acks resume idempotently", async () => {
   // Pump again: batch 2 goes out; duplicate acks and a stale replay are no-ops.
   await transport.sendPending();
   assert.equal(batches.length, 2);
-  const two = syncAckPayload(batches[1]!.records.map((r) => r.id));
+  const two = syncAckPayload(batches[1]!.batchId, batches[1]!.records.map((r) => r.id));
   transport.handleAck(two);
   transport.handleAck(two);
   transport.handleAck(one);
@@ -187,7 +202,7 @@ test("re-delivered batches dedup in the receiver merge store", async () => {
           receiver.apply(change);
           accepted.push(change.id);
         }
-        transport.handleAck({ tag: "sync-ack", recordIds: accepted });
+        transport.handleAck({ tag: "sync-ack", batchId: payload.batchId, recordIds: accepted });
       }
     },
   });
@@ -196,6 +211,85 @@ test("re-delivered batches dedup in the receiver merge store", async () => {
   assert.equal(transport.status().resumeCursor, 1);
   assert.equal(receiver.liveCount(), 3, "duplicate frames do not duplicate rows");
   assert.equal(transport.status().state, "idle");
+});
+
+test("R023: an acked record id re-enqueued (newer revision, then tombstone) still sends", async () => {
+  const sent: { batchId: string; ids: string[] }[] = [];
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    delay: noDelay,
+    send: async (payload) => {
+      EncryptedPayloadSchema.parse(payload);
+      const ids = payload.records.map((r) => r.id);
+      sent.push({ batchId: payload.batchId, ids });
+      transport.handleAck(syncAckPayload(payload.batchId, ids));
+    },
+  });
+  transport.enqueue([record(1)]);
+  await transport.sendPending();
+  assert.equal(sent.length, 1);
+  assert.equal(transport.status().resumeCursor, 1);
+
+  // Same record id, newer revision: an old acknowledgement must not
+  // pre-ack the new batch (the R023 silent-drop).
+  transport.enqueue([
+    { ...record(1), revision: { wallMs: 999_001, counter: 0, deviceId: DEV } },
+  ]);
+  await transport.sendPending();
+  assert.equal(sent.length, 2, "acked ids are scoped to their batch, not global");
+  assert.deepEqual(sent[1]!.ids, [id(1)]);
+  assert.notEqual(sent[1]!.batchId, sent[0]!.batchId, "each batch carries a fresh identity");
+
+  // The deletion under the same entity id (tombstone reuses the id) also
+  // reaches the wire instead of being silently dropped.
+  transport.enqueue([tombstone("message", id(10_001), 2_000)]);
+  await transport.sendPending();
+  assert.equal(sent.length, 3, "the tombstone under an acked entity id must send");
+  assert.equal(transport.status().resumeCursor, 3);
+});
+
+test("R023: a stale ack replayed for a drained batch cannot drain the newer batch", async () => {
+  const sent: { batchId: string; ids: string[] }[] = [];
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    delay: noDelay,
+    send: async (payload) => {
+      sent.push({ batchId: payload.batchId, ids: payload.records.map((r) => r.id) });
+      // Acks are held back; the test drives them manually.
+    },
+  });
+  transport.enqueue([record(1)]);
+  await transport.sendPending();
+  const ackOfBatchOne = syncAckPayload(sent[0]!.batchId, [id(1)]);
+  transport.handleAck(ackOfBatchOne);
+  assert.equal(transport.status().resumeCursor, 1);
+
+  transport.enqueue([
+    { ...record(1), revision: { wallMs: 999_002, counter: 0, deviceId: DEV } },
+  ]);
+  await transport.sendPending();
+  assert.equal(sent.length, 2, "newer revision re-sends");
+
+  // Replayed/delayed ack of batch 1 while batch 2 (same record id) is in
+  // flight: it names a drained batch identity and must be rejected.
+  transport.handleAck(ackOfBatchOne);
+  assert.equal(transport.status().resumeCursor, 1, "stale ack cannot drain the newer batch");
+  assert.equal(transport.status().pendingRecords, 1);
+
+  transport.handleAck(syncAckPayload(sent[1]!.batchId, [id(1)]));
+  assert.equal(transport.status().resumeCursor, 2);
+  assert.equal(transport.status().pendingRecords, 0);
+});
+
+const tombstone = (entityType: string, entityId: string, n: number) => ({
+  id: id(n + 2_000),
+  createdAt: T0,
+  updatedAt: T0,
+  revision: { wallMs: n, counter: 0, deviceId: DEV },
+  entityType,
+  entityId,
 });
 
 test("malformed records never enter the queue", () => {

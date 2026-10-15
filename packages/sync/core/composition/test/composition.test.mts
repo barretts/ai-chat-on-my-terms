@@ -326,7 +326,7 @@ test("excluded records throw fail-closed and never reach a queue or envelope", a
   );
 
   // And at the RECEIVE seam: a raw forged batch is refused without state change.
-  const forged = { tag: "sync-batch", records: [rec("model", id(9), { name: "giant.gguf" }, DEV_P, 920)] };
+  const forged = { tag: "sync-batch", batchId: id(777), records: [rec("model", id(9), { name: "giant.gguf" }, DEV_P, 920)] };
   await assert.rejects(
     () => mac.engine.onFrame(forged),
     (error: unknown) => (error as { kind?: string }).kind === "unsupported",
@@ -461,7 +461,7 @@ test("persona tier crosses ONLY under selection; unselected private memory canno
   );
   // A peer FORCING it in is refused fail-closed at the receive seam too.
   await assert.rejects(
-    () => mac.engine.onFrame({ tag: "sync-batch", records: [memB] }),
+    () => mac.engine.onFrame({ tag: "sync-batch", batchId: id(778), records: [memB] }),
     (error: unknown) => (error as { kind?: string }).kind === "unsupported",
   );
   assert.equal(mStore.rowFor("memory", MEM_B), null);
