@@ -1677,12 +1677,19 @@ export default function CompleteChatScreen() {
           : [];
         const mcpDeadline = new AbortController();
         const mcpTimer = setTimeout(() => mcpDeadline.abort(), 15_000);
-        const mcpCollected = await collectMcpTools(
-          runtime.mcpServers,
-          runtime.secrets,
-          mcpDeadline.signal,
-        );
-        clearTimeout(mcpTimer);
+        let mcpCollected: Awaited<ReturnType<typeof collectMcpTools>>;
+        try {
+          mcpCollected = await collectMcpTools(
+            runtime.mcpServers,
+            runtime.secrets,
+            mcpDeadline.signal,
+          );
+        } finally {
+          // The 15 s window bounds initialize AND tools/list together:
+          // collectMcpTools propagates the signal into discovery, and the
+          // owned timer is cleared even when setup throws or aborts.
+          clearTimeout(mcpTimer);
+        }
         mcpFinalize = mcpCollected.finalize;
         const loopTools = [
           ...fileTools,

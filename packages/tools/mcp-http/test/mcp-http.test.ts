@@ -95,6 +95,7 @@ interface McpFixtureOptions {
   tools?: unknown[];
   callResult?: Record<string, unknown>;
   callKeepsOpen?: boolean;
+  toolsListKeepsOpen?: boolean;
 }
 
 interface McpFixture extends Fixture {
@@ -102,6 +103,7 @@ interface McpFixture extends Fixture {
   initializedNotifications: number;
   deleted: Promise<void>;
   sawCall: Promise<void>;
+  sawToolsList: Promise<void>;
 }
 
 /** Minimal in-test MCP server: initialize / initialized / tools/list /
@@ -111,6 +113,7 @@ async function startMcpFixture(
 ): Promise<McpFixture> {
   let resolveDeleted: () => void = () => undefined;
   let resolveSawCall: () => void = () => undefined;
+  let resolveSawToolsList: () => void = () => undefined;
   const fixture = (await startFixture(
     "/mcp",
     (req, res, body) => {
@@ -170,6 +173,11 @@ async function startMcpFixture(
           res.writeHead(202).end();
           break;
         case "tools/list":
+          if (options.toolsListKeepsOpen) {
+            resolveSawToolsList();
+            trackSse(res);
+            return;
+          }
           answer({ tools: options.tools ?? [] });
           break;
         case "tools/call": {
@@ -201,6 +209,9 @@ async function startMcpFixture(
   });
   fixture.sawCall = new Promise<void>((resolve) => {
     resolveSawCall = resolve;
+  });
+  fixture.sawToolsList = new Promise<void>((resolve) => {
+    resolveSawToolsList = resolve;
   });
   return fixture;
 }
@@ -569,6 +580,19 @@ describe("createMcpTools registry mapping", () => {
     if (failed.ok) throw new Error("unreachable");
     expect(failed.error.code).toBe("malformed");
     expect(failed.error.message).toBe("upstream refused");
+  });
+
+  it("propagates the caller signal: a stalled tools/list is interruptible", async () => {
+    // Reproduces the chat-lockup trigger: the server initializes happily and
+    // then leaves tools/list open without replying.
+    const fixture = await startMcpFixture({ toolsListKeepsOpen: true });
+    const client = new McpHttpClient(config(fixture));
+    const controller = new AbortController();
+    const discovery = createMcpTools(client, { signal: controller.signal });
+    await fixture.sawToolsList; // initialize done; tools/list now hanging
+    controller.abort();
+    await expect(discovery).rejects.toThrow();
+    await client.dispose().catch(() => undefined);
   });
 });
 

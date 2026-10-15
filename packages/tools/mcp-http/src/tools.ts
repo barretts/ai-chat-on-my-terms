@@ -50,9 +50,16 @@ function matchesJsonType(value: unknown, type: string): boolean {
  * `structuredContent` only when the server sent it. */
 export async function createMcpTools(
   client: McpHttpClient,
-  opts: { serverId?: string; labels?: Record<string, string> } = {},
+  opts: {
+    serverId?: string;
+    labels?: Record<string, string>;
+    /** Caller's cancellation/deadline signal; applied to initialize and
+     * tools/list. Without one, discovery cannot be interrupted — callers
+     * that run inside a bounded setup window MUST pass their signal. */
+    signal?: AbortSignal;
+  } = {},
 ): Promise<RegisteredTool[]> {
-  const signal = new AbortController().signal;
+  const signal = opts.signal ?? new AbortController().signal;
   if (!client.isInitialized) await client.initialize(signal);
   const discovery = await client.discoverTools(signal);
   const serverId = opts.serverId ?? client.config.id;

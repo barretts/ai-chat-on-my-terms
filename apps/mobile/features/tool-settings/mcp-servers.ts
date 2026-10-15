@@ -189,7 +189,10 @@ export async function collectMcpTools(
     });
     try {
       await client.initialize(signal);
-      const mapped = await createMcpTools(client, { serverId: row.id });
+      const mapped = await createMcpTools(client, {
+        serverId: row.id,
+        signal,
+      });
       const enabledTools = mapped.filter(
         (tool) => row.toolEnabled[tool.name] === true,
       );
