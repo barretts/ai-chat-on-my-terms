@@ -26,6 +26,7 @@ import {
   createSessionPairing,
   createUuidV7,
   deriveSessionSalts,
+  generateSessionSalt,
   mobileRouteTicketHash,
 } from "@locallab/remote-crypto";
 
@@ -212,7 +213,8 @@ test("sealed frames through a live relay forward without corruption or duplicati
     const qr = createPairingQrV1({ relayUrl: base, serverIdentityFingerprint: `sha256:${"ab12cd34".repeat(8)}` });
     const secret = Buffer.from(qr.pairingSecret, "base64url");
     const salts = deriveSessionSalts(secret, qr.companionRouteId);
-    const session = createSessionPairing(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId);
+    const entropy = { mobileEphemeral: generateSessionSalt(), companionEphemeral: generateSessionSalt() };
+    const session = createSessionPairing(secret, salts.mobileSalt, salts.companionSalt, entropy, qr.companionRouteId);
 
     // Companion registers the route first; the mobile consumer must be
     // online BEFORE frames flow, because the relay drops frames whose

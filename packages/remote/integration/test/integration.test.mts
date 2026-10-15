@@ -11,10 +11,12 @@ import assert from "node:assert/strict";
 import { createRelayServer } from "@locallab/relay";
 import {
   PairingCryptoError,
+  createHandshakePairing,
   createPairingQrV1,
   createSessionPairing,
   createUuidV7,
   deriveSessionSalts,
+  generateSessionSalt,
   helloProof,
   mobileRouteTicketHash,
 } from "@locallab/remote-crypto";
@@ -79,7 +81,10 @@ async function openLiveSession(
 ): Promise<LiveSession> {
   const secret = Buffer.from(qr.pairingSecret, "base64url");
   const salts = deriveSessionSalts(secret, qr.companionRouteId);
-  const channels = createSessionPairing(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId);
+  // R007: the data phase rides ephemeral-mixed keys; both handles attach
+  // to the SAME channels object so the pair matches either way.
+  const entropy = { mobileEphemeral: generateSessionSalt(), companionEphemeral: generateSessionSalt() };
+  const channels = createSessionPairing(secret, salts.mobileSalt, salts.companionSalt, entropy, qr.companionRouteId);
   const companionSocket = new WebSocket(
     wsUrl(base, "/companion", `routeId=${qr.companionRouteId}&credential=companion-credential-0000` +
       `&mobileTicketHash=${mobileRouteTicketHash(qr.mobileRouteTicket)}`),
@@ -125,7 +130,7 @@ async function pairedRelaySession(
   const qr = makeQr(base);
   const secret = Buffer.from(qr.pairingSecret, "base64url");
   const salts = deriveSessionSalts(secret, qr.companionRouteId);
-  const pairing = createSessionPairing(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId).companion;
+  const handshake = createHandshakePairing(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId).companion;
   const pairingCompanion = new WebSocket(
     wsUrl(base, "/companion", `routeId=${qr.companionRouteId}&credential=companion-credential-0000` +
       `&mobileTicketHash=${mobileRouteTicketHash(qr.mobileRouteTicket)}`),
@@ -134,25 +139,42 @@ async function pairedRelaySession(
   pairingCompanion.addEventListener("open", () => opened.resolve());
   await opened.promise;
   const readySent = Promise.withResolvers<void>();
+  let mobileEphemeral: Uint8Array | undefined;
+  let dataOpen: ReturnType<typeof createSessionPairing>["companion"]["fromMobile"] | undefined;
   pairingCompanion.addEventListener("message", (event) => {
-    const payload = pairing.fromMobile.open(JSON.parse(String(event.data)));
+    const payload = (dataOpen ?? handshake.fromMobile).open(JSON.parse(String(event.data)));
     if (payload.tag !== "request") return;
+    if (mobileEphemeral === undefined) {
+      const salt = (payload.body as { sessionSalt?: unknown }).sessionSalt;
+      if (typeof salt === "string") mobileEphemeral = new Uint8Array(Buffer.from(salt, "base64url"));
+    }
+    const companionEphemeral = generateSessionSalt();
     pairingCompanion.send(
       JSON.stringify(
-        pairing.toMobile.seal(
+        handshake.toMobile.seal(
           {
             tag: "request",
             body: {
               type: "pairing-ready",
               proof: helloProof(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId),
-              protocol: { major: 1, minor: 0 },
+              protocol: { major: 1, minor: 1 },
               routes: [{ routeId: qr.companionRouteId, backend: "lmstudio", label: "LM Studio" }],
+              sessionSalt: Buffer.from(companionEphemeral).toString("base64url"),
             },
           },
           createUuidV7(),
         ),
       ),
     );
+    if (mobileEphemeral !== undefined) {
+      dataOpen = createSessionPairing(
+        secret,
+        salts.mobileSalt,
+        salts.companionSalt,
+        { mobileEphemeral, companionEphemeral },
+        qr.companionRouteId,
+      ).companion.fromMobile;
+    }
     readySent.resolve();
   });
   const client = createPairingClient({ qrText: JSON.stringify(qr), webSocket: wsFactory });

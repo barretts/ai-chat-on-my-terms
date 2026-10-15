@@ -25,16 +25,28 @@ import {
  * contract shared with apps/companion/remote/crypto through
  * fixtures/pairing-vectors.json:
  * - IKM = 32-byte pairing secret; salt = mobileSalt(16) || companionSalt(16).
- * - info strings are ASCII: "locallab-pairing-{hello|key|nonce}-v1|1.0|<routeId>[|<flow>]"
+ * - Session/nonce keys mix per-connection ephemerals into the salt:
+ *   mobileEphemeral(16) || companionEphemeral(16) appended after the salts.
+ *   Each side contributes a fresh random 16-byte ephemeral in its handshake
+ *   frame, so every connection derives fresh session keys and replay
+ *   windows — two sessions from one saved pairing can never reuse a
+ *   (key, nonce) pair even though the QR-derived salts are deterministic.
+ * - info strings are ASCII: "locallab-pairing-{hello|key|nonce|handshake|handshake-nonce}-v1|1.0|<routeId>[|<flow>]"
  *   with flow in {"mobile->companion","companion->mobile"} and hello has no flow.
  * - Hello proof = HMAC-SHA256(helloKey, "v1|<routeId>|<mobileSalt b64url>|<companionSalt b64url>").
+ * - The handshake channel (labels handshake/handshake-nonce, deterministic
+ *   salts only) seals exactly the hello and ready frames; every data frame
+ *   rides the ephemeral-mixed key. The handshake keys therefore only ever
+ *   encrypt fixed-layout possession proofs plus one random ephemeral, and
+ *   the seq-0 handshake nonce repeats across restarts by design — leaking
+ *   nothing (the ephemeral is random per session) and carrying no data.
  * - Frame nonce12 = HMAC-SHA256(nonceKey(flow), "c:" + u64be(sequence))[0..12],
  *   so the nonce field equals deriveNonce(frame.sequence) and the receiver
  *   rejects frames whose advertised nonce is not the derived one.
  * - AAD = utf8("v1|<routeId>|<requestId>|<sequence>|<contentTag>|<declaredSize>|<nonce16>").
  * - ciphertext = AES-256-GCM(directionKey, iv=nonce12, aad, payloadJson utf8) || tag(16).
- * Counters/nonce space are per session (fresh salts) and per direction; the
- * receiver rejects duplicate, stale and beyond-window sequences.
+ * Counters/nonce space are per session (fresh ephemeral-mixed keys) and per
+ * direction; the receiver rejects duplicate, stale and beyond-window sequences.
  */
 
 export type { EncryptedPayload, EncryptedRelayFrameV1 };
@@ -101,10 +113,29 @@ function sessionSalt(mobileSalt: SessionSalt, companionSalt: SessionSalt): Uint8
   return new Uint8Array([...mobileSalt, ...companionSalt]);
 }
 
-function keyInfo(kind: "hello" | "key" | "nonce", routeId: string, flow?: string): string {
+function keyInfo(kind: "hello" | "key" | "nonce" | "handshake" | "handshake-nonce", routeId: string, flow?: string): string {
   return flow === undefined
     ? `locallab-pairing-${kind}-v1|${PROTOCOL_LABEL}|${routeId}`
     : `locallab-pairing-${kind}-v1|${PROTOCOL_LABEL}|${routeId}|${flow}`;
+}
+/**
+ * R007: per-connection ephemerals mixed into the session key derivation.
+ * Each side contributes a fresh random 16-byte value in its handshake frame
+ * (hello carries mobileEphemeral, ready carries companionEphemeral), so
+ * session keys and replay windows are fresh per connection while the
+ * long-lived pairing secret and QR-derived salts never travel on the wire.
+ */
+export interface SessionEntropy {
+  mobileEphemeral: SessionSalt;
+  companionEphemeral: SessionSalt;
+}
+
+function entropyBytes(mobileSalt: SessionSalt, companionSalt: SessionSalt, entropy: SessionEntropy): Uint8Array {
+  if (entropy.mobileEphemeral.length !== 16)
+    throw new PairingCryptoError("malformed", "mobileEphemeral must be a 16-byte ephemeral");
+  if (entropy.companionEphemeral.length !== 16)
+    throw new PairingCryptoError("malformed", "companionEphemeral must be a 16-byte ephemeral");
+  return Buffer.concat([sessionSalt(mobileSalt, companionSalt), entropy.mobileEphemeral, entropy.companionEphemeral]);
 }
 
 export function deriveHelloKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string): Uint8Array {
@@ -112,9 +143,19 @@ export function deriveHelloKey(pairingSecret: Uint8Array, mobileSalt: SessionSal
   return hkdf(pairingSecret, sessionSalt(mobileSalt, companionSalt), keyInfo("hello", routeId), 32);
 }
 
-export function deriveSessionKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
+export function deriveSessionKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, entropy: SessionEntropy, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
   requireBytes(pairingSecret, 32, "pairingSecret");
-  return hkdf(pairingSecret, sessionSalt(mobileSalt, companionSalt), keyInfo("key", routeId, flowLabel(from, to)), 32);
+  return hkdf(pairingSecret, entropyBytes(mobileSalt, companionSalt, entropy), keyInfo("key", routeId, flowLabel(from, to)), 32);
+}
+
+export function deriveHandshakeKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
+  requireBytes(pairingSecret, 32, "pairingSecret");
+  return hkdf(pairingSecret, sessionSalt(mobileSalt, companionSalt), keyInfo("handshake", routeId, flowLabel(from, to)), 32);
+}
+
+export function deriveHandshakeNonceKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
+  requireBytes(pairingSecret, 32, "pairingSecret");
+  return hkdf(pairingSecret, sessionSalt(mobileSalt, companionSalt), keyInfo("handshake-nonce", routeId, flowLabel(from, to)), 32);
 }
 
 export function helloProof(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string): string {
@@ -139,8 +180,8 @@ export function verifyHelloProof(proof: string, pairingSecret: Uint8Array, mobil
   return expected.length === 32 && presented.length === 32 && timingSafeEqual(expected, presented);
 }
 
-export function deriveNonceKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
-  return hkdf(pairingSecret, sessionSalt(mobileSalt, companionSalt), keyInfo("nonce", routeId, flowLabel(from, to)), 32);
+export function deriveNonceKey(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, entropy: SessionEntropy, routeId: string, from: PairingRole, to: PairingRole): Uint8Array {
+  return hkdf(pairingSecret, entropyBytes(mobileSalt, companionSalt, entropy), keyInfo("nonce", routeId, flowLabel(from, to)), 32);
 }
 
 export function deriveNonce(nonceKey: Uint8Array, sequence: number): Uint8Array {
@@ -267,19 +308,49 @@ export class OpeningChannel {
   }
 }
 
-export function createSessionPairing(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string): {
+export function createSessionPairing(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, entropy: SessionEntropy, routeId: string): {
   mobile: { toCompanion: SealingChannel; fromCompanion: OpeningChannel };
   companion: { toMobile: SealingChannel; fromMobile: OpeningChannel };
 } {
   const channel = (from: PairingRole, to: PairingRole) => ({
     seal: new SealingChannel(
-      deriveSessionKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
-      deriveNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
+      deriveSessionKey(pairingSecret, mobileSalt, companionSalt, entropy, routeId, from, to),
+      deriveNonceKey(pairingSecret, mobileSalt, companionSalt, entropy, routeId, from, to),
       routeId,
     ),
     open: new OpeningChannel(
-      deriveSessionKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
-      deriveNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
+      deriveSessionKey(pairingSecret, mobileSalt, companionSalt, entropy, routeId, to, from),
+      deriveNonceKey(pairingSecret, mobileSalt, companionSalt, entropy, routeId, to, from),
+      routeId,
+    ),
+  });
+  const mobile = channel("mobile", "companion");
+  const companion = channel("companion", "mobile");
+  return {
+    mobile: { toCompanion: mobile.seal, fromCompanion: mobile.open },
+    companion: { toMobile: companion.seal, fromMobile: companion.open },
+  };
+}
+
+/**
+ * Deterministic handshake channels (no ephemeral entropy): they seal only
+ * the hello/ready possession-proof frames, which is what lets a restarting
+ * peer open a fresh hello before any ephemeral is known. Data traffic must
+ * ride createSessionPairing built from the ephemerals these frames carry.
+ */
+export function createHandshakePairing(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string): {
+  mobile: { toCompanion: SealingChannel; fromCompanion: OpeningChannel };
+  companion: { toMobile: SealingChannel; fromMobile: OpeningChannel };
+} {
+  const channel = (from: PairingRole, to: PairingRole) => ({
+    seal: new SealingChannel(
+      deriveHandshakeKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
+      deriveHandshakeNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
+      routeId,
+    ),
+    open: new OpeningChannel(
+      deriveHandshakeKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
+      deriveHandshakeNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
       routeId,
     ),
   });

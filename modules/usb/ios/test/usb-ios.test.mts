@@ -85,29 +85,43 @@ const record: UsbPairingRecord = {
   companionSalt: b64url(pairing.companionSaltBase64Url),
 };
 
+const mobileEphemeral = b64url(pairing.mobileEphemeralBase64Url);
+const companionEphemeral = b64url(pairing.companionEphemeralBase64Url);
+
 test("QR pairing material authenticates the USB handshake unchanged", () => {
-  const hello = buildUsbHello(record);
+  const hello = buildUsbHello(record, mobileEphemeral);
   // The proof the iPhone puts on the cable is the SAME value the pairing
   // golden vectors pin — no new secret material, nothing new to derive.
   assert.equal(hello.proof, pairing.helloProofBase64Url);
-  const verdict = verifyUsbHello(hello, [record]);
-  assert.deepEqual(verdict, { status: "authenticated", routeId: record.routeId });
+  // R007: the hello also carries the phone's fresh session ephemeral.
+  assert.equal(hello.sessionSalt, pairing.mobileEphemeralBase64Url);
+  assert.deepEqual(verifyUsbHello(hello, [record]), {
+    status: "authenticated",
+    routeId: record.routeId,
+    mobileEphemeral: mobileEphemeral,
+  });
   const routes = [{ id: "default", backend: "lmstudio", label: "LM Studio" }];
-  const ready = buildUsbReady(record, routes);
-  assert.deepEqual(verifyUsbReady(ready, record), routes);
+  const ready = buildUsbReady(record, routes, companionEphemeral);
+  assert.deepEqual(verifyUsbReady(ready, record), { routes, companionEphemeral });
 });
 
 test("forged proofs, unknown routes and stale protocols fail closed", () => {
-  const forged = { ...buildUsbHello(record), proof: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" };
+  const forged = { ...buildUsbHello(record, mobileEphemeral), proof: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" };
   assert.equal(verifyUsbHello(forged, [record]).status, "unauthorized");
-  const unknownRoute = { ...buildUsbHello(record), routeId: "0198f2a3-0000-7000-8000-0000000000ff" };
+  const unknownRoute = { ...buildUsbHello(record, mobileEphemeral), routeId: "0198f2a3-0000-7000-8000-0000000000ff" };
   assert.equal(verifyUsbHello(unknownRoute, [record]).status, "unauthorized");
-  const stale = { ...buildUsbHello(record), protocol: "locallab-usb-v0" };
+  const stale = { ...buildUsbHello(record, mobileEphemeral), protocol: "locallab-usb-v0" };
   assert.equal(verifyUsbHello(stale, [record]).status, "version-mismatch");
-  const empty = { ...buildUsbHello(record), tag: "usb-hi" };
+  const empty = { ...buildUsbHello(record, mobileEphemeral), tag: "usb-hi" };
   assert.equal(verifyUsbHello(empty, [record]).status, "malformed");
+  // R007: a hello without (or with a malformed) ephemeral is malformed —
+  // there is no silent fallback to deterministic keys.
+  assert.equal(verifyUsbHello({ ...buildUsbHello(record, mobileEphemeral), sessionSalt: "short" }, [record]).status, "malformed");
   // A cable peer that could not verify the hello cannot fake the ready echo.
   assert.equal(verifyUsbReady({ tag: "usb-ready", protocol: USB_PROTOCOL, proof: "nope-nope-nope-nope-nope", routes: [] }, record), null);
+  // A ready whose ephemeral is malformed is refused even with a valid proof.
+  const readyBadSalt = { ...buildUsbReady(record, [], companionEphemeral), sessionSalt: "short!" };
+  assert.equal(verifyUsbReady(readyBadSalt, record), null);
 });
 
 test("remote and USB sessions are mutually exclusive per pairing", () => {

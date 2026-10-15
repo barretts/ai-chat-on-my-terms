@@ -3,9 +3,12 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   assertPairingUsable,
+  createHandshakePairing,
   createPairingQrV1,
   createPairingRecord,
   createSessionPairing,
+  deriveHandshakeKey,
+  deriveHandshakeNonceKey,
   deriveNonce,
   deriveNonceKey,
   deriveSessionKey,
@@ -22,6 +25,7 @@ import {
   REPLAY_WINDOW,
   type EncryptedPayload,
   type EncryptedRelayFrameV1,
+  type SessionEntropy,
 } from "../src/index.js";
 
 const fixture = JSON.parse(
@@ -30,15 +34,20 @@ const fixture = JSON.parse(
   pairingSecretBase64Url: string;
   mobileSaltBase64Url: string;
   companionSaltBase64Url: string;
+  mobileEphemeralBase64Url: string;
+  companionEphemeralBase64Url: string;
   routeId: string;
   mobileRouteTicketBase64Url: string;
   mobileRouteTicketHash: string;
   helloProofBase64Url: string;
   mobileToCompanionKeyHex: string;
   companionToMobileKeyHex: string;
+  mobileToCompanionHandshakeKeyHex: string;
+  companionToMobileHandshakeKeyHex: string;
   sealed: {
     name: string;
     direction: "mobile-to-companion" | "companion-to-mobile";
+    channel: "session" | "handshake";
     requestId: string;
     sequence: number;
     contentTag: string;
@@ -50,6 +59,10 @@ const fixture = JSON.parse(
 const secret = new Uint8Array(Buffer.from(fixture.pairingSecretBase64Url, "base64url"));
 const mobileSalt = new Uint8Array(Buffer.from(fixture.mobileSaltBase64Url, "base64url"));
 const companionSalt = new Uint8Array(Buffer.from(fixture.companionSaltBase64Url, "base64url"));
+const entropy: SessionEntropy = {
+  mobileEphemeral: new Uint8Array(Buffer.from(fixture.mobileEphemeralBase64Url, "base64url")),
+  companionEphemeral: new Uint8Array(Buffer.from(fixture.companionEphemeralBase64Url, "base64url")),
+};
 
 function hex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
@@ -69,14 +82,26 @@ test("golden vectors reproduce derived keys, hello proof, ticket hash and every 
   assert.equal(secret.length, 32, "pairing secret is 256-bit");
   assert.equal(
     fixture.mobileToCompanionKeyHex,
-    hex(deriveSessionKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion")),
+    hex(deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion")),
   );
   assert.equal(
     fixture.companionToMobileKeyHex,
-    hex(deriveSessionKey(secret, mobileSalt, companionSalt, fixture.routeId, "companion", "mobile")),
+    hex(deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "companion", "mobile")),
   );
   assert.equal(hexToBytes(fixture.mobileToCompanionKeyHex).length, 32);
   assert.notEqual(fixture.mobileToCompanionKeyHex, fixture.companionToMobileKeyHex);
+  assert.equal(
+    fixture.mobileToCompanionHandshakeKeyHex,
+    hex(deriveHandshakeKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion")),
+  );
+  assert.equal(
+    fixture.companionToMobileHandshakeKeyHex,
+    hex(deriveHandshakeKey(secret, mobileSalt, companionSalt, fixture.routeId, "companion", "mobile")),
+  );
+  assert.notEqual(
+    fixture.mobileToCompanionHandshakeKeyHex,
+    hex(deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion")),
+  );
   assert.equal(
     fixture.helloProofBase64Url,
     helloProof(secret, mobileSalt, companionSalt, fixture.routeId),
@@ -89,8 +114,12 @@ test("golden vectors reproduce derived keys, hello proof, ticket hash and every 
     const [from, to] = directionRoles(entry.direction);
     const frame = sealPayload(
       JSON.parse(entry.payloadJson) as EncryptedPayload,
-      deriveSessionKey(secret, mobileSalt, companionSalt, fixture.routeId, from, to),
-      deriveNonceKey(secret, mobileSalt, companionSalt, fixture.routeId, from, to),
+      entry.channel === "handshake"
+        ? deriveHandshakeKey(secret, mobileSalt, companionSalt, fixture.routeId, from, to)
+        : deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, from, to),
+      entry.channel === "handshake"
+        ? deriveHandshakeNonceKey(secret, mobileSalt, companionSalt, fixture.routeId, from, to)
+        : deriveNonceKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, from, to),
       fixture.routeId,
       entry.requestId,
       entry.sequence,
@@ -100,7 +129,7 @@ test("golden vectors reproduce derived keys, hello proof, ticket hash and every 
 });
 
 test("session channels round-trip payloads in both directions", () => {
-  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, fixture.routeId);
+  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
   const payload: EncryptedPayload = { tag: "health", nonce: "ping-0123456789ab" };
   const fromMobile = pairing.mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-0000000000f1");
   assert.deepEqual(pairing.companion.fromMobile.open(fromMobile), payload);
@@ -110,7 +139,7 @@ test("session channels round-trip payloads in both directions", () => {
 });
 
 test("replay, stale and out-of-window sequences are rejected", () => {
-  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, fixture.routeId);
+  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
   const receiver = pairing.companion.fromMobile;
   const frames = Array.from({ length: 3 }, (_, i) =>
     pairing.mobile.toCompanion.seal({ tag: "health", nonce: `nonce-${i}-012345678` }, `0198f2a3-0000-7000-8000-0000000000f${i}`),
@@ -123,8 +152,8 @@ test("replay, stale and out-of-window sequences are rejected", () => {
   );
   const jump = sealPayload(
     { tag: "health", nonce: "jump-0123456789ab" },
-    deriveSessionKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion"),
-    deriveNonceKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion"),
+    deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion"),
+    deriveNonceKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion"),
     fixture.routeId,
     "0198f2a3-0000-7000-8000-0000000000f9",
     100,
@@ -137,8 +166,8 @@ test("replay, stale and out-of-window sequences are rejected", () => {
   );
   const far = sealPayload(
     { tag: "health", nonce: "far-nonce-0123456789a" },
-    deriveSessionKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion"),
-    deriveNonceKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion"),
+    deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion"),
+    deriveNonceKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion"),
     fixture.routeId,
     "0198f2a3-0000-7000-8000-0000000000fa",
     100 + REPLAY_WINDOW + 1,
@@ -151,7 +180,7 @@ test("replay, stale and out-of-window sequences are rejected", () => {
 });
 
 test("tampered ciphertext and foreign frames fail authentication", () => {
-  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, fixture.routeId);
+  const pairing = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
   const frame = pairing.mobile.toCompanion.seal({ tag: "health", nonce: "tamper-0123456789ab" }, "0198f2a3-0000-7000-8000-0000000000fb");
   const bytes = Buffer.from(frame.ciphertextBase64Url, "base64url");
   bytes[0] = bytes[0]! ^ 0xff;
@@ -160,7 +189,7 @@ test("tampered ciphertext and foreign frames fail authentication", () => {
     (error: unknown) =>
       error instanceof PairingCryptoError && /authentication failed/.test(error.message),
   );
-  const attacker = createSessionPairing(secret, generateSessionSalt(), generateSessionSalt(), fixture.routeId);
+  const attacker = createSessionPairing(secret, generateSessionSalt(), generateSessionSalt(), entropy, fixture.routeId);
   const foreign = attacker.mobile.toCompanion.seal({ tag: "health", nonce: "forged-0123456789ac" }, "0198f2a3-0000-7000-8000-0000000000fc");
   assert.throws(
     () => pairing.companion.fromMobile.open(foreign),
@@ -170,15 +199,28 @@ test("tampered ciphertext and foreign frames fail authentication", () => {
 });
 
 test("nonces are unique per sequence and never reused across sessions", () => {
-  const nonceKey = deriveNonceKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion");
+  const nonceKey = deriveNonceKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion");
   const nonces = Array.from({ length: 200 }, (_, i) =>
     Buffer.from(deriveNonce(nonceKey, i)).toString("base64url"),
   );
   assert.equal(new Set(nonces).size, nonces.length);
   const freshSalt = generateSessionSalt();
-  const otherNonceKey = deriveNonceKey(secret, freshSalt, companionSalt, fixture.routeId, "mobile", "companion");
+  const otherNonceKey = deriveNonceKey(secret, freshSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion");
   assert.notEqual(
     Buffer.from(deriveNonce(otherNonceKey, 0)).toString("base64url"),
+    Buffer.from(deriveNonce(nonceKey, 0)).toString("base64url"),
+  );
+  // R007: a restarted session mixes fresh ephemerals, so the (key, nonce)
+  // pairs of the previous session are unreachable even at sequence 0.
+  const restarted: SessionEntropy = {
+    mobileEphemeral: generateSessionSalt(),
+    companionEphemeral: generateSessionSalt(),
+  };
+  const restartedKey = deriveSessionKey(secret, mobileSalt, companionSalt, restarted, fixture.routeId, "mobile", "companion");
+  const restartedNonceKey = deriveNonceKey(secret, mobileSalt, companionSalt, restarted, fixture.routeId, "mobile", "companion");
+  assert.notEqual(hex(restartedKey), hex(deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion")));
+  assert.notEqual(
+    Buffer.from(deriveNonce(restartedNonceKey, 0)).toString("base64url"),
     Buffer.from(deriveNonce(nonceKey, 0)).toString("base64url"),
   );
 });
@@ -256,10 +298,50 @@ test("pairing-derived session salts are deterministic and per-pairing", () => {
   );
   assert.notEqual(Buffer.compare(Buffer.from(first.mobileSalt), Buffer.from(rotated.mobileSalt)), 0);
   // Derived salts still produce interoperable sessions (mobile seals, companion opens).
-  const session = createSessionPairing(secret, first.mobileSalt, first.companionSalt, fixture.routeId);
-  const payload = { tag: "health", nonce: "0198f2a3-0000-7000-8000-000000000099" };
+  const session = createSessionPairing(secret, first.mobileSalt, first.companionSalt, entropy, fixture.routeId);
+  const payload: EncryptedPayload = { tag: "health", nonce: "0198f2a3-0000-7000-8000-000000000099" };
   assert.deepEqual(
     session.companion.fromMobile.open(session.mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-000000000099")),
     payload,
   );
+});
+
+test("handshake channels authenticate hello/ready before data keys exist", () => {
+  const handshake = createHandshakePairing(secret, mobileSalt, companionSalt, fixture.routeId);
+  const hello: EncryptedPayload = { tag: "request", body: { type: "pairing-hello", proof: "x" } };
+  const helloFrame = handshake.mobile.toCompanion.seal(hello, "0198f2a3-0000-7000-8000-0000000000a0");
+  assert.deepEqual(handshake.companion.fromMobile.open(helloFrame), hello);
+  const ready: EncryptedPayload = { tag: "request", body: { type: "pairing-ready", proof: "y" } };
+  const readyFrame = handshake.companion.toMobile.seal(ready, "0198f2a3-0000-7000-8000-0000000000a1");
+  assert.deepEqual(handshake.mobile.fromCompanion.open(readyFrame), ready);
+  // The deterministic handshake channel must be key-wise distinct from the
+  // data channel it bootstraps.
+  assert.notEqual(
+    hex(deriveHandshakeKey(secret, mobileSalt, companionSalt, fixture.routeId, "mobile", "companion")),
+    hex(deriveSessionKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion")),
+  );
+});
+
+test("two sessions from one saved pairing never reuse key or nonce", () => {
+  // R007 regression: QR pairing salts are deterministic, so without mixed
+  // per-connection ephemerals a recreated session would replay its exact
+  // (key, nonce) pairs — the receiving window would accept a stale frame.
+  const first = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
+  const restarted = createSessionPairing(secret, mobileSalt, companionSalt, {
+    mobileEphemeral: generateSessionSalt(),
+    companionEphemeral: generateSessionSalt(),
+  }, fixture.routeId);
+  const payload: EncryptedPayload = { tag: "health", nonce: "restart-0123456789ab" };
+  const firstFrame = first.mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-0000000000d0");
+  const restartedFrame = restarted.mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-0000000000d0");
+  assert.notEqual(firstFrame.nonceBase64Url, restartedFrame.nonceBase64Url);
+  // Fresh receiver at sequence 0 refuses the previous session's frame.
+  assert.throws(
+    () => restarted.companion.fromMobile.open(firstFrame),
+    (error: unknown) => error instanceof PairingCryptoError && error.code === "unauthorized",
+  );
+  // The restarted receiver does accept its own sequence-0 frame, proving
+  // the rejection above was key/nonce separation, not a broken opener.
+  const mirrored = restarted.companion.fromMobile.open(restartedFrame);
+  assert.deepEqual(mirrored, payload);
 });

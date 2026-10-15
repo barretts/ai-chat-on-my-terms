@@ -13,15 +13,18 @@ import assert from "node:assert/strict";
 import { createRelayServer } from "@locallab/relay";
 import {
   PairingCryptoError,
+  createHandshakePairing,
   createPairingQrV1,
   createPairingRecord,
   createSessionPairing,
   createUuidV7,
   deriveSessionSalts,
   encodePairingQrPayload,
+  generateSessionSalt,
   helloProof,
   mobileRouteTicketHash,
   verifyHelloProof,
+  type OpeningChannel,
 } from "@locallab/remote-crypto";
 import { type PairingQrV1 } from "@locallab/service-contracts/pairing";
 import {
@@ -61,11 +64,16 @@ interface CompanionSim {
   receivedClose: () => Promise<{ reason?: string }>;
 }
 
-/** Registers a scripted companion on the relay and answers sealed hellos. */
+/**
+ * Registers a scripted companion on the relay and answers sealed hellos.
+ * R007 framing: hello/ready ride the deterministic handshake channel;
+ * once both sides' ephemerals are exchanged the companion opens later
+ * frames (close etc.) on the per-connection data channel.
+ */
 async function registerCompanion(base: string, qr: PairingQrV1): Promise<CompanionSim> {
   const secret = Buffer.from(qr.pairingSecret, "base64url");
   const { mobileSalt, companionSalt } = deriveSessionSalts(secret, qr.companionRouteId);
-  const session = createSessionPairing(secret, mobileSalt, companionSalt, qr.companionRouteId).companion;
+  const handshake = createHandshakePairing(secret, mobileSalt, companionSalt, qr.companionRouteId).companion;
   const socket = new WebSocket(
     `${base.replace("http://", "ws://")}/companion?routeId=${qr.companionRouteId}` +
       "&credential=companion-credential-0000" +
@@ -76,24 +84,48 @@ async function registerCompanion(base: string, qr: PairingQrV1): Promise<Compani
   await opened.promise;
   const helloSeen = Promise.withResolvers<unknown>();
   const closeSeen = Promise.withResolvers<{ reason?: string }>();
+  let mobileEphemeral: Uint8Array | undefined;
+  let dataFromMobile: OpeningChannel | undefined;
   socket.addEventListener("message", (event) => {
-    const payload = session.fromMobile.open(JSON.parse(String(event.data)));
-    if (payload.tag === "request") helloSeen.resolve(payload.body);
-    else if (payload.tag === "close") closeSeen.resolve({ reason: payload.reason });
+    const payload = (dataFromMobile ?? handshake.fromMobile).open(JSON.parse(String(event.data)));
+    if (payload.tag === "request") {
+      const salt = (payload.body as { sessionSalt?: unknown }).sessionSalt;
+      if (typeof salt === "string") mobileEphemeral = new Uint8Array(Buffer.from(salt, "base64url"));
+      helloSeen.resolve(payload.body);
+    } else if (payload.tag === "close") closeSeen.resolve({ reason: payload.reason });
   });
   const proof = helloProof(secret, mobileSalt, companionSalt, qr.companionRouteId);
   return {
     socket,
     hello: () => helloSeen.promise,
     ready: (protocol, routes, proofOut = proof) => {
+      const companionEphemeral = generateSessionSalt();
       socket.send(
         JSON.stringify(
-          session.toMobile.seal(
-            { tag: "request", body: { type: "pairing-ready", proof: proofOut, protocol, routes } },
+          handshake.toMobile.seal(
+            {
+              tag: "request",
+              body: {
+                type: "pairing-ready",
+                proof: proofOut,
+                protocol,
+                routes,
+                sessionSalt: Buffer.from(companionEphemeral).toString("base64url"),
+              },
+            },
             createUuidV7(),
           ),
         ),
       );
+      if (mobileEphemeral !== undefined) {
+        dataFromMobile = createSessionPairing(
+          secret,
+          mobileSalt,
+          companionSalt,
+          { mobileEphemeral, companionEphemeral },
+          qr.companionRouteId,
+        ).companion.fromMobile;
+      }
     },
     receivedClose: () => closeSeen.promise,
   };
@@ -137,7 +169,7 @@ test("hello travels mobile -> relay -> companion sealed", async () => {
     const connecting = client.connect();
     const body = (await companion.hello()) as { client: string; protocol: { major: number; minor: number } };
     assert.equal(body.client, "locallab-mobile");
-    assert.deepEqual(body.protocol, { major: 1, minor: 0 });
+    assert.deepEqual(body.protocol, { major: 1, minor: 1 });
     companion.ready(body.protocol, [{ routeId: "route-local", backend: "local", label: "Local runtime" }]);
     const routes = await connecting;
     assert.equal(client.state(), "ready");

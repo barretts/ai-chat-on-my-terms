@@ -103,6 +103,7 @@ const HelloSchema = z
     protocol: z.string(),
     routeId: z.string().min(1).max(128),
     proof: z.string().min(16).max(256),
+    sessionSalt: z.string().min(22).max(22),
   })
   .strict();
 
@@ -112,58 +113,88 @@ const ReadySchema = z
     protocol: z.string(),
     proof: z.string().min(16).max(256),
     routes: z.array(RouteCapabilitySchema).max(64),
+    sessionSalt: z.string().min(22).max(22),
   })
   .strict();
 
-/** iPhone side: build the hello proving possession of the pairing secret. */
-export function buildUsbHello(record: UsbPairingRecord) {
+/**
+ * iPhone side: build the hello proving possession of the pairing secret.
+ * R007: `mobileEphemeral` (fresh random 16 bytes this cable session) rides
+ * the hello as base64url `sessionSalt`; the companion mixes it (plus its own
+ * ephemeral, echoed in the ready) into the DATA-direction keys so two
+ * sessions over one saved pairing never reuse a (key, nonce) pair.
+ */
+export function buildUsbHello(record: UsbPairingRecord, mobileEphemeral: Uint8Array) {
   return {
     tag: "usb-hello" as const,
     side: "mobile" as const,
     protocol: USB_PROTOCOL,
     routeId: record.routeId,
     proof: helloProof(record.pairingSecret, record.mobileSalt, record.companionSalt, record.routeId),
+    sessionSalt: Buffer.from(mobileEphemeral).toString("base64url"),
   };
 }
 
 /** Companion-side mirror (integration tests + native bridges): verify the hello. */
 export type UsbHelloVerdict =
-  | { status: "authenticated"; routeId: string }
+  | { status: "authenticated"; routeId: string; mobileEphemeral: Uint8Array }
   | { status: "version-mismatch" }
   | { status: "unauthorized" }
   | { status: "malformed" };
+
+const SessionSaltB64 = /^[A-Za-z0-9_-]{22}$/;
 
 export function verifyUsbHello(hello: unknown, records: readonly UsbPairingRecord[]): UsbHelloVerdict {
   const parsed = HelloSchema.safeParse(hello);
   if (!parsed.success) return { status: "malformed" };
   if (parsed.data.protocol !== USB_PROTOCOL) return { status: "version-mismatch" };
+  if (!SessionSaltB64.test(parsed.data.sessionSalt)) return { status: "malformed" };
   const record = records.find((candidate) => candidate.routeId === parsed.data.routeId);
   if (record === undefined) return { status: "unauthorized" };
   if (!verifyHelloProof(parsed.data.proof, record.pairingSecret, record.mobileSalt, record.companionSalt, record.routeId)) {
     return { status: "unauthorized" };
   }
-  return { status: "authenticated", routeId: parsed.data.routeId };
+  return {
+    status: "authenticated",
+    routeId: parsed.data.routeId,
+    mobileEphemeral: new Uint8Array(Buffer.from(parsed.data.sessionSalt, "base64url")),
+  };
 }
 
-/** Companion echoes the same proof back (possession proof before traffic). */
-export function buildUsbReady(record: UsbPairingRecord, routes: readonly UsbRouteCapability[]) {
+/**
+ * Companion echoes the same proof back (possession proof before traffic)
+ * and contributes its own fresh 16-byte ephemeral for the data keys.
+ */
+export function buildUsbReady(
+  record: UsbPairingRecord,
+  routes: readonly UsbRouteCapability[],
+  companionEphemeral: Uint8Array,
+) {
   return {
     tag: "usb-ready" as const,
     protocol: USB_PROTOCOL,
     proof: helloProof(record.pairingSecret, record.mobileSalt, record.companionSalt, record.routeId),
+    sessionSalt: Buffer.from(companionEphemeral).toString("base64url"),
     routes: [...routes],
   };
 }
 
 /** iPhone side: only trust the cable once the companion echoed the proof. */
-export function verifyUsbReady(ready: unknown, record: UsbPairingRecord): UsbRouteCapability[] | null {
+export function verifyUsbReady(
+  ready: unknown,
+  record: UsbPairingRecord,
+): { routes: UsbRouteCapability[]; companionEphemeral: Uint8Array } | null {
   const parsed = ReadySchema.safeParse(ready);
   if (!parsed.success) return null;
   if (parsed.data.protocol !== USB_PROTOCOL) return null;
+  if (!SessionSaltB64.test(parsed.data.sessionSalt)) return null;
   if (!verifyHelloProof(parsed.data.proof, record.pairingSecret, record.mobileSalt, record.companionSalt, record.routeId)) {
     return null;
   }
-  return parsed.data.routes;
+  return {
+    routes: parsed.data.routes,
+    companionEphemeral: new Uint8Array(Buffer.from(parsed.data.sessionSalt, "base64url")),
+  };
 }
 
 export type DeviceMode = "remote" | "usb";

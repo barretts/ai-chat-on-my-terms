@@ -6,16 +6,26 @@
  * Handshake wire contract (sealed EncryptedPayload envelopes only — the
  * relay is opaque and never sees plaintext, keys or the pairing secret):
  * 1. Mobile connects `GET /mobile?routeId=<companionRouteId>&ticket=<mobileRouteTicket>`
- *    and seals its first payload: { tag:"request", body:{ type:"pairing-hello",
- *    proof, protocol, client } } where proof = helloProof(secret, mobileSalt,
- *    companionSalt, routeId) with per-pairing salts from deriveSessionSalts
- *    (both peers derive the identical salts from QR data alone).
+ *    and seals its first payload on the DETERMINISTIC handshake channel
+ *    (crypto createHandshakePairing; carries proofs only): { tag:"request",
+ *    body:{ type:"pairing-hello", proof, protocol, client, sessionSalt } }
+ *    where proof = helloProof(secret, mobileSalt, companionSalt, routeId)
+ *    with per-pairing salts from deriveSessionSalts, and sessionSalt is a
+ *    fresh random 16-byte mobileEphemeral for this connection.
  * 2. Companion verifies the proof (possession of the 256-bit secret),
- *    negotiates protocol via assertProtocolCompatible, and seals back
- *    { tag:"request", body:{ type:"pairing-ready", proof, protocol, routes } }
- *    echoing the same proof string — the echo proves companion possession.
- *    `routes` are the configured backend routes this device may use.
- * 3. Either side may seal { tag:"close", reason }.
+ *    negotiates protocol via assertProtocolCompatible, and seals back on
+ *    the handshake channel { tag:"request", body:{ type:"pairing-ready",
+ *    proof, protocol, routes, sessionSalt } } echoing the same proof — the
+ *    echo proves companion possession — with its own fresh random
+ *    companionEphemeral in sessionSalt. `routes` are the configured backend
+ *    routes this device may use.
+ * 3. Both sides then build the DATA session with createSessionPairing over
+ *    { mobileEphemeral, companionEphemeral }: every connection gets fresh
+ *    direction keys and replay windows, so two sessions from one saved
+ *    pairing can never reuse an AES-GCM (key, nonce) pair even though the
+ *    QR-derived salts are deterministic. Frames from the previous session
+ *    fail authentication under the new keys.
+ * 4. Either side may seal { tag:"close", reason } once data keys exist.
  *
  * Version mismatch or an invalidated pairing always resolves to a UI-visible
  * help state pointing at a fresh QR ("re-pair"); stale/old QR text can never
@@ -30,16 +40,20 @@ import {
 import {
   PairingCryptoError,
   assertPairingUsable,
+  createHandshakePairing,
   createPairingRecord,
   createSessionPairing,
   createUuidV7,
   deriveSessionSalts,
+  generateSessionSalt,
   helloProof,
   parsePairingQrPayload,
   regeneratePairing,
   verifyHelloProof,
   type EncryptedPayload,
+  type OpeningChannel,
   type PairingRecord,
+  type SealingChannel,
 } from "@locallab/remote-crypto";
 import { z } from "zod";
 
@@ -53,12 +67,17 @@ const RouteCapabilitySchema = z
   })
   .strict();
 
+const SessionSaltSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{22}$/, "sessionSalt must be 16 base64url bytes");
+
 const HelloBodySchema = z
   .object({
     type: z.literal("pairing-hello"),
     proof: z.string().min(16).max(256),
     protocol: z.object({ major: z.number().int(), minor: z.number().int().nonnegative() }).strict(),
     client: z.string().min(1).max(128),
+    sessionSalt: SessionSaltSchema,
   })
   .strict();
 
@@ -70,6 +89,7 @@ const ReadyBodySchema = z
       .object({ major: z.number().int(), minor: z.number().int().nonnegative() })
       .strict(),
     routes: z.array(RouteCapabilitySchema).max(64),
+    sessionSalt: SessionSaltSchema,
   })
   .strict();
 
@@ -114,6 +134,10 @@ function decodeBase64Url(value: string) {
   return bytes;
 }
 
+function encodeBase64Url(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64url");
+}
+
 export function relaySocketUrl(relayUrl: string): string {
   const trimmed = relayUrl.endsWith("/") ? relayUrl.slice(0, -1) : relayUrl;
   if (trimmed.startsWith("wss://") || trimmed.startsWith("ws://")) return trimmed;
@@ -133,7 +157,10 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
   const qr = parsePairingQrPayload(options.qrText);
   const pairingSecret = decodeBase64Url(qr.pairingSecret);
   const { mobileSalt, companionSalt } = deriveSessionSalts(pairingSecret, qr.companionRouteId);
-  const session = createSessionPairing(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
+  const handshake = createHandshakePairing(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
+  const mobileEphemeral = generateSessionSalt();
+  let dataToCompanion: SealingChannel | undefined;
+  let dataFromCompanion: OpeningChannel | undefined;
   const proof = helloProof(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
 
   let state: PairingClientState = "idle";
@@ -161,7 +188,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
       state = "awaiting-peer";
       next.send(
         JSON.stringify(
-          session.mobile.toCompanion.seal(
+          handshake.mobile.toCompanion.seal(
             {
               tag: "request",
               body: {
@@ -169,6 +196,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
                 proof,
                 protocol: { major: PAIRING_PROTOCOL.major, minor: PAIRING_PROTOCOL.minor },
                 client: options.clientLabel ?? "locallab-mobile",
+                sessionSalt: encodeBase64Url(mobileEphemeral),
               },
             },
             createUuidV7(),
@@ -180,7 +208,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
       if (typeof event.data !== "string") return;
       let payload: EncryptedPayload;
       try {
-        payload = session.mobile.fromCompanion.open(JSON.parse(event.data));
+        payload = (dataFromCompanion ?? handshake.mobile.fromCompanion).open(JSON.parse(event.data));
       } catch (error) {
         const failure = error instanceof PairingCryptoError ? error : undefined;
         if (failure !== undefined && failure.message.includes("protocol")) {
@@ -232,6 +260,30 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
         settled.reject(new PairingCryptoError("unauthorized", note));
         return;
       }
+      let companionEphemeral: Uint8Array;
+      try {
+        companionEphemeral = decodeBase64Url(ready.data.sessionSalt);
+      } catch {
+        state = "re-pair-required";
+        setNote("The desktop session key material was not understood. Show a fresh QR code.");
+        settled.reject(new PairingCryptoError("malformed", note));
+        return;
+      }
+      if (companionEphemeral.length !== 16) {
+        state = "re-pair-required";
+        setNote("The desktop session key material was the wrong size. Show a fresh QR code.");
+        settled.reject(new PairingCryptoError("malformed", note));
+        return;
+      }
+      const data = createSessionPairing(
+        pairingSecret,
+        mobileSalt,
+        companionSalt,
+        { mobileEphemeral, companionEphemeral },
+        qr.companionRouteId,
+      );
+      dataToCompanion = data.mobile.toCompanion;
+      dataFromCompanion = data.mobile.fromCompanion;
       routes = ready.data.routes;
       state = "ready";
       settled.resolve(routes);
@@ -263,12 +315,14 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
 
   function disconnect(reason = "client-disconnect") {
     if (socket !== undefined && (state === "ready" || state === "awaiting-peer")) {
-      try {
-        socket.send(
-          JSON.stringify(session.mobile.toCompanion.seal({ tag: "close", reason }, createUuidV7())),
-        );
-      } catch {
-        // best-effort: close below regardless
+      if (dataToCompanion !== undefined) {
+        try {
+          socket.send(
+            JSON.stringify(dataToCompanion.seal({ tag: "close", reason }, createUuidV7())),
+          );
+        } catch {
+          // best-effort: close below regardless
+        }
       }
       socket.close(1000, reason);
     }

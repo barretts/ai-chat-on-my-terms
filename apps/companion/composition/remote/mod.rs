@@ -33,7 +33,7 @@ use crate::usb::guard::{DeviceMode, ModeGuard};
 /// Wire protocol this companion speaks: major 1 (fixed; a major bump is
 /// always a full re-pair) and the minor tracked here. A phone with a
 /// NEWER minor is refused (RE-10) rather than guessing at its framing.
-pub const COMPANION_PROTOCOL_MINOR: u32 = 0;
+pub const COMPANION_PROTOCOL_MINOR: u32 = 1;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompositionError {
@@ -212,7 +212,7 @@ impl RemoteComposition {
 mod tests {
     use super::*;
     use crate::features::sync_setup::SyncChoice;
-    use crate::remote::crypto::{b64url_encode, derive_nonce_key, derive_session_key, Role};
+    use crate::remote::crypto::{b64url_encode, derive_nonce_key, derive_session_key, Role, SessionEntropy};
     use crate::remote::routes::{cancel_pair, BackendKind, RouteConfig};
     use serde_json::json;
     use std::io::Read;
@@ -301,11 +301,22 @@ mod tests {
             .expect("csalt")
             .try_into()
             .expect("16-byte companion salt");
+        // R007: data keys mix both sides' handshake ephemerals (relay:
+        // hello/ready sessionSalt; here the fixture's frozen ephemerals).
+        let mobile_ephemeral: [u8; 16] = b64url_decode(f["mobileEphemeralBase64Url"].as_str().expect("meph"))
+            .expect("meph")
+            .try_into()
+            .expect("16-byte mobile ephemeral");
+        let companion_ephemeral: [u8; 16] = b64url_decode(f["companionEphemeralBase64Url"].as_str().expect("ceph"))
+            .expect("ceph")
+            .try_into()
+            .expect("16-byte companion ephemeral");
+        let entropy = SessionEntropy { mobile_ephemeral, companion_ephemeral };
         // mobile->companion direction on both sides of the opener/seal pair.
-        let m2c = derive_session_key(&secret, &mobile_salt, &companion_salt, route, Role::Mobile, Role::Companion).expect("m2c key");
-        let m2c_nonce = derive_nonce_key(&secret, &mobile_salt, &companion_salt, route, Role::Mobile, Role::Companion).expect("m2c nonce key");
-        let c2m = derive_session_key(&secret, &mobile_salt, &companion_salt, route, Role::Companion, Role::Mobile).expect("c2m key");
-        let c2m_nonce = derive_nonce_key(&secret, &mobile_salt, &companion_salt, route, Role::Companion, Role::Mobile).expect("c2m nonce key");
+        let m2c = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("m2c key");
+        let m2c_nonce = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("m2c nonce key");
+        let c2m = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Companion, Role::Mobile).expect("c2m key");
+        let c2m_nonce = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Companion, Role::Mobile).expect("c2m nonce key");
 
         let (port, _server) = ok_backend();
         let registry = RouteRegistry::configure(vec![RouteConfig {

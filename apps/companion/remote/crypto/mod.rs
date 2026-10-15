@@ -4,8 +4,17 @@
 //! if this module and the fixture ever disagree, the fixture is the contract.
 //!
 //! Layout (ASCII info strings, salts concatenated mobile||companion):
-//! - HKDF-SHA256(ikm=32B pairing secret, salt=mobileSalt||companionSalt,
-//!   info="locallab-pairing-{hello|key|nonce}-v1|1.0|<routeId>[|<flow>]").
+//! - Session/nonce keys use salt = mobileSalt||companionSalt||mobileEphemeral
+//!   ||companionEphemeral (R007): each side contributes a fresh random
+//!   16-byte ephemeral in its handshake frame, so every connection derives
+//!   fresh direction keys and replay windows — two sessions from one saved
+//!   pairing can never reuse an AES-GCM (key, nonce) pair.
+//! - HKDF-SHA256(ikm=32B pairing secret, salt as above,
+//!   info="locallab-pairing-{hello|key|nonce|handshake|handshake-nonce}-v1|1.1|<routeId>[|<flow>]").
+//!   The hello and handshake-* labels keep the deterministic
+//!   mobileSalt||companionSalt salt: they seal only the hello/ready
+//!   possession-proof frames, which a restarting peer must be able to open
+//!   before any ephemeral is known. Data frames ride the ephemeral-mixed key.
 //! - Hello proof = HMAC-SHA256(helloKey, "v1|<routeId>|<mobileSalt b64url>|<companionSalt b64url>").
 //! - Frame nonce12 = HMAC-SHA256(nonceKey(flow), "c:" + u64be(sequence))[0..12];
 //!   receivers reject frames whose advertised nonce is not deriveNonce(sequence).
@@ -21,9 +30,11 @@ use subtle::ConstantTimeEq;
 pub const REPLAY_WINDOW: u64 = 1_000;
 pub const REPLAY_TRACK: u64 = 64;
 pub const MAX_FRAME_BYTES: usize = 1_048_576;
-const HELLO_LABEL: &str = "locallab-pairing-hello-v1|1.0";
-const KEY_LABEL: &str = "locallab-pairing-key-v1|1.0";
-const NONCE_LABEL: &str = "locallab-pairing-nonce-v1|1.0";
+const HELLO_LABEL: &str = "locallab-pairing-hello-v1|1.1";
+const KEY_LABEL: &str = "locallab-pairing-key-v1|1.1";
+const NONCE_LABEL: &str = "locallab-pairing-nonce-v1|1.1";
+const HANDSHAKE_LABEL: &str = "locallab-pairing-handshake-v1|1.1";
+const HANDSHAKE_NONCE_LABEL: &str = "locallab-pairing-handshake-nonce-v1|1.1";
 const ROUTE_TICKET_KEY: &[u8] = b"locallab-pairing-route-ticket-v1";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -141,20 +152,56 @@ pub fn derive_hello_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &
     hkdf_expand(secret, &session_salt(mobile_salt, companion_salt), &format!("{HELLO_LABEL}|{route_id}"))
 }
 
-pub fn derive_session_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
+/// R007: per-connection ephemerals mixed into the session key derivation.
+/// Each side contributes a fresh random 16-byte value in its handshake frame
+/// (hello carries mobile_ephemeral, ready carries companion_ephemeral), so
+/// data keys and replay windows are fresh per connection while the pairing
+/// secret and salts never travel on the wire.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SessionEntropy {
+    pub mobile_ephemeral: [u8; 16],
+    pub companion_ephemeral: [u8; 16],
+}
+
+fn entropy_bytes(mobile_salt: &[u8; 16], companion_salt: &[u8; 16], entropy: &SessionEntropy) -> Vec<u8> {
+    let mut salt = Vec::with_capacity(64);
+    salt.extend_from_slice(mobile_salt);
+    salt.extend_from_slice(companion_salt);
+    salt.extend_from_slice(&entropy.mobile_ephemeral);
+    salt.extend_from_slice(&entropy.companion_ephemeral);
+    salt
+}
+
+pub fn derive_handshake_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
+    if secret.len() != 32 {
+        return Err(PairingCryptoError::malformed("pairingSecret must be exactly 32 bytes"));
+    }
+    let info = format!("{HANDSHAKE_LABEL}|{route_id}|{}", flow_label(from, to));
+    hkdf_expand(secret, &session_salt(mobile_salt, companion_salt), &info)
+}
+
+pub fn derive_handshake_nonce_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
+    if secret.len() != 32 {
+        return Err(PairingCryptoError::malformed("pairingSecret must be exactly 32 bytes"));
+    }
+    let info = format!("{HANDSHAKE_NONCE_LABEL}|{route_id}|{}", flow_label(from, to));
+    hkdf_expand(secret, &session_salt(mobile_salt, companion_salt), &info)
+}
+
+pub fn derive_session_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], entropy: &SessionEntropy, route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
     if secret.len() != 32 {
         return Err(PairingCryptoError::malformed("pairingSecret must be exactly 32 bytes"));
     }
     let info = format!("{KEY_LABEL}|{route_id}|{}", flow_label(from, to));
-    hkdf_expand(secret, &session_salt(mobile_salt, companion_salt), &info)
+    hkdf_expand(secret, &entropy_bytes(mobile_salt, companion_salt, entropy), &info)
 }
 
-pub fn derive_nonce_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
+pub fn derive_nonce_key(secret: &[u8], mobile_salt: &[u8; 16], companion_salt: &[u8; 16], entropy: &SessionEntropy, route_id: &str, from: Role, to: Role) -> Result<[u8; 32]> {
     if secret.len() != 32 {
         return Err(PairingCryptoError::malformed("pairingSecret must be exactly 32 bytes"));
     }
     let info = format!("{NONCE_LABEL}|{route_id}|{}", flow_label(from, to));
-    hkdf_expand(secret, &session_salt(mobile_salt, companion_salt), &info)
+    hkdf_expand(secret, &entropy_bytes(mobile_salt, companion_salt, entropy), &info)
 }
 
 pub fn derive_nonce(nonce_key: &[u8; 32], sequence: u64) -> [u8; 12] {
@@ -348,6 +395,13 @@ mod tests {
         decode(f, field).try_into().expect("16-byte salt")
     }
 
+    fn entropy_of(f: &Value) -> SessionEntropy {
+        SessionEntropy {
+            mobile_ephemeral: salt_of(f, "mobileEphemeralBase64Url"),
+            companion_ephemeral: salt_of(f, "companionEphemeralBase64Url"),
+        }
+    }
+
     fn frame_of(jf: &Value) -> Frame {
         Frame {
             route_id: jf["routeId"].as_str().expect("routeId").to_string(),
@@ -370,15 +424,24 @@ mod tests {
         let secret = decode(&f, "pairingSecretBase64Url");
         let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
         let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
         let route = f["routeId"].as_str().expect("routeId");
         assert_eq!(secret.len(), 32);
         let mobile_to_companion =
-            derive_session_key(&secret, &mobile_salt, &companion_salt, route, Role::Mobile, Role::Companion).expect("key");
+            derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("key");
         let companion_to_mobile =
-            derive_session_key(&secret, &mobile_salt, &companion_salt, route, Role::Companion, Role::Mobile).expect("key");
+            derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Companion, Role::Mobile).expect("key");
         assert_eq!(hex_encode(&mobile_to_companion), f["mobileToCompanionKeyHex"].as_str().expect("hex"));
         assert_eq!(hex_encode(&companion_to_mobile), f["companionToMobileKeyHex"].as_str().expect("hex"));
         assert_ne!(mobile_to_companion, companion_to_mobile);
+        assert_eq!(
+            hex_encode(&derive_handshake_key(&secret, &mobile_salt, &companion_salt, route, Role::Mobile, Role::Companion).expect("hs key")),
+            f["mobileToCompanionHandshakeKeyHex"].as_str().expect("hs hex")
+        );
+        assert_eq!(
+            hex_encode(&derive_handshake_key(&secret, &mobile_salt, &companion_salt, route, Role::Companion, Role::Mobile).expect("hs key")),
+            f["companionToMobileHandshakeKeyHex"].as_str().expect("hs hex")
+        );
         assert_eq!(hello_proof(&secret, &mobile_salt, &companion_salt, route).expect("proof"),
             f["helloProofBase64Url"].as_str().expect("proof"));
         assert_eq!(
@@ -391,8 +454,17 @@ mod tests {
             } else {
                 (Role::Companion, Role::Mobile)
             };
-            let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, route, from, to).expect("key");
-            let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, route, from, to).expect("nonce key");
+            let handshake = entry["channel"].as_str() == Some("handshake");
+            let direction_key = if handshake {
+                derive_handshake_key(&secret, &mobile_salt, &companion_salt, route, from, to).expect("key")
+            } else {
+                derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, from, to).expect("key")
+            };
+            let nonce_key = if handshake {
+                derive_handshake_nonce_key(&secret, &mobile_salt, &companion_salt, route, from, to).expect("nonce key")
+            } else {
+                derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, from, to).expect("nonce key")
+            };
             let frame = seal_bytes(
                 &direction_key,
                 &nonce_key,
@@ -416,12 +488,16 @@ mod tests {
         let secret = decode(&f, "pairingSecretBase64Url");
         let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
         let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
         let route = f["routeId"].as_str().expect("routeId").to_string();
-        let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &route, Role::Mobile, Role::Companion).expect("key");
-        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &route, Role::Mobile, Role::Companion).expect("nonce key");
+        let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("key");
+        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("nonce key");
         let entries: Vec<&Value> = sealed(&f)
             .iter()
-            .filter(|entry| entry["direction"].as_str() == Some("mobile-to-companion"))
+            .filter(|entry| {
+                entry["channel"].as_str() == Some("session")
+                    && entry["direction"].as_str() == Some("mobile-to-companion")
+            })
             .collect();
         assert_eq!(entries.len(), 3);
         let mut receiver = OpeningChannel::new(&direction_key, &nonce_key, &route);
@@ -446,10 +522,18 @@ mod tests {
         let secret = decode(&f, "pairingSecretBase64Url");
         let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
         let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
         let route = f["routeId"].as_str().expect("routeId").to_string();
-        let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &route, Role::Mobile, Role::Companion).expect("key");
-        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &route, Role::Mobile, Role::Companion).expect("nonce key");
-        let first = sealed(&f).iter().find(|entry| entry["sequence"].as_u64() == Some(0)).expect("seq0");
+        let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("key");
+        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("nonce key");
+        let first = sealed(&f)
+            .iter()
+            .find(|entry| {
+                entry["channel"].as_str() == Some("session")
+                    && entry["direction"].as_str() == Some("mobile-to-companion")
+                    && entry["sequence"].as_u64() == Some(0)
+            })
+            .expect("seq0");
 
         let mut frame = frame_of(&first["frame"]);
         let mut ct = b64url_decode(&frame.ciphertext_base64url).expect("ct");
@@ -479,13 +563,54 @@ mod tests {
         let secret = decode(&f, "pairingSecretBase64Url");
         let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
         let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
         let route = f["routeId"].as_str().expect("routeId");
-        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, route, Role::Mobile, Role::Companion).expect("nonce key");
+        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("nonce key");
         let nonces: std::collections::HashSet<[u8; 12]> =
             (0..200u64).map(|sequence| derive_nonce(&nonce_key, sequence)).collect();
         assert_eq!(nonces.len(), 200);
-        let other = derive_nonce_key(&secret, b"rust-fresh-salt!", &companion_salt, route, Role::Mobile, Role::Companion).expect("other nonce key");
+        let other = derive_nonce_key(&secret, b"rust-fresh-salt!", &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("other nonce key");
         assert_ne!(derive_nonce(&other, 0), derive_nonce(&nonce_key, 0));
+    }
+
+    #[test]
+    fn two_sessions_from_one_pairing_never_reuse_key_or_nonce() {
+        // R007 regression: the QR-derived salts are deterministic, so a
+        // recreated session must mix different ephemerals or it would reuse
+        // the previous session's (key, nonce) pairs at sequence 0.
+        let f = fixture();
+        let secret = decode(&f, "pairingSecretBase64Url");
+        let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
+        let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
+        let route = f["routeId"].as_str().expect("routeId");
+        let restarted = SessionEntropy {
+            mobile_ephemeral: [0x9a; 16],
+            companion_ephemeral: [0x2b; 16],
+        };
+        let old_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("key");
+        let new_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &restarted, route, Role::Mobile, Role::Companion).expect("key");
+        assert_ne!(old_key, new_key);
+        let old_nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, Role::Mobile, Role::Companion).expect("nonce key");
+        let new_nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &restarted, route, Role::Mobile, Role::Companion).expect("nonce key");
+        assert_ne!(old_nonce_key, new_nonce_key);
+        // A zero counter restart under the restarted keys yields a nonce the
+        // old session never used, and old-session frames fail authentication.
+        let restarted_frame = seal_bytes(&new_key, &new_nonce_key, b"{\"tag\":\"health\",\"nonce\":\"restart-00000001\"}", route, "0198f2a3-0000-7000-8000-0000000000fb", 0, "health").expect("seal restart");
+        let mut old_receiver = OpeningChannel::new(&old_key, &old_nonce_key, route);
+        let err = old_receiver.open(&restarted_frame).expect_err("restarted frame must fail old receiver");
+        assert!(err.kind == "unauthorized" || err.message.contains("nonce") || err.message.contains("authentication"));
+        let first_frame = sealed(&f)
+            .iter()
+            .find(|entry| {
+                entry["channel"].as_str() == Some("session")
+                    && entry["direction"].as_str() == Some("mobile-to-companion")
+                    && entry["sequence"].as_u64() == Some(0)
+            })
+            .expect("seq0");
+        let mut new_receiver = OpeningChannel::new(&new_key, &new_nonce_key, route);
+        let err = new_receiver.open(&frame_of(&first_frame["frame"])).expect_err("old-session frame must fail new receiver");
+        assert!(err.kind == "unauthorized" || err.message.contains("nonce") || err.message.contains("authentication"));
     }
 
     #[test]

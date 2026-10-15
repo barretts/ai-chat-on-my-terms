@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { EntityIdSchema } from "@locallab/contracts/identity";
 
-export const PAIRING_PROTOCOL = Object.freeze({ major: 1, minor: 0 });
+export const PAIRING_PROTOCOL = Object.freeze({ major: 1, minor: 1 });
 const Base64UrlBytes32Schema = z
   .string()
   .regex(/^[A-Za-z0-9_-]{43}$/, "Expected 32 base64url bytes");
