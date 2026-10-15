@@ -1,0 +1,168 @@
+{
+  "asOf": "2026-10-14T17:57:23.050Z",
+  "commit": "49e9d85750184b0ce07d1d927211f73a3bdfb533",
+  "worktree": "Includes uncommitted source; hashes identify exact finding files.",
+  "evidence": [
+    {
+      "id": "R001",
+      "file": "apps/mobile/package.json",
+      "line": 12,
+      "sha256": "eeb9e8939a18aa8d91467180a3d39aeff112787f6694fb65ee603639769a19af",
+      "excerpt": "  },\n  \"dependencies\": {\n    \"@expo/metro-runtime\": \"57.0.16\",\n    \"@expo/vector-icons\": \"15.0.2\","
+    },
+    {
+      "id": "R002",
+      "file": "pnpm-workspace.yaml",
+      "line": 6,
+      "sha256": "a529b8af76606b1d577a49c8da799053c007bd233c767d2b3b1f04e25059062c",
+      "excerpt": "  - packages/*\n  - packages/*/*\n  - packages/chat/engine/*\n  - packages/providers/*/*"
+    },
+    {
+      "id": "R003",
+      "file": "packages/groups/config/src/index.ts",
+      "line": 294,
+      "sha256": "4fd136f077f8cc96d03ae305534e8d4d09d48e809341e6e562951653f95cfc06",
+      "excerpt": "  if (db.withTransactionAsync) {\n    await db.withTransactionAsync(work);\n    return;\n  }"
+    },
+    {
+      "id": "R004",
+      "file": "packages/memory/scope/src/index.ts",
+      "line": 283,
+      "sha256": "fd21da2aa4886bf30b43dca289d09579cd99f4313c8184a413581f0d9e38312e",
+      "excerpt": "    EntityIdSchema.parse(personaId);\n    await this.db.withTransactionAsync(async () => {\n      await this.db.runAsync(\n        \"DELETE FROM memory_persona_associations WHERE persona_id=?\","
+    },
+    {
+      "id": "R005",
+      "file": "apps/mobile/features/voice/imports.ts",
+      "line": 45,
+      "sha256": "791ef2436fbbdf9efbc95f0712e1386293bfc822eb50729c554540eddacc0bae",
+      "excerpt": "    const rows = await this.database.getAllAsync<ImportedTranscription>(\n      `SELECT id, name, audio_uri AS audioUri, transcript AS text,\n              created_at AS createdAt\n         FROM ${TABLE} ORDER BY created_at DESC`,"
+    },
+    {
+      "id": "R006",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 248,
+      "sha256": "4612ffe47eb1eb538909e45e1148563e99ab97fdaf82eec246a09c78220931cf",
+      "excerpt": "  /** Target side of copy-*: tombstone every live local row. */\n  private replaceLocalSet(): void {\n    const stamp = this.opts.now();\n    for (const entry of this.opts.store.snapshot()) {"
+    },
+    {
+      "id": "R007",
+      "file": "packages/remote/client/src/index.ts",
+      "line": 135,
+      "sha256": "29c02ae84e5e3a1939a39254844680528e415f4a1a1a52b23394dd184218c876",
+      "excerpt": "  const pairingSecret = decodeBase64Url(qr.pairingSecret);\n  const { mobileSalt, companionSalt } = deriveSessionSalts(pairingSecret, qr.companionRouteId);\n  const session = createSessionPairing(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);\n  const proof = helloProof(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);"
+    },
+    {
+      "id": "R008",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 190,
+      "sha256": "4612ffe47eb1eb538909e45e1148563e99ab97fdaf82eec246a09c78220931cf",
+      "excerpt": "    if (parsed.data.tag === \"sync-ack\") {\n      this.transport.handleAck(parsed.data);\n      return;\n    }"
+    },
+    {
+      "id": "R009",
+      "file": "workers/mlx-macos/Sources/LocalLabMlxWorker/main.swift",
+      "line": 51,
+      "sha256": "fce6a1400e7479e0dfe52a1cfa506daa60230deff2ce32f41b4d42254659f07a",
+      "excerpt": "        event(\"WorkerReady\", runId: nil, capability: MLXMacPlatform.capability())\n        while let line = readLine() {\n            guard let data = line.data(using: .utf8), let command = try? JSONDecoder().decode(Command.self, from: data) else {\n                event(\"WorkerError\", runId: nil, code: \"invalid-request\", message: \"Command must be a JSON object.\")"
+    },
+    {
+      "id": "R010",
+      "file": "modules/downloads/ios/native/BackgroundTransferSession.swift",
+      "line": 79,
+      "sha256": "b2366a5f2e6dad9948668c9a75bad39fb5e663f0ddd9f07734ea3c0a5caffbb1",
+      "excerpt": "\n    public func pause(taskID: Int) async throws -> Data? {\n        guard let download = await task(taskID) as? URLSessionDownloadTask else { throw missingTask() }\n        return await withCheckedContinuation { continuation in"
+    },
+    {
+      "id": "R011",
+      "file": "packages/providers/cloud/anthropic/src/index.ts",
+      "line": 57,
+      "sha256": "f33c57b3298f8151014e85bf1342977fa6ee6c64559d3c4c931248c1f7ec6962",
+      "excerpt": "    }\n    if (item.kind !== \"user\" && item.kind !== \"assistant\") continue;\n    const role = item.kind;\n    const content = anthropicContent(item.value);"
+    },
+    {
+      "id": "R012",
+      "file": "packages/models/imports/src/index.ts",
+      "line": 260,
+      "sha256": "326e0693fd2206731857c3cca7e48c211fe3583b9411f2f3afa13d36e02ec06b",
+      "excerpt": "      EntityIdSchema.parse(id),\n      RevisionSchema.parse(revision),\n    );\n    const state = {"
+    },
+    {
+      "id": "R013",
+      "file": "packages/tools/mcp-http/src/client.ts",
+      "line": 641,
+      "sha256": "8e7c395a2bd7f39e673129c4d94e0e9b9acb02f5bd009ce673d50831cb89dfb3",
+      "excerpt": "        );\n      const envelope = await this.postRpc(\n        messageEndpoint,\n        {"
+    },
+    {
+      "id": "R014",
+      "file": "packages/tools/mcp-http/src/client.ts",
+      "line": 528,
+      "sha256": "8e7c395a2bd7f39e673129c4d94e0e9b9acb02f5bd009ce673d50831cb89dfb3",
+      "excerpt": "        for (;;) {\n          const boundary = buffer.indexOf(\"\\n\\n\");\n          if (boundary === -1) break;\n          const frame = buffer.slice(0, boundary);"
+    },
+    {
+      "id": "R015",
+      "file": "packages/tools/mcp-http/src/tools.ts",
+      "line": 55,
+      "sha256": "9e774ccc5580a9a0cf17a2d89040097a3c702e847f93ad47a09bb3899db28e07",
+      "excerpt": "): Promise<RegisteredTool[]> {\n  const signal = new AbortController().signal;\n  if (!client.isInitialized) await client.initialize(signal);\n  const discovery = await client.discoverTools(signal);"
+    },
+    {
+      "id": "R016",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 198,
+      "sha256": "4612ffe47eb1eb538909e45e1148563e99ab97fdaf82eec246a09c78220931cf",
+      "excerpt": "    for (const record of batch.records) {\n      this.admit(record); // SY-10: no persona-tier rows we never selected enter the store\n      this.opts.store.apply(record); // throws unsupported/malformed fail-closed\n      accepted.push(record.id);"
+    },
+    {
+      "id": "R017",
+      "file": "packages/speech-system/ios/SpeechSystemModule.swift",
+      "line": 343,
+      "sha256": "7cad385d8e261a9b1aceb1c6a2a087d288f78c475beb02186b76f632cb929d6e",
+      "excerpt": "        engine.prepare()\n        engine.start()\n        self.captureEngine = engine\n        promise.resolve([\"ok\": true, \"value\": NSNull()])"
+    },
+    {
+      "id": "R018",
+      "file": "packages/media/comfyui/src/index.ts",
+      "line": 368,
+      "sha256": "65d83e5b899dd39e6970c6f5ff7150201c74a6a08c81cbb88c4af51b3ed9b822",
+      "excerpt": "    const promptRecord = promptResponse as Record<string, unknown>;\n    if (promptRecord.node_errors)\n      throw err(\n        \"malformed\","
+    },
+    {
+      "id": "R019",
+      "file": "packages/media/comfyui/src/index.ts",
+      "line": 126,
+      "sha256": "65d83e5b899dd39e6970c6f5ff7150201c74a6a08c81cbb88c4af51b3ed9b822",
+      "excerpt": "      if (Array.isArray(value) && value[0] === checkpointId)\n        patched[key] = value[1] === 0 ? modelSource : clipSource;\n    }\n    node.inputs = patched;"
+    },
+    {
+      "id": "R020",
+      "file": "services/relay/Dockerfile",
+      "line": 14,
+      "sha256": "2fc12999388fa7fbb3c33d33684be7f710123199daab638555f31deb127da7fc",
+      "excerpt": "COPY packages/remote/crypto packages/remote/crypto\nRUN npm ci --omit=dev\nEXPOSE 8790\nENV RELAY_PORT=8790"
+    },
+    {
+      "id": "R021",
+      "file": "packages/remote/crypto/src/index.ts",
+      "line": 227,
+      "sha256": "e5fb188397e20293725b93cf7d095072c9d91463c3e8af549fafe8c5f36e9b0a",
+      "excerpt": "\n  private acceptSequence(sequence: number): void {\n    if (sequence > this.highSequence + REPLAY_WINDOW)\n      throw new PairingCryptoError(\"unauthorized\", \"frame sequence is beyond the replay window\");"
+    },
+    {
+      "id": "R022",
+      "file": "packages/sync/icloud/src/index.ts",
+      "line": 150,
+      "sha256": "c00ae629b8a3803b7af2efcd45cbfeaa7aba61beae30656478a07ecb7c5b48cb",
+      "excerpt": "      await this.cfg.bridge.saveRecords(records);\n      for (const row of chunk) this.pending.delete(`${row.entityType}:${row.entityId}`);\n      saved += chunk.length;\n      if (chunk.length < batch) break;"
+    },
+    {
+      "id": "R023",
+      "file": "packages/sync/core/transport/src/index.ts",
+      "line": 214,
+      "sha256": "4b21358eae675c34fbd4424806053fb41af0becbcf9598f869e95841e110ab7a",
+      "excerpt": "  private isFullyAcked(batch: SyncBatchPayload): boolean {\n    return batch.records.every((record) => this.ackedIds.has(record.id));\n  }\n}"
+    }
+  ]
+}

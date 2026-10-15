@@ -1,0 +1,15 @@
+{
+  "asOf": "2026-10-14T17:58:48.298Z",
+  "requirements": {
+    "allTaskCardsAccountedFor": true,
+    "taskCount": 212,
+    "pendingTaskReviews": 0,
+    "blockerOnlyFindings": true,
+    "findingCount": 23,
+    "csvFullMatrixRoundTripVerified": true,
+    "independentPowerShellCsvParseVerified": true,
+    "sourceFilesRevalidatedByHash": true
+  },
+  "limits": "Source review only. No product tests, native builds, backend calls or implementation fixes were performed. Absent/held tasks and unavailable native milestone evidence are explicit coverage statuses.",
+  "scopeVerdict": "FAIL — confirmed source blockers remain."
+}

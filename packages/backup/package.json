@@ -1,0 +1,17 @@
+{
+  "name": "@locallab/backup",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node-crypto.ts"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.mts"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

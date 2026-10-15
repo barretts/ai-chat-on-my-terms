@@ -9,6 +9,7 @@ import {
   MD3LightTheme,
   Portal,
   RadioButton,
+  Switch,
   Text,
   TextInput,
   ThemeProvider,
@@ -24,9 +25,17 @@ import {
 import { speechVoices } from "../../platform/speech";
 import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
+import { PersonaGeneratorForm } from "../persona-generator/screen";
+import { readPersonaMemorySettings } from "@locallab/memory-scope";
 import {
   DEFAULT_PERSONA_APPEARANCE,
 } from "@locallab/personas-library";
+import {
+  DEFAULT_MODEL_CHOICE,
+  personaModelChoices,
+  personaProfileWithModel,
+} from "../persona-bindings";
+import { readPersonaModelSettings } from "@locallab/personas-bindings";
 import {
   personaEditorDraft,
   personaInitials,
@@ -219,6 +228,10 @@ export function PersonaScreen(props: PersonaFeatureProps) {
             expectedRevision: editing.revision,
           })
         : await props.library.create({ ...draft, id: ownerId });
+      await props.onPersonaMemoryPolicy?.(
+        record.id,
+        readPersonaMemorySettings(record.profile).share === true,
+      );
       // Saved avatars retain their owner; discarded picks and the previous avatar are released.
       if (record.photoAttachmentId)
         pendingAvatars.current.delete(record.photoAttachmentId);
@@ -242,6 +255,33 @@ export function PersonaScreen(props: PersonaFeatureProps) {
       await reload();
       await props.onProfilesChanged?.();
     });
+
+  const memory = readPersonaMemorySettings(draft?.profile);
+  const memorySwitch = (
+    key: "extract" | "inject" | "share",
+    value: boolean,
+  ) => {
+    if (!draft) return;
+    setDraft({
+      ...draft,
+      profile: {
+        ...draft.profile,
+        memory: { ...readPersonaMemorySettings(draft.profile), [key]: value },
+      },
+    });
+  };
+
+  const modelBinding = readPersonaModelSettings(draft?.profile);
+  const setModelBinding = (choice: string) => {
+    if (!draft) return;
+    setDraft({
+      ...draft,
+      profile: personaProfileWithModel(
+        draft.profile,
+        choice === DEFAULT_MODEL_CHOICE ? null : choice,
+      ),
+    });
+  };
 
   const avatar = (
     name: string,
@@ -331,6 +371,21 @@ export function PersonaScreen(props: PersonaFeatureProps) {
             <Text variant="titleLarge">
               {editing ? "Edit profile" : "Create Persona"}
             </Text>
+            {!editing && props.generatePersona ? (
+              <PersonaGeneratorForm
+                generate={props.generatePersona}
+                editorBusy={busy}
+                onApply={(fields) =>
+                  setDraft({
+                    ...draft,
+                    name: fields.name,
+                    description: fields.description,
+                    prompt: fields.prompt,
+                    appearance: fields.appearance,
+                  })
+                }
+              />
+            ) : null}
             {avatar(
               draft.name,
               draft.photoAttachmentId,
@@ -416,6 +471,64 @@ export function PersonaScreen(props: PersonaFeatureProps) {
             <Text>
               Download the chosen voice pack in Voices before reading aloud.
             </Text>
+            </PersonaEditorOptions>
+            <PersonaEditorOptions phone={phone} title="Memory">
+              <View style={styles.row}>
+                <Text>Save new facts from this Persona's chats</Text>
+                <Switch
+                  accessibilityLabel="Persona fact saving switch"
+                  value={memory.extract ?? props.globalMemorySettings?.extract ?? true}
+                  disabled={busy}
+                  onValueChange={(value) => memorySwitch("extract", value)}
+                />
+              </View>
+              <View style={styles.row}>
+                <Text>Use saved facts when this Persona replies</Text>
+                <Switch
+                  accessibilityLabel="Persona fact usage switch"
+                  value={memory.inject ?? props.globalMemorySettings?.inject ?? true}
+                  disabled={busy}
+                  onValueChange={(value) => memorySwitch("inject", value)}
+                />
+              </View>
+              <View style={styles.row}>
+                <Text>Share this Persona's facts</Text>
+                <Switch
+                  accessibilityLabel="Persona fact sharing switch"
+                  value={memory.share === true}
+                  disabled={busy}
+                  onValueChange={(value) => memorySwitch("share", value)}
+                />
+              </View>
+              <Text variant="bodySmall">
+                Unshared Persona facts never enter the global memory pool or
+                another chat's prompt. Editing these switches never resets the
+                conversation.
+              </Text>
+            </PersonaEditorOptions>
+            <PersonaEditorOptions phone={phone} title="Model">
+              <NativeDropdown
+                label="Persona model"
+                value={modelBinding.connectionId ?? DEFAULT_MODEL_CHOICE}
+                options={personaModelChoices(
+                  props.modelConnections ?? [],
+                  modelBinding.connectionId,
+                )}
+                disabled={busy}
+                onChange={setModelBinding}
+              />
+              <Text variant="bodySmall">
+                A bound model belongs to this Persona: switching the chat
+                provider never replaces it. If the bound connection is removed,
+                the chat explains and stops instead of using another model.
+              </Text>
+            </PersonaEditorOptions>
+            <PersonaEditorOptions phone={phone} title="Media">
+              <Text variant="bodySmall">
+                This Persona uses the app&apos;s default image workflow.
+                Workflow binding appears once ComfyUI workflows are configured;
+                until then nothing is substituted.
+              </Text>
             </PersonaEditorOptions>
             <Text>
               Profile changes apply to the next response. Current responses keep

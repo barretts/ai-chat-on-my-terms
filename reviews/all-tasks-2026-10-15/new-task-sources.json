@@ -1,0 +1,351 @@
+[
+  {
+    "id": "T103",
+    "card": "plans/tasks/P09/T103.md",
+    "title": "T103 — Remote, USB and sync integration gate",
+    "owned": [
+      "apps/mobile/composition/remote",
+      "apps/companion/composition/remote",
+      "packages/remote/integration"
+    ],
+    "source": [
+      "apps/mobile/composition/remote/index.ts",
+      "apps/companion/composition/remote/mod.rs",
+      "packages/remote/integration/src/index.ts",
+      "packages/remote/integration/src/ws.d.ts"
+    ]
+  },
+  {
+    "id": "T104",
+    "card": "plans/tasks/P10/T104.md",
+    "title": "T104 — Native theme editor and per-chat appearance",
+    "owned": [
+      "apps/mobile/features/themes",
+      "packages/themes/schema"
+    ],
+    "source": [
+      "apps/mobile/features/themes/index.ts",
+      "apps/mobile/features/themes/messenger-desktop.tsx",
+      "apps/mobile/features/themes/phone-sheet.tsx",
+      "apps/mobile/features/themes/provider.tsx",
+      "apps/mobile/features/themes/system-color-scheme.ts",
+      "apps/mobile/features/themes/system-color-scheme.web.ts",
+      "apps/mobile/features/themes/theme-editor.tsx",
+      "packages/themes/schema/src/index.ts"
+    ]
+  },
+  {
+    "id": "T106",
+    "card": "plans/tasks/P10/T106.md",
+    "title": "T106 — Community theme and voice catalog service",
+    "owned": [
+      "services/api/features/catalog",
+      "apps/mobile/features/community"
+    ],
+    "source": [
+      "services/api/features/catalog/index.ts",
+      "apps/mobile/features/community/client.ts",
+      "apps/mobile/features/community/provider.tsx",
+      "apps/mobile/features/community/section.tsx"
+    ]
+  },
+  {
+    "id": "T107",
+    "card": "plans/tasks/P10/T107.md",
+    "title": "T107 — Entitlement policy and preview gates",
+    "owned": [
+      "packages/entitlements"
+    ],
+    "source": [
+      "packages/entitlements/src/index.ts"
+    ]
+  },
+  {
+    "id": "T108",
+    "card": "plans/tasks/P10/T108.md",
+    "title": "T108 — Mobile PIN and biometric App Lock",
+    "owned": [
+      "modules/app-lock",
+      "apps/mobile/features/app-lock"
+    ],
+    "source": [
+      "modules/app-lock/src/index.ts",
+      "apps/mobile/features/app-lock/adapters.ts",
+      "apps/mobile/features/app-lock/index.ts",
+      "apps/mobile/features/app-lock/provider.tsx",
+      "apps/mobile/features/app-lock/section.tsx"
+    ]
+  },
+  {
+    "id": "T109",
+    "card": "plans/tasks/P10/T109.md",
+    "title": "T109 — Authenticated PIN recovery service",
+    "owned": [
+      "services/api/features/lock-recovery",
+      "packages/security/recovery"
+    ],
+    "source": [
+      "services/api/features/lock-recovery/index.ts",
+      "packages/security/recovery/src/index.ts"
+    ]
+  },
+  {
+    "id": "T110",
+    "card": "plans/tasks/P10/T110.md",
+    "title": "T110 — Encrypted backup and restore",
+    "owned": [
+      "packages/backup",
+      "services/api/features/backup",
+      "apps/mobile/features/backup"
+    ],
+    "source": [
+      "packages/backup/src/index.ts",
+      "packages/backup/src/node-crypto.ts",
+      "services/api/features/backup/index.ts",
+      "apps/mobile/features/backup/client.ts",
+      "apps/mobile/features/backup/db-snapshot.ts",
+      "apps/mobile/features/backup/provider.tsx",
+      "apps/mobile/features/backup/section.tsx"
+    ]
+  },
+  {
+    "id": "T111",
+    "card": "plans/tasks/P10/T111.md",
+    "title": "T111 — Optional accounts and password recovery",
+    "owned": [
+      "services/api/features/auth",
+      "apps/mobile/features/account"
+    ],
+    "source": [
+      "services/api/features/auth/index.ts",
+      "apps/mobile/features/account/adapters.ts",
+      "apps/mobile/features/account/client.ts",
+      "apps/mobile/features/account/provider.tsx",
+      "apps/mobile/features/account/section.tsx"
+    ]
+  },
+  {
+    "id": "T112",
+    "card": "plans/tasks/P10/T112.md",
+    "title": "T112 — Store purchases, restoration and family entitlement",
+    "owned": [
+      "modules/billing",
+      "services/api/features/billing",
+      "apps/mobile/features/billing"
+    ],
+    "source": [
+      "modules/billing/src/index.ts",
+      "services/api/features/billing/index.ts",
+      "apps/mobile/features/billing/client.ts",
+      "apps/mobile/features/billing/provider.tsx",
+      "apps/mobile/features/billing/section.tsx"
+    ]
+  },
+  {
+    "id": "T113",
+    "card": "plans/tasks/P10/T113.md",
+    "title": "T113 — Support board, attachments and release updates",
+    "owned": [
+      "services/api/features/support",
+      "apps/mobile/features/support"
+    ],
+    "source": [
+      "services/api/features/support/index.ts",
+      "apps/mobile/features/support/client.ts",
+      "apps/mobile/features/support/provider.tsx",
+      "apps/mobile/features/support/redacted-diagnostics.ts",
+      "apps/mobile/features/support/section.tsx"
+    ]
+  },
+  {
+    "id": "T114",
+    "card": "plans/tasks/P10/T114.md",
+    "title": "T114 — iOS widgets and Live Activities",
+    "owned": [
+      "modules/widgets/ios",
+      "apps/mobile/features/widgets-ios"
+    ],
+    "source": [
+      "modules/widgets/ios/src/index.ts",
+      "apps/mobile/features/widgets-ios/snapshot-publisher.ts"
+    ]
+  },
+  {
+    "id": "T116",
+    "card": "plans/tasks/P10/T116.md",
+    "title": "T116 — App Intents and typed deep-link automation",
+    "owned": [
+      "modules/app-intents/ios",
+      "packages/automation",
+      "apps/companion/automation"
+    ],
+    "source": [
+      "modules/app-intents/ios/src/index.ts",
+      "packages/automation/src/index.ts",
+      "apps/companion/automation/mod.rs"
+    ]
+  },
+  {
+    "id": "T117",
+    "card": "plans/tasks/P10/T117.md",
+    "title": "T117 — Twenty-two Shortcut recipes integration gate",
+    "owned": [
+      "apps/mobile/composition/workflows",
+      "packages/workflows/integration"
+    ],
+    "source": [
+      "apps/mobile/composition/workflows/registry.ts",
+      "packages/workflows/integration/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117A",
+    "card": "plans/tasks/P10/T117A.md",
+    "title": "T117A — Article, meeting and speech summaries",
+    "owned": [
+      "packages/workflows/summaries"
+    ],
+    "source": [
+      "packages/workflows/summaries/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117B",
+    "card": "plans/tasks/P10/T117B.md",
+    "title": "T117B — Writing and rewriting recipes",
+    "owned": [
+      "packages/workflows/writing"
+    ],
+    "source": [
+      "packages/workflows/writing/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117C",
+    "card": "plans/tasks/P10/T117C.md",
+    "title": "T117C — Story and support recipes",
+    "owned": [
+      "packages/workflows/creative"
+    ],
+    "source": [
+      "packages/workflows/creative/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117D",
+    "card": "plans/tasks/P10/T117D.md",
+    "title": "T117D — Screenshot OCR and business cards",
+    "owned": [
+      "modules/ocr/ios",
+      "packages/workflows/camera"
+    ],
+    "source": [
+      "modules/ocr/ios/src/index.ts",
+      "packages/workflows/camera/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117E",
+    "card": "plans/tasks/P10/T117E.md",
+    "title": "T117E — Food and travel recipes",
+    "owned": [
+      "packages/workflows/planning"
+    ],
+    "source": [
+      "packages/workflows/planning/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117F",
+    "card": "plans/tasks/P10/T117F.md",
+    "title": "T117F — Voice and search shortcut recipes",
+    "owned": [
+      "packages/workflows/voice-actions"
+    ],
+    "source": [
+      "packages/workflows/voice-actions/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117G",
+    "card": "plans/tasks/P10/T117G.md",
+    "title": "T117G — Context and clipboard translation recipes",
+    "owned": [
+      "packages/workflows/context",
+      "packages/workflows/translation"
+    ],
+    "source": [
+      "packages/workflows/context/src/index.ts",
+      "packages/workflows/translation/src/index.ts"
+    ]
+  },
+  {
+    "id": "T117H",
+    "card": "plans/tasks/P10/T117H.md",
+    "title": "T117H — Weather and scheduled news recipes",
+    "owned": [
+      "packages/workflows/briefings",
+      "services/api/features/news"
+    ],
+    "source": [
+      "packages/workflows/briefings/src/index.ts",
+      "services/api/features/news/index.ts"
+    ]
+  },
+  {
+    "id": "T118",
+    "card": "plans/tasks/P10/T118.md",
+    "title": "T118 — Diagnostics, analytics and benchmark consent",
+    "owned": [
+      "packages/diagnostics",
+      "services/api/features/metrics",
+      "apps/mobile/features/diagnostics"
+    ],
+    "source": [
+      "packages/diagnostics/src/index.ts",
+      "services/api/features/metrics/index.ts",
+      "apps/mobile/features/diagnostics/analytics-section.tsx",
+      "apps/mobile/features/diagnostics/analytics.ts",
+      "apps/mobile/features/diagnostics/context.ts",
+      "apps/mobile/features/diagnostics/error-notice.tsx",
+      "apps/mobile/features/diagnostics/errors.ts",
+      "apps/mobile/features/diagnostics/provider.tsx",
+      "apps/mobile/features/diagnostics/sanitization.ts",
+      "apps/mobile/features/diagnostics/screen.tsx",
+      "apps/mobile/features/diagnostics/trace-fetch.ts",
+      "apps/mobile/features/diagnostics/trace-log.ts"
+    ]
+  },
+  {
+    "id": "T119",
+    "card": "plans/tasks/P10/T119.md",
+    "title": "T119 — iPhone localization and accessibility",
+    "owned": [
+      "packages/localization",
+      "apps/mobile/features/responsive/iphone"
+    ],
+    "source": [
+      "packages/localization/src/index.ts",
+      "apps/mobile/features/responsive/iphone/a11y.ts",
+      "apps/mobile/features/responsive/iphone/layout.ts"
+    ]
+  },
+  {
+    "id": "T120",
+    "card": "plans/tasks/P10/T120.md",
+    "title": "T120 — Low battery, glass, full-width and app icons",
+    "owned": [
+      "packages/appearance/behavior",
+      "apps/mobile/features/appearance-behavior",
+      "modules/app-icons/ios"
+    ],
+    "source": [
+      "packages/appearance/behavior/src/index.ts",
+      "apps/mobile/features/appearance-behavior/battery-rn.ts",
+      "apps/mobile/features/appearance-behavior/index.ts",
+      "apps/mobile/features/appearance-behavior/provider.tsx",
+      "apps/mobile/features/appearance-behavior/section.tsx",
+      "modules/app-icons/ios/src/index.ts"
+    ]
+  }
+]

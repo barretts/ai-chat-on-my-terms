@@ -9,7 +9,7 @@ import { errorDetails } from "@locallab/network-http";
 import { speechModel, speechModels, speechText, speechVoice } from "./catalog";
 import { SpeechStateStore, speechFailureDetails, speechRate } from "./state";
 import type { OfflineSpeech } from "./types";
-export { speechModels, speechVoices } from "./catalog";
+export { speechLanguages, speechModels, speechVoices } from "./catalog";
 export type { OfflineSpeech, SpeechState } from "./types";
 
 const root = `${FileSystem.documentDirectory}offline-speech/`;

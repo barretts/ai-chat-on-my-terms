@@ -1,0 +1,498 @@
+[
+  {
+    "tasks": [
+      "T001",
+      "T001A"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed executable entry points, Expo/Tauri configuration, workspace and mobile manifests, CI frozen install and companion/API shells. Startup dependency blocker recorded. No native builds executed.",
+    "sources": "apps/mobile/app/_layout.tsx;apps/mobile/app/index.tsx;apps/mobile/app/chat.tsx;apps/mobile/package.json;pnpm-workspace.yaml;apps/mobile/eas.json;apps/mobile/app.json;apps/desktop/src-tauri/tauri.conf.json;apps/companion/src/main.rs;services/api/src/index.ts;infra/docker/compose.yml;.github/workflows/initial-checks.yml"
+  },
+  {
+    "tasks": [
+      "T002",
+      "T007"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed identity, revision ordering, entity/run/request validation and pairing/relay bounds. No additional blocker established in these contract definitions; integration defects are assigned to their consumers.",
+    "sources": "packages/contracts/src/identity.ts;packages/contracts/src/entities.ts;packages/contracts/src/run-events.ts;packages/service-contracts/src/relay.ts;packages/service-contracts/src/pairing.ts"
+  },
+  {
+    "tasks": [
+      "T003",
+      "T003A"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed immutable core/optional DDL, ledger validation, transactional migration application, embedded migration entry point and app transaction adapter. No severe defect established in the reviewed migration paths.",
+    "sources": "packages/schema/core/001_core.sql;packages/schema/extensions/0002_optional_features.sql;packages/schema/extensions/0003_scheduled_jobs.sql;packages/schema/extensions/0004_persona_library.sql;packages/schema/extensions/0005_memory_extraction.sql;packages/schema/extensions/0008_conversation_archive.sql;packages/schema/migrations/apply.ts;packages/schema/migrations/baseline.ts;packages/schema/migrations/registry.ts;packages/schema/migrations/embedded.ts;apps/mobile/platform/migrations.ts;apps/mobile/platform/database.ts"
+  },
+  {
+    "tasks": [
+      "T004"
+    ],
+    "status": "support_reviewed",
+    "notes": "Reviewed CI installation/typecheck/fixture separation. Support task rather than an app execution path. No tests executed and no historical green results treated as current runtime proof.",
+    "sources": ".github/workflows/initial-checks.yml"
+  },
+  {
+    "tasks": [
+      "T005"
+    ],
+    "status": "documentation_reviewed",
+    "notes": "Feasibility baseline explicitly leaves physical hardware measurements pending. No false native-completion assumption used in this review.",
+    "sources": "docs/implementation/feasibility/P00-baseline.md"
+  },
+  {
+    "tasks": [
+      "T005A",
+      "T005B",
+      "T005C",
+      "T005D"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed streaming/SQLite/GGUF/Apple capability probe facades and Mac sidecar probe. Native implementation/hardware claims remain unverified; no executed device evidence added.",
+    "sources": "packages/compat-probes/expo-transport/src/provider.ts;packages/compat-probes/expo-transport/src/expo-runtime.ts;packages/compat-probes/expo-transport/src/sqlite-probe.ts;packages/compat-probes/gguf-ios/src/index.ts;packages/compat-probes/apple-ml/src/index.ts;packages/compat-probes/apple-ml/src/expo.ts;packages/compat-probes/mac-host/src/probe.ts"
+  },
+  {
+    "tasks": [
+      "T006"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed native primitive input/button/dropdown and layout/theme paths for render blockers. No severe defect established.",
+    "sources": "packages/ui-native/primitives/src/native-input.tsx;packages/ui-native/primitives/src/native-button.tsx;packages/ui-native/primitives/src/native-dropdown.tsx;packages/ui-native/primitives/src/use-workspace-layout.ts;packages/ui-native/primitives/src/theme.ts"
+  },
+  {
+    "tasks": [
+      "T006A"
+    ],
+    "status": "no_implementation",
+    "notes": "Owned packages/ui-web/primitives path is absent. Later desktop work has no implementation here to review.",
+    "sources": "plans/tasks/P00/T006A.md;packages/ui-web/primitives (absent)"
+  },
+  {
+    "tasks": [
+      "T008",
+      "T008B"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed atomic begin/complete run persistence and optional entity repositories. Writes use transaction-scoped connections. No additional severe defect established.",
+    "sources": "packages/storage/sqlite/core/src/index.ts;packages/storage/sqlite/extensions/src/index.ts;apps/mobile/platform/database.ts;apps/mobile/platform/database-open.ts"
+  },
+  {
+    "tasks": [
+      "T009"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed opaque references, host binding, secure-store failure cleanup and export redaction. No severe source defect established. Native OS key storage not exercised.",
+    "sources": "packages/security/secrets/src/index.ts;apps/mobile/platform/secrets/index.ts;apps/mobile/platform/crypto.ts"
+  },
+  {
+    "tasks": [
+      "T010"
+    ],
+    "status": "partial_review",
+    "notes": "Reviewed blob catalog transaction scoping, import finalization/recovery, references, leases and collection. Platform filesystem adapters still need review.",
+    "sources": "packages/storage/blobs/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T011"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed scheduler admission, recovery, cancel/terminal transitions and transactional SQLite store. No additional severe defect established in shared scheduler code; media recovery wiring remains a later review.",
+    "sources": "packages/jobs/src/scheduler.ts;packages/jobs/src/sqlite-store.ts"
+  },
+  {
+    "tasks": [
+      "T012",
+      "T015"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed parameter precedence, capability filtering, context reload intent and conservative feature gates. No severe defect established.",
+    "sources": "packages/parameters/src/index.ts;packages/capabilities/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T013",
+      "T014"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed required-message retention, atomic tool groups, context packing/compaction and run projection replay/terminal transitions. No blocker established in normal app source paths. Runtime cancellation behavior not executed.",
+    "sources": "packages/context/src/index.ts;packages/chat-projection/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T016"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed exact-origin/cleartext policy, manual redirects, SSE read limits, timeout/cancel lifetime and error reading. Source review only; real native network/permission paths not exercised.",
+    "sources": "packages/network/http/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T017",
+      "T018",
+      "T019",
+      "T020",
+      "T021",
+      "T021A",
+      "T022",
+      "T023",
+      "T024",
+      "T025"
+    ],
+    "status": "partial_review",
+    "notes": "Reviewed primary provider stream/encoding paths, error/cancel/terminal handling, canonical tool replay integration, native LM Studio continuation and connection CRUD. Follow-up inspection of remaining encoders and composition is in progress.",
+    "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/composition/chat/providers.ts"
+  },
+  {
+    "tasks": [
+      "T010"
+    ],
+    "status": "source_reviewed",
+    "notes": "Completed platform adapter inspection: native managed path confinement, browser IndexedDB transactions and blob catalog/lease/import recovery. No severe counterexample established. File/OS behavior not exercised.",
+    "sources": "packages/storage/blobs/src/index.ts;apps/mobile/platform/files/index.ts;apps/mobile/platform/files/index.web.ts;apps/desktop/platform/files/index.ts"
+  },
+  {
+    "tasks": [
+      "T017",
+      "T018",
+      "T019",
+      "T020",
+      "T021",
+      "T021A",
+      "T022",
+      "T023",
+      "T024",
+      "T025"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+    "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+  },
+  {
+    "tasks": [
+      "T026",
+      "T028"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed managed model admission, inference parameter bounds, token stream/cancellation/resource drainage and MLX folder validation. iOS MLX bridge remains unmounted/native-unverified; no claim of device success.",
+    "sources": "modules/gguf/ios/src/index.ts;apps/mobile/platform/local-chat-provider.ts;modules/mlx/ios/src/index.ts;modules/mlx/ios/Sources/LocalLabMlxIOS/MLXInferenceAdapter.swift"
+  },
+  {
+    "tasks": [
+      "T027",
+      "T032"
+    ],
+    "status": "no_implementation",
+    "notes": "Owned Android runtime/downloader paths do not exist. These are later platform tasks, not completed implementations.",
+    "sources": "plans/tasks/P03/T027.md;plans/tasks/P03/T032.md;modules/gguf/android (absent);modules/downloads/android (absent)"
+  },
+  {
+    "tasks": [
+      "T029"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed sidecar launch/control, process status and shutdown paths. Native sidecar packaging/readiness and real inference remain unverified; no additional blocker established beyond incomplete host integration.",
+    "sources": "workers/gguf/src/lib.rs;workers/gguf/src/main.rs;apps/companion/runtimes/gguf/mod.rs"
+  },
+  {
+    "tasks": [
+      "T030"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed Swift runtime/worker and Rust process bridge. Confirmed actor starvation blocker R009. Real Mac inference not executed.",
+    "sources": "workers/mlx-macos/Sources/LocalLabMlxWorker/main.swift;workers/mlx-macos/Sources/LocalLabMlxMac/MLXMacRuntime.swift;apps/companion/runtimes/mlx/mod.rs"
+  },
+  {
+    "tasks": [
+      "T031"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed durable background task state/reconciliation and native URLSession pause/resume. Confirmed Swift type blocker R010. App currently uses a separate foreground download route; native background downloader is not mounted or compiled here.",
+    "sources": "modules/downloads/ios/src/index.ts;modules/downloads/ios/native/BackgroundTransferSession.swift;apps/mobile/platform/model-download.ts"
+  },
+  {
+    "tasks": [
+      "T033",
+      "T035",
+      "T036"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed curated catalog identity, safe GGUF/MLX import admission, Hugging Face enqueue, hardware fit/onboarding state and runtime routing/lease checks. R012 blocks the typed Hugging Face enqueue API. Device-backed integration and remaining import UI are pending implementation/proof.",
+    "sources": "packages/models/catalog/src/index.ts;packages/models/imports/src/index.ts;packages/models/fit/src/index.ts;apps/mobile/features/onboarding/index.ts;packages/models/integration/src/index.ts;apps/mobile/platform/model-download.ts;apps/mobile/features/models/selection.ts"
+  },
+  {
+    "tasks": [
+      "T037",
+      "T037A",
+      "T038"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed durable send/regeneration, scoped atomic event writes, stop/terminal persistence, context packing/retry and history/variant/continuation handling. No additional blocker established in these shared paths.",
+    "sources": "packages/chat/engine/core/src/index.ts;packages/chat/engine/advanced/src/index.ts;packages/chat/history/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T034"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed exact model selection persistence, registered-provider inventory and remote lifecycle dispatch. Existing GGUF download route checks size/header and uses managed storage; remaining general imports/native lifecycle are partial features, not claimed complete.",
+    "sources": "apps/mobile/features/models/index.ts;apps/mobile/features/models/selection.ts;apps/mobile/features/models/connections.ts;apps/mobile/features/models/registered-connections.ts;apps/mobile/platform/model-download.ts;apps/mobile/platform/model-storage.ts"
+  },
+  {
+    "tasks": [
+      "T039",
+      "T039A",
+      "T041",
+      "T041A"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed transcript ordering/stream status/render branches, inert Markdown parser, draft acceptance/preservation, attachment and dictation controls. No additional severe blocker established. Device UI not exercised.",
+    "sources": "apps/mobile/features/transcript/core/index.ts;apps/mobile/features/transcript/core/transcript.tsx;apps/mobile/features/transcript/rich/markdown.ts;apps/mobile/features/composer/core/composer.tsx;apps/mobile/features/composer/advanced/index.ts;apps/mobile/features/composer/advanced/composer.tsx"
+  },
+  {
+    "tasks": [
+      "T040",
+      "T048"
+    ],
+    "status": "no_implementation",
+    "notes": "Owned desktop transcript/composer and Android lifecycle paths are absent. Later platform tasks have no implementation here to review.",
+    "sources": "plans/tasks/P04/T040.md;plans/tasks/P04/T048.md;apps/desktop/features/transcript (absent);modules/generation-lifecycle/android (absent)"
+  },
+  {
+    "tasks": [
+      "T042"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed folder moves/deletion, archive/unarchive, title/message search and history previews. Scoped transactions preserve conversation data; no additional severe defect established.",
+    "sources": "packages/conversations/library/src/index.ts;apps/mobile/composition/chat/conversation-lifecycle.ts"
+  },
+  {
+    "tasks": [
+      "T043"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed size/type admission, managed intake-before-extraction, retained owners, vision mapping and native file/image picker wiring. PDF/XLSX extraction is explicitly unavailable without host codecs; native codecs remain unfinished, not treated as runtime passes.",
+    "sources": "packages/attachments/src/index.ts;apps/mobile/composition/chat/attachments.ts;packages/chat/integration/src/features.ts"
+  },
+  {
+    "tasks": [
+      "T044"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed archive validation, managed ID/blob remapping, scoped import transaction, staged blob cleanup and ZIP central-directory bounds/CRC checks. No additional severe blocker established. Native pick/share/PDF render not exercised.",
+    "sources": "packages/archives/src/index.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/chat/archives/zip.ts"
+  },
+  {
+    "tasks": [
+      "T045"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed local runtime identity selection, vector validation, reindex/purge, FTS fallback and scoped index writes. Usable native embeddings remain an unfinished integration; no additional severe defect established in these abstractions.",
+    "sources": "packages/search/semantic/src/index.ts;modules/embeddings/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T046",
+      "T047"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed settings precedence/capability controls and generation lifecycle start/record/suspend/reconcile with scoped transactions. No additional blocker established. Background execution and notifications remain injected native seams.",
+    "sources": "apps/mobile/features/chat-settings/index.ts;modules/generation-lifecycle/ios/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T049",
+      "T158"
+    ],
+    "status": "partial_review",
+    "notes": "Reviewed migration-before-startup, durable transcript rebuild, foreground send admission, immutable provider selection, tool-loop mounting and attachment/lifecycle composition. Remaining screen orchestration, audio/media side effects and native-global assumptions still need final review. R001/R003/R011 are concrete integration blockers.",
+    "sources": "apps/mobile/composition/first-run-chat/index.ts;apps/mobile/composition/chat/screen.tsx;packages/chat/integration/src/index.ts;packages/chat/integration/src/features.ts;apps/mobile/composition/chat/conversation-lifecycle.ts"
+  },
+  {
+    "tasks": [
+      "T008A"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed Rust SQLite FFI ownership, migrations, entity writes, revisions and outbox storage. Mac compilation and execution remain unverified; no additional severe defect established.",
+    "sources": "apps/companion/platform/storage/mod.rs"
+  },
+  {
+    "tasks": [
+      "T050",
+      "T051",
+      "T052",
+      "T053",
+      "T054",
+      "T055",
+      "T056",
+      "T057",
+      "T058"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+    "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+  },
+  {
+    "tasks": [
+      "T059"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed race admission, bounded snapshots/output/events, independent terminal persistence, cancellation, model drainage and scoped SQLite recovery. No additional severe blocker established in this unmounted engine. Runtime/provider execution not performed.",
+    "sources": "packages/arena/engine/src/index.ts;packages/arena/engine/src/sqlite-store.ts"
+  },
+  {
+    "tasks": [
+      "T060"
+    ],
+    "status": "held_no_implementation",
+    "notes": "Arena UI is explicitly held in current task progress. No owned implementation exists to review; do not confuse the held feature with a defect in a completed implementation.",
+    "sources": "plans/tasks/P05/T060.md;handoffs/qwen3.8-flash-next-2026-10-08/PROGRESS.md"
+  },
+  {
+    "tasks": [
+      "T061"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Reviewed existing Persona/memory/group integration through current mobile composition and package paths. Group-save blocker recorded; Arena UI held and device/provider integration gate remains unverified.",
+    "sources": "apps/mobile/composition/chat/screen.tsx;packages/personas/library/src/index.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T062",
+      "T063",
+      "T064",
+      "T065",
+      "T066",
+      "T067",
+      "T068",
+      "T069",
+      "T070"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+    "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T071",
+      "T072",
+      "T075",
+      "T077",
+      "T079",
+      "T080",
+      "T081",
+      "T083"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+    "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T073",
+      "T074",
+      "T076",
+      "T078",
+      "T082"
+    ],
+    "status": "no_implementation",
+    "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+    "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+  },
+  {
+    "tasks": [
+      "T084",
+      "T085",
+      "T086",
+      "T087",
+      "T089",
+      "T091",
+      "T092"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+    "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+  },
+  {
+    "tasks": [
+      "T088",
+      "T090"
+    ],
+    "status": "no_implementation",
+    "notes": "Owned Core ML diffusion and desktop media UI paths are absent; later platform features have no implementation here to review.",
+    "sources": "plans/tasks/P08/T088.md;plans/tasks/P08/T090.md"
+  },
+  {
+    "tasks": [
+      "T093",
+      "T094",
+      "T095",
+      "T096",
+      "T097",
+      "T098",
+      "T098A",
+      "T098B",
+      "T098C",
+      "T099",
+      "T100",
+      "T101",
+      "T102",
+      "T103"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+    "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+  },
+  {
+    "tasks": [
+      "C01",
+      "C02",
+      "C08"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed persisted auto/manual/off policy, inheritance/veto/capability admission, provider/key migration and cleanup, public/manual research parsing and bounded evidence assembly, autonomous web tools and configured SearXNG path. Cloud tool continuation blocker R011 and MCP setup blocking defects remain. Source-only review; real search services not executed.",
+    "sources": "apps/mobile/composition/chat/web-research-settings.ts;apps/mobile/composition/chat/web-research.ts;apps/mobile/composition/chat/web-research-tools.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/searxng/src/client.ts;apps/mobile/composition/chat/screen.tsx"
+  },
+  {
+    "tasks": [
+      "C03",
+      "C04",
+      "C05"
+    ],
+    "status": "source_reviewed_native_unverified",
+    "notes": "Reviewed shared audio admission/drain, native system dictation bridge, stop/discard controller, composer final/autosend draft handling, voice preference persistence and app background/unmount cancellation. R017 blocks compiling the native speech module. Native speech/device execution remains unverified.",
+    "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/audio/offline-speech-output.ts;apps/mobile/features/composer/advanced/composer.tsx;apps/mobile/composition/chat/screen.tsx"
+  },
+  {
+    "tasks": [
+      "C06",
+      "C07",
+      "C09",
+      "C10"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Reviewed persistent master/tool/chat policies and labels, current_time argument validation, remote MCP connection/secrets/discovery/teardown, integrated LM Studio name persistence and selected-provider routing. Priority integration remains blocked by R011/R013/R014/R015/R017. Native globals and live backend behavior are not asserted as tested.",
+    "sources": "apps/mobile/features/tool-settings/settings.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/features/tool-settings/lmstudio-integrations.ts;packages/tools/builtins/src/index.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/screen.tsx"
+  },
+  {
+    "tasks": [
+      "T104",
+      "T118"
+    ],
+    "status": "source_reviewed",
+    "notes": "Reviewed live theme/layout preference load/save/scoped transaction, diagnostic opt-in metadata bounds/serialization and transport outcome sanitization. No additional severe defect established. This source review does not claim full task feature completion or executed native/browser evidence.",
+    "sources": "apps/mobile/features/themes/provider.tsx;apps/mobile/features/diagnostics/trace-log.ts;apps/mobile/features/diagnostics/trace-fetch.ts;apps/mobile/features/diagnostics/sanitization.ts"
+  },
+  {
+    "tasks": [
+      "T049",
+      "T158",
+      "T128"
+    ],
+    "status": "source_reviewed_integration_unverified",
+    "notes": "Finished source review of startup/recovery, current shared database ownership, send setup/stream completion/tool research, voice/media/extraction side effects, app background and unmount cleanup, saved-chat navigation/deletion, archive ownership and mounted Persona/group/media/voice panels. Blockers listed in findings include clean installation, scoped transaction deadlocks, native speech build and tool discovery stalls. Runtime native/full-feature milestone evidence is unavailable; completed source review is not a declaration that these milestones pass.",
+    "sources": "apps/mobile/app/chat.tsx;apps/mobile/composition/first-run-chat/index.ts;apps/mobile/composition/chat/screen.tsx;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/chat/conversation-lifecycle.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/voice/container.ts;apps/mobile/platform/speech/index.ts;apps/mobile/platform/speech/index.web.ts"
+  }
+]

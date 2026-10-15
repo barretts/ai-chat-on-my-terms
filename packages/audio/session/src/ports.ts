@@ -37,6 +37,10 @@ export interface ListenOptions {
   locale?: string;
   signal: AbortSignal;
   onPartial?: (text: string) => void;
+  /** Silence that may end dictation early; device recognizers apply it. */
+  silenceTimeoutMs?: number;
+  /** Hard cap on listening; capture finalizes automatically once elapsed. */
+  maxListeningMs?: number;
 }
 
 /** Recognition side, implemented later by the iOS dictation adapter (C04). */
@@ -55,6 +59,10 @@ export interface SpeechInputPort {
 export interface SpeakOptions {
   voiceId?: string;
   rate?: number;
+  /** Language tag for playback, used by system voices (BCP-47). */
+  language?: string;
+  /** Pitch multiplier, 1.0 = normal. Supported by iOS system voices. */
+  pitch?: number;
   signal?: AbortSignal;
 }
 

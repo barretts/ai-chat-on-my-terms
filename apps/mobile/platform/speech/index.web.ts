@@ -3,7 +3,7 @@ import { httpResponseError } from "@locallab/network-http";
 import { speechModel, speechModels, speechText, speechVoice } from "./catalog";
 import { SpeechStateStore, speechFailureDetails, speechRate } from "./state";
 import type { OfflineSpeech } from "./types";
-export { speechModels, speechVoices } from "./catalog";
+export { speechLanguages, speechModels, speechVoices } from "./catalog";
 export type { OfflineSpeech, SpeechState } from "./types";
 
 const cacheName = "locallab-offline-speech-v1-wasm-1.3.1";

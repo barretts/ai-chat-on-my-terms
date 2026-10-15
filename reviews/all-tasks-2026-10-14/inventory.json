@@ -1,0 +1,3147 @@
+[
+  {
+    "id": "C01",
+    "title": "C01 — Persistent automatic web policy",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C01-web-policy.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C02",
+    "title": "C02 — Autonomous native web research",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C02-autonomous-web-tools.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C03",
+    "title": "C03 — Shared audio/session ownership",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C03-audio-session.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C04",
+    "title": "C04 — iOS system speech recognition",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C04-ios-dictation.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C05",
+    "title": "C05 — Dictation composer and voice preferences",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C05-dictation-ui.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C06",
+    "title": "C06 — General tool settings and current time",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C06-tool-settings.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C07",
+    "title": "C07 — HTTP MCP",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C07-http-mcp.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C08",
+    "title": "C08 — Configured SearXNG",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C08-searxng.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C09",
+    "title": "C09 — LM Studio integrated MCP",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C09-lmstudio-mcp.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "C10",
+    "title": "C10 — Priority-feature integration checkpoint",
+    "card": "handoffs/qwen3.8-flash-next-2026-10-08/tasks/C10-priority-integration.md",
+    "phase": "continuation",
+    "owned": [],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T001",
+    "title": "T001 — Git workspace and runnable iPhone shell",
+    "card": "plans/tasks/P00/T001.md",
+    "phase": "P00",
+    "owned": [
+      "root manifests",
+      "apps/mobile/app/_layout.tsx",
+      "apps/mobile/app/index.tsx",
+      "apps/mobile/app/chat.tsx"
+    ],
+    "existingOwned": [
+      "apps/mobile/app/_layout.tsx",
+      "apps/mobile/app/index.tsx",
+      "apps/mobile/app/chat.tsx"
+    ],
+    "source": [
+      "apps/mobile/app/_layout.tsx",
+      "apps/mobile/app/index.tsx",
+      "apps/mobile/app/chat.tsx"
+    ]
+  },
+  {
+    "id": "T001A",
+    "title": "T001A — Mac host, desktop and API runnable shells",
+    "card": "plans/tasks/P00/T001A.md",
+    "phase": "P00",
+    "owned": [
+      "apps/desktop/package.json",
+      "apps/desktop/src-tauri/tauri.conf.json",
+      "apps/companion/Cargo.toml",
+      "apps/companion/src/main.rs",
+      "services/api/package.json",
+      "services/api/src/index.ts",
+      "infra/docker/compose.yml"
+    ],
+    "existingOwned": [
+      "apps/desktop/package.json",
+      "apps/desktop/src-tauri/tauri.conf.json",
+      "apps/companion/Cargo.toml",
+      "apps/companion/src/main.rs",
+      "services/api/package.json",
+      "services/api/src/index.ts",
+      "infra/docker/compose.yml"
+    ],
+    "source": [
+      "apps/companion/Cargo.toml",
+      "apps/companion/src/main.rs",
+      "services/api/src/index.ts",
+      "infra/docker/compose.yml"
+    ]
+  },
+  {
+    "id": "T002",
+    "title": "T002 — Domain and adapter contracts",
+    "card": "plans/tasks/P00/T002.md",
+    "phase": "P00",
+    "owned": [
+      "packages/contracts"
+    ],
+    "existingOwned": [
+      "packages/contracts"
+    ],
+    "source": [
+      "packages/contracts/src/entities.ts",
+      "packages/contracts/src/identity.ts",
+      "packages/contracts/src/local-failure-details.ts",
+      "packages/contracts/src/ports.ts",
+      "packages/contracts/src/run-events.ts"
+    ]
+  },
+  {
+    "id": "T003",
+    "title": "T003 — Core chat schema and migration allocator",
+    "card": "plans/tasks/P00/T003.md",
+    "phase": "P00",
+    "owned": [
+      "packages/schema/core",
+      "packages/schema/migrations"
+    ],
+    "existingOwned": [
+      "packages/schema/core",
+      "packages/schema/migrations"
+    ],
+    "source": [
+      "packages/schema/core/001_core.sql",
+      "packages/schema/migrations/apply.ts",
+      "packages/schema/migrations/baseline.ts",
+      "packages/schema/migrations/embedded-data.generated.ts",
+      "packages/schema/migrations/embedded.ts",
+      "packages/schema/migrations/full.ts",
+      "packages/schema/migrations/generate-embedded.ts",
+      "packages/schema/migrations/README.md",
+      "packages/schema/migrations/registry.ts",
+      "packages/schema/migrations/runner.ts"
+    ]
+  },
+  {
+    "id": "T003A",
+    "title": "T003A — Full feature and optional service schema extensions",
+    "card": "plans/tasks/P00/T003A.md",
+    "phase": "P00",
+    "owned": [
+      "packages/schema/extensions",
+      "services/api/schema"
+    ],
+    "existingOwned": [
+      "packages/schema/extensions",
+      "services/api/schema"
+    ],
+    "source": [
+      "packages/schema/extensions/0002_optional_features.sql",
+      "packages/schema/extensions/0003_scheduled_jobs.sql",
+      "packages/schema/extensions/0004_persona_library.sql",
+      "packages/schema/extensions/0005_memory_extraction.sql",
+      "packages/schema/extensions/0006_arena_engine.sql",
+      "packages/schema/extensions/0007_tool_engine.sql",
+      "packages/schema/extensions/0008_conversation_archive.sql",
+      "packages/schema/extensions/conversation-archive-register.ts",
+      "packages/schema/extensions/jobs-register.ts",
+      "packages/schema/extensions/persona-memory-arena-tools-register.ts",
+      "packages/schema/extensions/register.ts",
+      "services/api/schema/001_services.sql"
+    ]
+  },
+  {
+    "id": "T004",
+    "title": "T004 — Fixtures, fake workers and CI test harness",
+    "card": "plans/tasks/P00/T004.md",
+    "phase": "P00",
+    "owned": [
+      "packages/testkit",
+      ".github/workflows/initial-checks.yml"
+    ],
+    "existingOwned": [
+      "packages/testkit",
+      ".github/workflows/initial-checks.yml"
+    ],
+    "source": [
+      "packages/testkit/src/fake-native-ports.ts",
+      "packages/testkit/src/fragmented-server.ts",
+      "packages/testkit/src/recorded-content.ts",
+      "packages/testkit/vitest.config.ts",
+      ".github/workflows/initial-checks.yml"
+    ]
+  },
+  {
+    "id": "T005",
+    "title": "T005 — Feasibility decision and pinned baseline",
+    "card": "plans/tasks/P00/T005.md",
+    "phase": "P00",
+    "owned": [
+      "docs/implementation/feasibility"
+    ],
+    "existingOwned": [
+      "docs/implementation/feasibility"
+    ],
+    "source": [
+      "docs/implementation/feasibility/P00-baseline.md"
+    ]
+  },
+  {
+    "id": "T005A",
+    "title": "T005A — Expo streaming and SQLite probe",
+    "card": "plans/tasks/P00/T005A.md",
+    "phase": "P00",
+    "owned": [
+      "packages/compat-probes/expo-transport"
+    ],
+    "existingOwned": [
+      "packages/compat-probes/expo-transport"
+    ],
+    "source": [
+      "packages/compat-probes/expo-transport/README.md",
+      "packages/compat-probes/expo-transport/src/expo-runtime.ts",
+      "packages/compat-probes/expo-transport/src/index.ts",
+      "packages/compat-probes/expo-transport/src/provider.ts",
+      "packages/compat-probes/expo-transport/src/sqlite-probe.ts"
+    ]
+  },
+  {
+    "id": "T005B",
+    "title": "T005B — iPhone GGUF native probe",
+    "card": "plans/tasks/P00/T005B.md",
+    "phase": "P00",
+    "owned": [
+      "packages/compat-probes/gguf-ios"
+    ],
+    "existingOwned": [
+      "packages/compat-probes/gguf-ios"
+    ],
+    "source": [
+      "packages/compat-probes/gguf-ios/README.md",
+      "packages/compat-probes/gguf-ios/src/index.ts"
+    ]
+  },
+  {
+    "id": "T005C",
+    "title": "T005C — Apple MLX and Core ML image probe",
+    "card": "plans/tasks/P00/T005C.md",
+    "phase": "P00",
+    "owned": [
+      "packages/compat-probes/apple-ml"
+    ],
+    "existingOwned": [
+      "packages/compat-probes/apple-ml"
+    ],
+    "source": [
+      "packages/compat-probes/apple-ml/ios/AppleMLProbe.podspec",
+      "packages/compat-probes/apple-ml/ios/AppleMLProbeModule.swift",
+      "packages/compat-probes/apple-ml/Package.swift",
+      "packages/compat-probes/apple-ml/README.md",
+      "packages/compat-probes/apple-ml/Sources/AppleMLProbeCore/DeviceFacts.swift",
+      "packages/compat-probes/apple-ml/src/expo.ts",
+      "packages/compat-probes/apple-ml/src/index.ts"
+    ]
+  },
+  {
+    "id": "T005D",
+    "title": "T005D — Mac static desktop and sidecar probe",
+    "card": "plans/tasks/P00/T005D.md",
+    "phase": "P00",
+    "owned": [
+      "packages/compat-probes/mac-host"
+    ],
+    "existingOwned": [
+      "packages/compat-probes/mac-host"
+    ],
+    "source": [
+      "packages/compat-probes/mac-host/README.md",
+      "packages/compat-probes/mac-host/src/probe.ts"
+    ]
+  },
+  {
+    "id": "T006",
+    "title": "T006 — iPhone UI tokens and native primitives",
+    "card": "plans/tasks/P00/T006.md",
+    "phase": "P00",
+    "owned": [
+      "packages/ui-tokens",
+      "packages/ui-native/primitives"
+    ],
+    "existingOwned": [
+      "packages/ui-tokens",
+      "packages/ui-native/primitives"
+    ],
+    "source": [
+      "packages/ui-tokens/src/index.ts",
+      "packages/ui-native/primitives/src/fixture-screen.tsx",
+      "packages/ui-native/primitives/src/index.ts",
+      "packages/ui-native/primitives/src/native-activity.tsx",
+      "packages/ui-native/primitives/src/native-button.tsx",
+      "packages/ui-native/primitives/src/native-dropdown.tsx",
+      "packages/ui-native/primitives/src/native-input.tsx",
+      "packages/ui-native/primitives/src/native-surface.tsx",
+      "packages/ui-native/primitives/src/native-text.tsx",
+      "packages/ui-native/primitives/src/theme.ts",
+      "packages/ui-native/primitives/src/use-workspace-layout.ts"
+    ]
+  },
+  {
+    "id": "T006A",
+    "title": "T006A — Desktop shadcn and AI Elements primitives",
+    "card": "plans/tasks/P00/T006A.md",
+    "phase": "P00",
+    "owned": [
+      "packages/ui-web/primitives"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T007",
+    "title": "T007 — Online and pairing protocol contracts",
+    "card": "plans/tasks/P00/T007.md",
+    "phase": "P00",
+    "owned": [
+      "packages/service-contracts"
+    ],
+    "existingOwned": [
+      "packages/service-contracts"
+    ],
+    "source": [
+      "packages/service-contracts/docs/pairing-v1.md",
+      "packages/service-contracts/openapi/v1.yaml",
+      "packages/service-contracts/src/pairing.ts",
+      "packages/service-contracts/src/relay.ts",
+      "packages/service-contracts/src/services.ts"
+    ]
+  },
+  {
+    "id": "T008",
+    "title": "T008 — Core iPhone SQLite repositories",
+    "card": "plans/tasks/P01/T008.md",
+    "phase": "P01",
+    "owned": [
+      "packages/storage/sqlite/core",
+      "apps/mobile/platform/storage"
+    ],
+    "existingOwned": [
+      "packages/storage/sqlite/core",
+      "apps/mobile/platform/storage"
+    ],
+    "source": [
+      "packages/storage/sqlite/core/src/index.ts",
+      "apps/mobile/platform/storage/index.ts"
+    ]
+  },
+  {
+    "id": "T008A",
+    "title": "T008A — Mac companion SQLite persistence",
+    "card": "plans/tasks/P01/T008A.md",
+    "phase": "P01",
+    "owned": [
+      "apps/companion/platform/storage"
+    ],
+    "existingOwned": [
+      "apps/companion/platform/storage"
+    ],
+    "source": [
+      "apps/companion/platform/storage/mod.rs"
+    ]
+  },
+  {
+    "id": "T008B",
+    "title": "T008B — Full mobile SQLite repository extensions",
+    "card": "plans/tasks/P01/T008B.md",
+    "phase": "P01",
+    "owned": [
+      "packages/storage/sqlite/extensions"
+    ],
+    "existingOwned": [
+      "packages/storage/sqlite/extensions"
+    ],
+    "source": [
+      "packages/storage/sqlite/extensions/src/index.ts"
+    ]
+  },
+  {
+    "id": "T009",
+    "title": "T009 — Device secrets and redaction",
+    "card": "plans/tasks/P01/T009.md",
+    "phase": "P01",
+    "owned": [
+      "packages/security/secrets",
+      "apps/mobile/platform/secrets",
+      "apps/desktop/platform/secrets"
+    ],
+    "existingOwned": [
+      "packages/security/secrets",
+      "apps/mobile/platform/secrets",
+      "apps/desktop/platform/secrets"
+    ],
+    "source": [
+      "packages/security/secrets/src/index.ts",
+      "apps/mobile/platform/secrets/index.ts",
+      "apps/mobile/platform/secrets/index.web.ts",
+      "apps/mobile/platform/secrets/secure-store-key.ts",
+      "apps/desktop/platform/secrets/index.ts"
+    ]
+  },
+  {
+    "id": "T010",
+    "title": "T010 — Managed blob storage and leases",
+    "card": "plans/tasks/P01/T010.md",
+    "phase": "P01",
+    "owned": [
+      "packages/storage/blobs",
+      "apps/mobile/platform/files",
+      "apps/desktop/platform/files"
+    ],
+    "existingOwned": [
+      "packages/storage/blobs",
+      "apps/mobile/platform/files",
+      "apps/desktop/platform/files"
+    ],
+    "source": [
+      "packages/storage/blobs/src/index.ts",
+      "apps/mobile/platform/files/index.ts",
+      "apps/mobile/platform/files/index.web.ts",
+      "apps/desktop/platform/files/index.ts"
+    ]
+  },
+  {
+    "id": "T011",
+    "title": "T011 — Job scheduler and cancellation",
+    "card": "plans/tasks/P01/T011.md",
+    "phase": "P01",
+    "owned": [
+      "packages/jobs"
+    ],
+    "existingOwned": [
+      "packages/jobs"
+    ],
+    "source": [
+      "packages/jobs/src/index.ts",
+      "packages/jobs/src/memory-store.ts",
+      "packages/jobs/src/scheduler.ts",
+      "packages/jobs/src/sqlite-store.ts",
+      "packages/jobs/src/types.ts"
+    ]
+  },
+  {
+    "id": "T012",
+    "title": "T012 — Parameter resolution and capability filtering",
+    "card": "plans/tasks/P01/T012.md",
+    "phase": "P01",
+    "owned": [
+      "packages/parameters"
+    ],
+    "existingOwned": [
+      "packages/parameters"
+    ],
+    "source": [
+      "packages/parameters/src/index.ts"
+    ]
+  },
+  {
+    "id": "T013",
+    "title": "T013 — Context packing and compaction",
+    "card": "plans/tasks/P01/T013.md",
+    "phase": "P01",
+    "owned": [
+      "packages/context"
+    ],
+    "existingOwned": [
+      "packages/context"
+    ],
+    "source": [
+      "packages/context/src/index.ts"
+    ]
+  },
+  {
+    "id": "T014",
+    "title": "T014 — Run event projection and AI SDK bridge",
+    "card": "plans/tasks/P01/T014.md",
+    "phase": "P01",
+    "owned": [
+      "packages/chat-projection"
+    ],
+    "existingOwned": [
+      "packages/chat-projection"
+    ],
+    "source": [
+      "packages/chat-projection/src/index.ts"
+    ]
+  },
+  {
+    "id": "T015",
+    "title": "T015 — Model capability and feature gates",
+    "card": "plans/tasks/P01/T015.md",
+    "phase": "P01",
+    "owned": [
+      "packages/capabilities"
+    ],
+    "existingOwned": [
+      "packages/capabilities"
+    ],
+    "source": [
+      "packages/capabilities/src/index.ts"
+    ]
+  },
+  {
+    "id": "T016",
+    "title": "T016 — HTTP, SSE and LAN policy",
+    "card": "plans/tasks/P02/T016.md",
+    "phase": "P02",
+    "owned": [
+      "packages/network/http"
+    ],
+    "existingOwned": [
+      "packages/network/http"
+    ],
+    "source": [
+      "packages/network/http/README.md",
+      "packages/network/http/src/index.ts"
+    ]
+  },
+  {
+    "id": "T017",
+    "title": "T017 — Ollama streaming chat adapter",
+    "card": "plans/tasks/P02/T017.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/ollama/chat"
+    ],
+    "existingOwned": [
+      "packages/providers/ollama/chat"
+    ],
+    "source": [
+      "packages/providers/ollama/chat/src/index.ts"
+    ]
+  },
+  {
+    "id": "T018",
+    "title": "T018 — LM Studio native adapter",
+    "card": "plans/tasks/P02/T018.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/lmstudio"
+    ],
+    "existingOwned": [
+      "packages/providers/lmstudio"
+    ],
+    "source": [
+      "packages/providers/lmstudio/src/index.ts"
+    ]
+  },
+  {
+    "id": "T019",
+    "title": "T019 — Ollama model management",
+    "card": "plans/tasks/P02/T019.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/ollama/models"
+    ],
+    "existingOwned": [
+      "packages/providers/ollama/models"
+    ],
+    "source": [
+      "packages/providers/ollama/models/src/index.ts"
+    ]
+  },
+  {
+    "id": "T020",
+    "title": "T020 — JAN, oMLX, Unsloth and custom compatible adapters",
+    "card": "plans/tasks/P02/T020.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/compatible-local"
+    ],
+    "existingOwned": [
+      "packages/providers/compatible-local"
+    ],
+    "source": [
+      "packages/providers/compatible-local/src/index.ts"
+    ]
+  },
+  {
+    "id": "T021",
+    "title": "T021 — OpenAI advanced and Anthropic adapters",
+    "card": "plans/tasks/P02/T021.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/cloud/openai-advanced",
+      "packages/providers/cloud/anthropic"
+    ],
+    "existingOwned": [
+      "packages/providers/cloud/openai-advanced",
+      "packages/providers/cloud/anthropic"
+    ],
+    "source": [
+      "packages/providers/cloud/openai-advanced/src/index.ts",
+      "packages/providers/cloud/anthropic/src/index.ts"
+    ]
+  },
+  {
+    "id": "T021A",
+    "title": "T021A — First-run OpenAI Responses endpoint",
+    "card": "plans/tasks/P02/T021A.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/openai-first-run",
+      "apps/mobile/features/openai-endpoint-setup"
+    ],
+    "existingOwned": [
+      "packages/providers/openai-first-run",
+      "apps/mobile/features/openai-endpoint-setup"
+    ],
+    "source": [
+      "packages/providers/openai-first-run/src/index.ts",
+      "apps/mobile/features/openai-endpoint-setup/index.ts",
+      "apps/mobile/features/openai-endpoint-setup/screen.tsx"
+    ]
+  },
+  {
+    "id": "T022",
+    "title": "T022 — Gemini and Mistral adapters",
+    "card": "plans/tasks/P02/T022.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/cloud/gemini",
+      "packages/providers/cloud/mistral"
+    ],
+    "existingOwned": [
+      "packages/providers/cloud/gemini",
+      "packages/providers/cloud/mistral"
+    ],
+    "source": [
+      "packages/providers/cloud/gemini/src/index.ts",
+      "packages/providers/cloud/mistral/src/index.ts"
+    ]
+  },
+  {
+    "id": "T023",
+    "title": "T023 — OpenRouter, DeepSeek, Z.AI and Vercel Gateway",
+    "card": "plans/tasks/P02/T023.md",
+    "phase": "P02",
+    "owned": [
+      "packages/providers/cloud/compatible"
+    ],
+    "existingOwned": [
+      "packages/providers/cloud/compatible"
+    ],
+    "source": [
+      "packages/providers/cloud/compatible/src/index.ts"
+    ]
+  },
+  {
+    "id": "T024",
+    "title": "T024 — Connection settings and discovery",
+    "card": "plans/tasks/P02/T024.md",
+    "phase": "P02",
+    "owned": [
+      "apps/mobile/features/connections",
+      "modules/lan-discovery"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/connections",
+      "modules/lan-discovery"
+    ],
+    "source": [
+      "apps/mobile/features/connections/index.ts",
+      "apps/mobile/features/connections/screen.tsx",
+      "modules/lan-discovery/src/index.ts"
+    ]
+  },
+  {
+    "id": "T025",
+    "title": "T025 — Provider integration and conformance gate",
+    "card": "plans/tasks/P02/T025.md",
+    "phase": "P02",
+    "owned": [
+      "apps/mobile/composition/providers",
+      "apps/companion/composition/providers",
+      "packages/providers/conformance"
+    ],
+    "existingOwned": [
+      "apps/mobile/composition/providers",
+      "packages/providers/conformance"
+    ],
+    "source": [
+      "apps/mobile/composition/providers/index.ts",
+      "packages/providers/conformance/src/index.ts"
+    ]
+  },
+  {
+    "id": "T026",
+    "title": "T026 — iOS GGUF runtime",
+    "card": "plans/tasks/P03/T026.md",
+    "phase": "P03",
+    "owned": [
+      "modules/gguf/ios"
+    ],
+    "existingOwned": [
+      "modules/gguf/ios"
+    ],
+    "source": [
+      "modules/gguf/ios/src/index.ts",
+      "modules/gguf/ios/src/stream-decoder.ts"
+    ]
+  },
+  {
+    "id": "T027",
+    "title": "T027 — Android GGUF runtime",
+    "card": "plans/tasks/P03/T027.md",
+    "phase": "P03",
+    "owned": [
+      "modules/gguf/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T028",
+    "title": "T028 — iOS MLX runtime and folder loading",
+    "card": "plans/tasks/P03/T028.md",
+    "phase": "P03",
+    "owned": [
+      "modules/mlx/ios"
+    ],
+    "existingOwned": [
+      "modules/mlx/ios"
+    ],
+    "source": [
+      "modules/mlx/ios/Package.swift",
+      "modules/mlx/ios/Sources/LocalLabMlxIOS/MLXInferenceAdapter.swift",
+      "modules/mlx/ios/src/index.ts"
+    ]
+  },
+  {
+    "id": "T029",
+    "title": "T029 — Desktop GGUF worker",
+    "card": "plans/tasks/P03/T029.md",
+    "phase": "P03",
+    "owned": [
+      "workers/gguf",
+      "apps/companion/runtimes/gguf"
+    ],
+    "existingOwned": [
+      "workers/gguf",
+      "apps/companion/runtimes/gguf"
+    ],
+    "source": [
+      "workers/gguf/Cargo.toml",
+      "workers/gguf/README.md",
+      "workers/gguf/src/lib.rs",
+      "workers/gguf/src/main.rs",
+      "apps/companion/runtimes/gguf/mod.rs"
+    ]
+  },
+  {
+    "id": "T030",
+    "title": "T030 — Mac MLX worker",
+    "card": "plans/tasks/P03/T030.md",
+    "phase": "P03",
+    "owned": [
+      "workers/mlx-macos",
+      "apps/companion/runtimes/mlx"
+    ],
+    "existingOwned": [
+      "workers/mlx-macos",
+      "apps/companion/runtimes/mlx"
+    ],
+    "source": [
+      "workers/mlx-macos/Package.swift",
+      "workers/mlx-macos/README.md",
+      "workers/mlx-macos/Sources/LocalLabMlxMac/MLXMacRuntime.swift",
+      "workers/mlx-macos/Sources/LocalLabMlxWorker/main.swift",
+      "apps/companion/runtimes/mlx/mod.rs"
+    ]
+  },
+  {
+    "id": "T031",
+    "title": "T031 — iOS background model downloader",
+    "card": "plans/tasks/P03/T031.md",
+    "phase": "P03",
+    "owned": [
+      "modules/downloads/ios"
+    ],
+    "existingOwned": [
+      "modules/downloads/ios"
+    ],
+    "source": [
+      "modules/downloads/ios/native/BackgroundTransferSession.swift",
+      "modules/downloads/ios/src/index.ts"
+    ]
+  },
+  {
+    "id": "T032",
+    "title": "T032 — Android background model downloader",
+    "card": "plans/tasks/P03/T032.md",
+    "phase": "P03",
+    "owned": [
+      "modules/downloads/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T033",
+    "title": "T033 — Catalog, imports and Hugging Face lifecycle",
+    "card": "plans/tasks/P03/T033.md",
+    "phase": "P03",
+    "owned": [
+      "packages/models/catalog",
+      "packages/models/imports"
+    ],
+    "existingOwned": [
+      "packages/models/catalog",
+      "packages/models/imports"
+    ],
+    "source": [
+      "packages/models/catalog/src/index.ts",
+      "packages/models/imports/src/index.ts"
+    ]
+  },
+  {
+    "id": "T034",
+    "title": "T034 — Model-management screens and remote lifecycle",
+    "card": "plans/tasks/P03/T034.md",
+    "phase": "P03",
+    "owned": [
+      "apps/mobile/features/models"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/models"
+    ],
+    "source": [
+      "apps/mobile/features/models/connections.ts",
+      "apps/mobile/features/models/index.ts",
+      "apps/mobile/features/models/local-models.tsx",
+      "apps/mobile/features/models/registered-connections.ts",
+      "apps/mobile/features/models/screen.tsx",
+      "apps/mobile/features/models/selection.ts"
+    ]
+  },
+  {
+    "id": "T035",
+    "title": "T035 — Hardware fit and onboarding",
+    "card": "plans/tasks/P03/T035.md",
+    "phase": "P03",
+    "owned": [
+      "packages/models/fit",
+      "apps/mobile/features/onboarding"
+    ],
+    "existingOwned": [
+      "packages/models/fit",
+      "apps/mobile/features/onboarding"
+    ],
+    "source": [
+      "packages/models/fit/src/index.ts",
+      "apps/mobile/features/onboarding/index.ts",
+      "apps/mobile/features/onboarding/screen.tsx"
+    ]
+  },
+  {
+    "id": "T036",
+    "title": "T036 — Inference and downloads integration gate",
+    "card": "plans/tasks/P03/T036.md",
+    "phase": "P03",
+    "owned": [
+      "apps/mobile/composition/runtimes",
+      "apps/companion/composition/runtimes",
+      "packages/models/integration"
+    ],
+    "existingOwned": [
+      "packages/models/integration"
+    ],
+    "source": [
+      "packages/models/integration/src/index.ts"
+    ]
+  },
+  {
+    "id": "T037",
+    "title": "T037 — Advanced chat context, titles and retry",
+    "card": "plans/tasks/P04/T037.md",
+    "phase": "P04",
+    "owned": [
+      "packages/chat/engine/advanced"
+    ],
+    "existingOwned": [
+      "packages/chat/engine/advanced"
+    ],
+    "source": [
+      "packages/chat/engine/advanced/src/index.ts"
+    ]
+  },
+  {
+    "id": "T037A",
+    "title": "T037A — Minimum provider send, stream and stop pipeline",
+    "card": "plans/tasks/P04/T037A.md",
+    "phase": "P04",
+    "owned": [
+      "packages/chat/engine/core"
+    ],
+    "existingOwned": [
+      "packages/chat/engine/core"
+    ],
+    "source": [
+      "packages/chat/engine/core/src/index.ts"
+    ]
+  },
+  {
+    "id": "T038",
+    "title": "T038 — History, variants and continuation persistence",
+    "card": "plans/tasks/P04/T038.md",
+    "phase": "P04",
+    "owned": [
+      "packages/chat/history"
+    ],
+    "existingOwned": [
+      "packages/chat/history"
+    ],
+    "source": [
+      "packages/chat/history/src/index.ts"
+    ]
+  },
+  {
+    "id": "T039",
+    "title": "T039 — Rich native transcript, Markdown and math",
+    "card": "plans/tasks/P04/T039.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/features/transcript/rich"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/transcript/rich"
+    ],
+    "source": [
+      "apps/mobile/features/transcript/rich/markdown.ts",
+      "apps/mobile/features/transcript/rich/renderer.tsx"
+    ]
+  },
+  {
+    "id": "T039A",
+    "title": "T039A — Basic iPhone streaming transcript",
+    "card": "plans/tasks/P04/T039A.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/features/transcript/core"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/transcript/core"
+    ],
+    "source": [
+      "apps/mobile/features/transcript/core/index.ts",
+      "apps/mobile/features/transcript/core/transcript.tsx"
+    ]
+  },
+  {
+    "id": "T040",
+    "title": "T040 — Desktop AI Elements conversation UI",
+    "card": "plans/tasks/P04/T040.md",
+    "phase": "P04",
+    "owned": [
+      "apps/desktop/features/transcript",
+      "apps/desktop/features/composer-controls"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T041",
+    "title": "T041 — Composer modes, attachments and starter controls",
+    "card": "plans/tasks/P04/T041.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/features/composer/advanced"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/composer/advanced"
+    ],
+    "source": [
+      "apps/mobile/features/composer/advanced/composer.tsx",
+      "apps/mobile/features/composer/advanced/index.ts"
+    ]
+  },
+  {
+    "id": "T041A",
+    "title": "T041A — Basic native chat composer",
+    "card": "plans/tasks/P04/T041A.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/features/composer/core"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/composer/core"
+    ],
+    "source": [
+      "apps/mobile/features/composer/core/composer.tsx",
+      "apps/mobile/features/composer/core/index.ts"
+    ]
+  },
+  {
+    "id": "T042",
+    "title": "T042 — Conversation folders, list and text search",
+    "card": "plans/tasks/P04/T042.md",
+    "phase": "P04",
+    "owned": [
+      "packages/conversations/library",
+      "apps/mobile/features/library"
+    ],
+    "existingOwned": [
+      "packages/conversations/library",
+      "apps/mobile/features/library"
+    ],
+    "source": [
+      "packages/conversations/library/src/index.ts",
+      "apps/mobile/features/library/index.ts",
+      "apps/mobile/features/library/screen.tsx"
+    ]
+  },
+  {
+    "id": "T043",
+    "title": "T043 — Attachments, extraction and image resend",
+    "card": "plans/tasks/P04/T043.md",
+    "phase": "P04",
+    "owned": [
+      "packages/attachments",
+      "modules/attachments"
+    ],
+    "existingOwned": [
+      "packages/attachments",
+      "modules/attachments"
+    ],
+    "source": [
+      "packages/attachments/src/index.ts",
+      "modules/attachments/src/index.ts"
+    ]
+  },
+  {
+    "id": "T044",
+    "title": "T044 — Import/export and archive round trips",
+    "card": "plans/tasks/P04/T044.md",
+    "phase": "P04",
+    "owned": [
+      "packages/archives",
+      "apps/mobile/features/archives"
+    ],
+    "existingOwned": [
+      "packages/archives",
+      "apps/mobile/features/archives"
+    ],
+    "source": [
+      "packages/archives/src/index.ts",
+      "apps/mobile/features/archives/index.ts",
+      "apps/mobile/features/archives/screen.tsx"
+    ]
+  },
+  {
+    "id": "T045",
+    "title": "T045 — Local semantic search",
+    "card": "plans/tasks/P04/T045.md",
+    "phase": "P04",
+    "owned": [
+      "packages/search/semantic",
+      "modules/embeddings"
+    ],
+    "existingOwned": [
+      "packages/search/semantic",
+      "modules/embeddings"
+    ],
+    "source": [
+      "packages/search/semantic/README.md",
+      "packages/search/semantic/src/index.ts",
+      "modules/embeddings/src/index.ts"
+    ]
+  },
+  {
+    "id": "T046",
+    "title": "T046 — Per-chat and model parameter settings UI",
+    "card": "plans/tasks/P04/T046.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/features/chat-settings"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/chat-settings"
+    ],
+    "source": [
+      "apps/mobile/features/chat-settings/index.ts",
+      "apps/mobile/features/chat-settings/screen.tsx"
+    ]
+  },
+  {
+    "id": "T047",
+    "title": "T047 — iOS background generation lifecycle",
+    "card": "plans/tasks/P04/T047.md",
+    "phase": "P04",
+    "owned": [
+      "modules/generation-lifecycle/ios"
+    ],
+    "existingOwned": [
+      "modules/generation-lifecycle/ios"
+    ],
+    "source": [
+      "modules/generation-lifecycle/ios/src/index.ts"
+    ]
+  },
+  {
+    "id": "T048",
+    "title": "T048 — Android background generation lifecycle",
+    "card": "plans/tasks/P04/T048.md",
+    "phase": "P04",
+    "owned": [
+      "modules/generation-lifecycle/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T049",
+    "title": "T049 — Complete-chat vertical slice gate",
+    "card": "plans/tasks/P04/T049.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/composition/chat",
+      "packages/chat/integration"
+    ],
+    "existingOwned": [
+      "apps/mobile/composition/chat",
+      "packages/chat/integration"
+    ],
+    "source": [
+      "apps/mobile/composition/chat/archives/index.ts",
+      "apps/mobile/composition/chat/archives/native.ts",
+      "apps/mobile/composition/chat/archives/native.web.ts",
+      "apps/mobile/composition/chat/archives/pdf.web.ts",
+      "apps/mobile/composition/chat/archives/types.ts",
+      "apps/mobile/composition/chat/archives/zip.ts",
+      "apps/mobile/composition/chat/attachments-browser.ts",
+      "apps/mobile/composition/chat/attachments.ts",
+      "apps/mobile/composition/chat/attachments.web.ts",
+      "apps/mobile/composition/chat/brave-web-search.ts",
+      "apps/mobile/composition/chat/connection-catalog.ts",
+      "apps/mobile/composition/chat/conversation-lifecycle.ts",
+      "apps/mobile/composition/chat/default-chat-connection.ts",
+      "apps/mobile/composition/chat/dictation.ts",
+      "apps/mobile/composition/chat/foreground.ts",
+      "apps/mobile/composition/chat/index.ts",
+      "apps/mobile/composition/chat/lan-connection-discovery.tsx",
+      "apps/mobile/composition/chat/model-context.ts",
+      "apps/mobile/composition/chat/navigation.ts",
+      "apps/mobile/composition/chat/panels/search.ts",
+      "apps/mobile/composition/chat/panels.tsx",
+      "apps/mobile/composition/chat/persona-memory.ts",
+      "apps/mobile/composition/chat/provider-setup-helpers.ts",
+      "apps/mobile/composition/chat/provider-setup.tsx",
+      "apps/mobile/composition/chat/providers.ts",
+      "apps/mobile/composition/chat/recovery.ts",
+      "apps/mobile/composition/chat/screen.tsx",
+      "apps/mobile/composition/chat/searxng-web-search.ts",
+      "apps/mobile/composition/chat/selection.ts",
+      "apps/mobile/composition/chat/settings-store.ts",
+      "apps/mobile/composition/chat/startup-errors.ts",
+      "apps/mobile/composition/chat/web-research-settings-panel.tsx",
+      "apps/mobile/composition/chat/web-research-settings.ts",
+      "apps/mobile/composition/chat/web-research-tool-sources.ts",
+      "apps/mobile/composition/chat/web-research-tools.ts",
+      "apps/mobile/composition/chat/web-research.ts",
+      "apps/mobile/composition/chat/workspace-file-intent.ts",
+      "apps/mobile/composition/chat/workspace-file-output.ts",
+      "packages/chat/integration/src/features.ts",
+      "packages/chat/integration/src/index.ts"
+    ]
+  },
+  {
+    "id": "T050",
+    "title": "T050 — Persona library, profiles and seed rules",
+    "card": "plans/tasks/P05/T050.md",
+    "phase": "P05",
+    "owned": [
+      "packages/personas/library",
+      "apps/mobile/features/personas"
+    ],
+    "existingOwned": [
+      "packages/personas/library",
+      "apps/mobile/features/personas"
+    ],
+    "source": [
+      "packages/personas/library/src/index.ts",
+      "packages/personas/library/src/schema.ts",
+      "apps/mobile/features/personas/avatar.ts",
+      "apps/mobile/features/personas/index.ts",
+      "apps/mobile/features/personas/screen.tsx"
+    ]
+  },
+  {
+    "id": "T051",
+    "title": "T051 — AI Persona Generator",
+    "card": "plans/tasks/P05/T051.md",
+    "phase": "P05",
+    "owned": [
+      "packages/personas/generator",
+      "apps/mobile/features/persona-generator"
+    ],
+    "existingOwned": [
+      "packages/personas/generator",
+      "apps/mobile/features/persona-generator"
+    ],
+    "source": [
+      "packages/personas/generator/src/index.ts",
+      "apps/mobile/features/persona-generator/index.ts",
+      "apps/mobile/features/persona-generator/screen.tsx"
+    ]
+  },
+  {
+    "id": "T052",
+    "title": "T052 — Memory extraction and management",
+    "card": "plans/tasks/P05/T052.md",
+    "phase": "P05",
+    "owned": [
+      "packages/memory/extraction",
+      "apps/mobile/features/memory"
+    ],
+    "existingOwned": [
+      "packages/memory/extraction",
+      "apps/mobile/features/memory"
+    ],
+    "source": [
+      "packages/memory/extraction/README.md",
+      "packages/memory/extraction/src/coordinator.ts",
+      "packages/memory/extraction/src/extractor.ts",
+      "packages/memory/extraction/src/identity.ts",
+      "packages/memory/extraction/src/index.ts",
+      "packages/memory/extraction/src/resources.ts",
+      "packages/memory/extraction/src/schema.ts",
+      "packages/memory/extraction/src/store.ts",
+      "packages/memory/extraction/src/types.ts",
+      "apps/mobile/features/memory/index.ts",
+      "apps/mobile/features/memory/screen.tsx"
+    ]
+  },
+  {
+    "id": "T053",
+    "title": "T053 — Persona-scoped memory injection",
+    "card": "plans/tasks/P05/T053.md",
+    "phase": "P05",
+    "owned": [
+      "packages/memory/scope"
+    ],
+    "existingOwned": [
+      "packages/memory/scope"
+    ],
+    "source": [
+      "packages/memory/scope/src/index.ts"
+    ]
+  },
+  {
+    "id": "T054",
+    "title": "T054 — Persona model, voice, params and workflow bindings",
+    "card": "plans/tasks/P05/T054.md",
+    "phase": "P05",
+    "owned": [
+      "packages/personas/bindings",
+      "apps/mobile/features/persona-bindings"
+    ],
+    "existingOwned": [
+      "packages/personas/bindings",
+      "apps/mobile/features/persona-bindings"
+    ],
+    "source": [
+      "packages/personas/bindings/src/index.ts",
+      "apps/mobile/features/persona-bindings/index.ts"
+    ]
+  },
+  {
+    "id": "T055",
+    "title": "T055 — Group setup and participant editor",
+    "card": "plans/tasks/P05/T055.md",
+    "phase": "P05",
+    "owned": [
+      "packages/groups/config",
+      "apps/mobile/features/group-setup"
+    ],
+    "existingOwned": [
+      "packages/groups/config",
+      "apps/mobile/features/group-setup"
+    ],
+    "source": [
+      "packages/groups/config/src/index.ts",
+      "apps/mobile/features/group-setup/index.ts",
+      "apps/mobile/features/group-setup/screen.tsx"
+    ]
+  },
+  {
+    "id": "T056",
+    "title": "T056 — Group serial, mention and manual scheduler",
+    "card": "plans/tasks/P05/T056.md",
+    "phase": "P05",
+    "owned": [
+      "packages/groups/turns"
+    ],
+    "existingOwned": [
+      "packages/groups/turns"
+    ],
+    "source": [
+      "packages/groups/turns/src/index.ts"
+    ]
+  },
+  {
+    "id": "T057",
+    "title": "T057 — Parallel group streams and local memory leases",
+    "card": "plans/tasks/P05/T057.md",
+    "phase": "P05",
+    "owned": [
+      "packages/groups/parallel"
+    ],
+    "existingOwned": [
+      "packages/groups/parallel"
+    ],
+    "source": [
+      "packages/groups/parallel/src/index.ts"
+    ]
+  },
+  {
+    "id": "T058",
+    "title": "T058 — Group transcript, per-participant tools and voice UI",
+    "card": "plans/tasks/P05/T058.md",
+    "phase": "P05",
+    "owned": [
+      "apps/mobile/features/group-chat"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/group-chat"
+    ],
+    "source": [
+      "apps/mobile/features/group-chat/index.ts",
+      "apps/mobile/features/group-chat/screen.tsx"
+    ]
+  },
+  {
+    "id": "T059",
+    "title": "T059 — Arena race and timing engine",
+    "card": "plans/tasks/P05/T059.md",
+    "phase": "P05",
+    "owned": [
+      "packages/arena/engine"
+    ],
+    "existingOwned": [
+      "packages/arena/engine"
+    ],
+    "source": [
+      "packages/arena/engine/src/index.ts",
+      "packages/arena/engine/src/sqlite-store.ts",
+      "packages/arena/engine/src/types.ts"
+    ]
+  },
+  {
+    "id": "T060",
+    "title": "T060 — Arena discovery, history and apply UI",
+    "card": "plans/tasks/P05/T060.md",
+    "phase": "P05",
+    "owned": [
+      "apps/mobile/features/arena",
+      "packages/arena/history"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T061",
+    "title": "T061 — Persona, memory, group and Arena integration gate",
+    "card": "plans/tasks/P05/T061.md",
+    "phase": "P05",
+    "owned": [
+      "apps/mobile/composition/orchestration",
+      "packages/groups/integration"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T062",
+    "title": "T062 — Tool registry and bounded execution loop",
+    "card": "plans/tasks/P06/T062.md",
+    "phase": "P06",
+    "owned": [
+      "packages/tools/engine"
+    ],
+    "existingOwned": [
+      "packages/tools/engine"
+    ],
+    "source": [
+      "packages/tools/engine/src/index.ts",
+      "packages/tools/engine/src/sqlite.ts"
+    ]
+  },
+  {
+    "id": "T063",
+    "title": "T063 — SearXNG client",
+    "card": "plans/tasks/P06/T063.md",
+    "phase": "P06",
+    "owned": [
+      "packages/tools/searxng"
+    ],
+    "existingOwned": [
+      "packages/tools/searxng"
+    ],
+    "source": [
+      "packages/tools/searxng/src/client.ts",
+      "packages/tools/searxng/src/config.ts",
+      "packages/tools/searxng/src/errors.ts",
+      "packages/tools/searxng/src/index.ts"
+    ]
+  },
+  {
+    "id": "T064",
+    "title": "T064 — HTTP MCP client",
+    "card": "plans/tasks/P06/T064.md",
+    "phase": "P06",
+    "owned": [
+      "packages/tools/mcp-http"
+    ],
+    "existingOwned": [
+      "packages/tools/mcp-http"
+    ],
+    "source": [
+      "packages/tools/mcp-http/src/client.ts",
+      "packages/tools/mcp-http/src/errors.ts",
+      "packages/tools/mcp-http/src/index.ts",
+      "packages/tools/mcp-http/src/tools.ts",
+      "packages/tools/mcp-http/src/type-guards.ts"
+    ]
+  },
+  {
+    "id": "T065",
+    "title": "T065 — LM Studio integrated MCP bindings",
+    "card": "plans/tasks/P06/T065.md",
+    "phase": "P06",
+    "owned": [
+      "packages/tools/mcp-lmstudio"
+    ],
+    "existingOwned": [
+      "packages/tools/mcp-lmstudio"
+    ],
+    "source": [
+      "packages/tools/mcp-lmstudio/src/index.ts"
+    ]
+  },
+  {
+    "id": "T066",
+    "title": "T066 — Built-ins and MCP naming/settings",
+    "card": "plans/tasks/P06/T066.md",
+    "phase": "P06",
+    "owned": [
+      "packages/tools/builtins",
+      "apps/mobile/features/tool-settings"
+    ],
+    "existingOwned": [
+      "packages/tools/builtins",
+      "apps/mobile/features/tool-settings"
+    ],
+    "source": [
+      "packages/tools/builtins/src/index.ts",
+      "apps/mobile/features/tool-settings/lmstudio-integrations.ts",
+      "apps/mobile/features/tool-settings/lmstudio-panel.tsx",
+      "apps/mobile/features/tool-settings/mcp-panel.tsx",
+      "apps/mobile/features/tool-settings/mcp-servers.ts",
+      "apps/mobile/features/tool-settings/screen.tsx",
+      "apps/mobile/features/tool-settings/settings.ts"
+    ]
+  },
+  {
+    "id": "T067",
+    "title": "T067 — Optional hosted Pro Search service",
+    "card": "plans/tasks/P06/T067.md",
+    "phase": "P06",
+    "owned": [
+      "services/api/features/search",
+      "packages/tools/hosted-search"
+    ],
+    "existingOwned": [
+      "services/api/features/search",
+      "packages/tools/hosted-search"
+    ],
+    "source": [
+      "services/api/features/search/index.ts",
+      "packages/tools/hosted-search/src/index.ts"
+    ]
+  },
+  {
+    "id": "T068",
+    "title": "T068 — Isolated Python and JS sandbox worker",
+    "card": "plans/tasks/P06/T068.md",
+    "phase": "P06",
+    "owned": [
+      "workers/sandbox",
+      "services/api/features/sandbox",
+      "packages/tools/sandbox"
+    ],
+    "existingOwned": [
+      "workers/sandbox",
+      "services/api/features/sandbox",
+      "packages/tools/sandbox"
+    ],
+    "source": [
+      "workers/sandbox/Dockerfile",
+      "workers/sandbox/run.sh",
+      "workers/sandbox/worker.mjs",
+      "services/api/features/sandbox/index.ts",
+      "packages/tools/sandbox/src/index.ts"
+    ]
+  },
+  {
+    "id": "T069",
+    "title": "T069 — Transcript tools, search chips and errors",
+    "card": "plans/tasks/P06/T069.md",
+    "phase": "P06",
+    "owned": [
+      "apps/mobile/features/tools"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T070",
+    "title": "T070 — Tools across providers integration gate",
+    "card": "plans/tasks/P06/T070.md",
+    "phase": "P06",
+    "owned": [
+      "apps/mobile/composition/tools",
+      "packages/tools/integration"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T071",
+    "title": "T071 — Audio session, focus and ordered playback",
+    "card": "plans/tasks/P07/T071.md",
+    "phase": "P07",
+    "owned": [
+      "packages/audio/session"
+    ],
+    "existingOwned": [
+      "packages/audio/session"
+    ],
+    "source": [
+      "packages/audio/session/src/coordinator.ts",
+      "packages/audio/session/src/index.ts",
+      "packages/audio/session/src/ports.ts"
+    ]
+  },
+  {
+    "id": "T072",
+    "title": "T072 — iOS native TTS and system STT",
+    "card": "plans/tasks/P07/T072.md",
+    "phase": "P07",
+    "owned": [
+      "modules/speech-system/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T073",
+    "title": "T073 — Android native TTS and STT",
+    "card": "plans/tasks/P07/T073.md",
+    "phase": "P07",
+    "owned": [
+      "modules/speech-system/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T074",
+    "title": "T074 — Desktop system speech adapters",
+    "card": "plans/tasks/P07/T074.md",
+    "phase": "P07",
+    "owned": [
+      "apps/companion/speech/system"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T075",
+    "title": "T075 — Mobile Kokoro/Piper packs",
+    "card": "plans/tasks/P07/T075.md",
+    "phase": "P07",
+    "owned": [
+      "modules/tts-local",
+      "packages/voice-packs/mobile"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T076",
+    "title": "T076 — Desktop Kokoro/Piper service",
+    "card": "plans/tasks/P07/T076.md",
+    "phase": "P07",
+    "owned": [
+      "workers/tts",
+      "apps/companion/speech/tts"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T077",
+    "title": "T077 — iOS Whisper transcription",
+    "card": "plans/tasks/P07/T077.md",
+    "phase": "P07",
+    "owned": [
+      "modules/whisper/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T078",
+    "title": "T078 — Mac Whisper transcription worker",
+    "card": "plans/tasks/P07/T078.md",
+    "phase": "P07",
+    "owned": [
+      "workers/whisper",
+      "apps/companion/speech/whisper"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T079",
+    "title": "T079 — ElevenLabs and Grok voices",
+    "card": "plans/tasks/P07/T079.md",
+    "phase": "P07",
+    "owned": [
+      "packages/speech/cloud"
+    ],
+    "existingOwned": [
+      "packages/speech/cloud"
+    ],
+    "source": [
+      "packages/speech/cloud/src/elevenlabs.ts",
+      "packages/speech/cloud/src/index.ts",
+      "packages/speech/cloud/src/shared.ts",
+      "packages/speech/cloud/src/xai.ts"
+    ]
+  },
+  {
+    "id": "T080",
+    "title": "T080 — Voice settings, tests and transcription player",
+    "card": "plans/tasks/P07/T080.md",
+    "phase": "P07",
+    "owned": [
+      "apps/mobile/features/voice"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/voice"
+    ],
+    "source": [
+      "apps/mobile/features/voice/container.ts",
+      "apps/mobile/features/voice/imports.ts",
+      "apps/mobile/features/voice/index.ts",
+      "apps/mobile/features/voice/read-aloud.ts",
+      "apps/mobile/features/voice/screen.tsx",
+      "apps/mobile/features/voice/settings.ts"
+    ]
+  },
+  {
+    "id": "T081",
+    "title": "T081 — Continuous/group voice and iOS Call Mode",
+    "card": "plans/tasks/P07/T081.md",
+    "phase": "P07",
+    "owned": [
+      "packages/audio/conversation",
+      "modules/call-mode/ios"
+    ],
+    "existingOwned": [
+      "packages/audio/conversation"
+    ],
+    "source": [
+      "packages/audio/conversation/src/index.ts"
+    ]
+  },
+  {
+    "id": "T082",
+    "title": "T082 — Android persistent voice sessions",
+    "card": "plans/tasks/P07/T082.md",
+    "phase": "P07",
+    "owned": [
+      "modules/call-mode/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T083",
+    "title": "T083 — Full voice integration gate",
+    "card": "plans/tasks/P07/T083.md",
+    "phase": "P07",
+    "owned": [
+      "apps/mobile/composition/voice",
+      "packages/audio/integration"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T084",
+    "title": "T084 — Media job engine and settings",
+    "card": "plans/tasks/P08/T084.md",
+    "phase": "P08",
+    "owned": [
+      "packages/media/engine"
+    ],
+    "existingOwned": [
+      "packages/media/engine"
+    ],
+    "source": [
+      "packages/media/engine/src/index.ts"
+    ]
+  },
+  {
+    "id": "T085",
+    "title": "T085 — AUTOMATIC1111 adapter",
+    "card": "plans/tasks/P08/T085.md",
+    "phase": "P08",
+    "owned": [
+      "packages/media/a1111"
+    ],
+    "existingOwned": [
+      "packages/media/a1111"
+    ],
+    "source": [
+      "packages/media/a1111/src/index.ts"
+    ]
+  },
+  {
+    "id": "T086",
+    "title": "T086 — ComfyUI workflows and LoRA adapter",
+    "card": "plans/tasks/P08/T086.md",
+    "phase": "P08",
+    "owned": [
+      "packages/media/comfyui"
+    ],
+    "existingOwned": [
+      "packages/media/comfyui"
+    ],
+    "source": [
+      "packages/media/comfyui/src/index.ts"
+    ]
+  },
+  {
+    "id": "T087",
+    "title": "T087 — ComfyUI queue and video outputs",
+    "card": "plans/tasks/P08/T087.md",
+    "phase": "P08",
+    "owned": [
+      "packages/media/queue",
+      "packages/media/video"
+    ],
+    "existingOwned": [
+      "packages/media/queue",
+      "packages/media/video"
+    ],
+    "source": [
+      "packages/media/queue/src/index.ts",
+      "packages/media/video/src/index.ts"
+    ]
+  },
+  {
+    "id": "T088",
+    "title": "T088 — iOS Core ML Stable Diffusion",
+    "card": "plans/tasks/P08/T088.md",
+    "phase": "P08",
+    "owned": [
+      "modules/stable-diffusion/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T089",
+    "title": "T089 — Mobile media prompts and generated gallery",
+    "card": "plans/tasks/P08/T089.md",
+    "phase": "P08",
+    "owned": [
+      "apps/mobile/features/media"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/media"
+    ],
+    "source": [
+      "apps/mobile/features/media/index.ts",
+      "apps/mobile/features/media/screen.tsx"
+    ]
+  },
+  {
+    "id": "T090",
+    "title": "T090 — Desktop media settings and gallery",
+    "card": "plans/tasks/P08/T090.md",
+    "phase": "P08",
+    "owned": [
+      "apps/desktop/features/media"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T091",
+    "title": "T091 — Persona image prompts and workflow launch integration",
+    "card": "plans/tasks/P08/T091.md",
+    "phase": "P08",
+    "owned": [
+      "packages/personas/media",
+      "packages/chat/media-hooks"
+    ],
+    "existingOwned": [
+      "packages/personas/media",
+      "packages/chat/media-hooks"
+    ],
+    "source": [
+      "packages/personas/media/src/index.ts",
+      "packages/chat/media-hooks/src/index.ts"
+    ]
+  },
+  {
+    "id": "T092",
+    "title": "T092 — Images/video integration gate",
+    "card": "plans/tasks/P08/T092.md",
+    "phase": "P08",
+    "owned": [
+      "apps/mobile/composition/media",
+      "packages/media/integration"
+    ],
+    "existingOwned": [
+      "apps/mobile/composition/media",
+      "packages/media/integration"
+    ],
+    "source": [
+      "apps/mobile/composition/media/providers.ts",
+      "packages/media/integration/src/index.ts"
+    ]
+  },
+  {
+    "id": "T093",
+    "title": "T093 — Pairing encryption implementation",
+    "card": "plans/tasks/P09/T093.md",
+    "phase": "P09",
+    "owned": [
+      "packages/remote/crypto",
+      "apps/companion/remote/crypto"
+    ],
+    "existingOwned": [
+      "packages/remote/crypto",
+      "apps/companion/remote/crypto"
+    ],
+    "source": [
+      "packages/remote/crypto/scripts/generate-vectors.mts",
+      "packages/remote/crypto/src/index.ts",
+      "apps/companion/remote/crypto/mod.rs"
+    ]
+  },
+  {
+    "id": "T094",
+    "title": "T094 — Opaque WebSocket relay service",
+    "card": "plans/tasks/P09/T094.md",
+    "phase": "P09",
+    "owned": [
+      "services/relay"
+    ],
+    "existingOwned": [
+      "services/relay"
+    ],
+    "source": [
+      "services/relay/docker-compose.relay.yml",
+      "services/relay/Dockerfile",
+      "services/relay/src/cli.ts",
+      "services/relay/src/index.ts",
+      "services/relay/src/ws.d.ts"
+    ]
+  },
+  {
+    "id": "T095",
+    "title": "T095 — Desktop companion model routing and health",
+    "card": "plans/tasks/P09/T095.md",
+    "phase": "P09",
+    "owned": [
+      "apps/companion/remote/routes"
+    ],
+    "existingOwned": [
+      "apps/companion/remote/routes"
+    ],
+    "source": [
+      "apps/companion/remote/routes/mod.rs"
+    ]
+  },
+  {
+    "id": "T096",
+    "title": "T096 — Mobile QR pairing and remote connection UI",
+    "card": "plans/tasks/P09/T096.md",
+    "phase": "P09",
+    "owned": [
+      "apps/mobile/features/remote",
+      "packages/remote/client"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/remote",
+      "packages/remote/client"
+    ],
+    "source": [
+      "apps/mobile/features/remote/index.ts",
+      "apps/mobile/features/remote/screen.tsx",
+      "packages/remote/client/src/index.ts",
+      "packages/remote/client/src/ws.d.ts"
+    ]
+  },
+  {
+    "id": "T097",
+    "title": "T097 — Encrypted binary image and speech forwarding",
+    "card": "plans/tasks/P09/T097.md",
+    "phase": "P09",
+    "owned": [
+      "packages/remote/binary",
+      "apps/companion/remote/media"
+    ],
+    "existingOwned": [
+      "packages/remote/binary",
+      "apps/companion/remote/media"
+    ],
+    "source": [
+      "packages/remote/binary/src/index.ts",
+      "packages/remote/binary/src/ws.d.ts",
+      "apps/companion/remote/media/mod.rs"
+    ]
+  },
+  {
+    "id": "T098",
+    "title": "T098 — Sync integration and two-device convergence gate",
+    "card": "plans/tasks/P09/T098.md",
+    "phase": "P09",
+    "owned": [
+      "packages/sync/core/composition"
+    ],
+    "existingOwned": [
+      "packages/sync/core/composition"
+    ],
+    "source": [
+      "packages/sync/core/composition/src/index.ts"
+    ]
+  },
+  {
+    "id": "T098A",
+    "title": "T098A — Sync opt-in and initial choices",
+    "card": "plans/tasks/P09/T098A.md",
+    "phase": "P09",
+    "owned": [
+      "packages/sync/preferences",
+      "apps/mobile/features/sync",
+      "apps/companion/features/sync-setup"
+    ],
+    "existingOwned": [
+      "packages/sync/preferences",
+      "apps/mobile/features/sync",
+      "apps/companion/features/sync-setup"
+    ],
+    "source": [
+      "packages/sync/preferences/src/index.ts",
+      "apps/mobile/features/sync/index.ts",
+      "apps/mobile/features/sync/screen.tsx",
+      "apps/companion/features/sync-setup/mod.rs"
+    ]
+  },
+  {
+    "id": "T098B",
+    "title": "T098B — Revisioned messages, folders and tombstones",
+    "card": "plans/tasks/P09/T098B.md",
+    "phase": "P09",
+    "owned": [
+      "packages/sync/core/merge"
+    ],
+    "existingOwned": [
+      "packages/sync/core/merge"
+    ],
+    "source": [
+      "packages/sync/core/merge/src/index.ts"
+    ]
+  },
+  {
+    "id": "T098C",
+    "title": "T098C — Live paired sync transport and retry",
+    "card": "plans/tasks/P09/T098C.md",
+    "phase": "P09",
+    "owned": [
+      "packages/sync/core/transport"
+    ],
+    "existingOwned": [
+      "packages/sync/core/transport"
+    ],
+    "source": [
+      "packages/sync/core/transport/src/index.ts"
+    ]
+  },
+  {
+    "id": "T099",
+    "title": "T099 — Selective Persona, photo and memory sync",
+    "card": "plans/tasks/P09/T099.md",
+    "phase": "P09",
+    "owned": [
+      "packages/sync/personas",
+      "apps/mobile/features/persona-sync"
+    ],
+    "existingOwned": [
+      "packages/sync/personas",
+      "apps/mobile/features/persona-sync"
+    ],
+    "source": [
+      "packages/sync/personas/src/index.ts",
+      "apps/mobile/features/persona-sync/index.ts",
+      "apps/mobile/features/persona-sync/screen.tsx"
+    ]
+  },
+  {
+    "id": "T100",
+    "title": "T100 — Apple iCloud data synchronization",
+    "card": "plans/tasks/P09/T100.md",
+    "phase": "P09",
+    "owned": [
+      "modules/icloud",
+      "packages/sync/icloud"
+    ],
+    "existingOwned": [
+      "modules/icloud",
+      "packages/sync/icloud"
+    ],
+    "source": [
+      "modules/icloud/src/index.ts",
+      "packages/sync/icloud/src/index.ts"
+    ]
+  },
+  {
+    "id": "T101",
+    "title": "T101 — iPhone-to-Mac USB transport",
+    "card": "plans/tasks/P09/T101.md",
+    "phase": "P09",
+    "owned": [
+      "apps/companion/usb",
+      "modules/usb/ios"
+    ],
+    "existingOwned": [
+      "apps/companion/usb",
+      "modules/usb/ios"
+    ],
+    "source": [
+      "apps/companion/usb/frames/mod.rs",
+      "apps/companion/usb/guard/mod.rs",
+      "apps/companion/usb/session/mod.rs",
+      "modules/usb/ios/src/index.ts"
+    ]
+  },
+  {
+    "id": "T102",
+    "title": "T102 — Companion sharing, tray, startup and voice packs UI",
+    "card": "plans/tasks/P09/T102.md",
+    "phase": "P09",
+    "owned": [
+      "apps/companion/features/sharing",
+      "apps/companion/lifecycle"
+    ],
+    "existingOwned": [
+      "apps/companion/features/sharing",
+      "apps/companion/lifecycle"
+    ],
+    "source": [
+      "apps/companion/features/sharing/mod.rs",
+      "apps/companion/lifecycle/mod.rs"
+    ]
+  },
+  {
+    "id": "T103",
+    "title": "T103 — Remote, USB and sync integration gate",
+    "card": "plans/tasks/P09/T103.md",
+    "phase": "P09",
+    "owned": [
+      "apps/mobile/composition/remote",
+      "apps/companion/composition/remote",
+      "packages/remote/integration"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T104",
+    "title": "T104 — Native theme editor and per-chat appearance",
+    "card": "plans/tasks/P10/T104.md",
+    "phase": "P10",
+    "owned": [
+      "apps/mobile/features/themes",
+      "packages/themes/schema"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/themes"
+    ],
+    "source": [
+      "apps/mobile/features/themes/messenger-desktop.tsx",
+      "apps/mobile/features/themes/phone-sheet.tsx",
+      "apps/mobile/features/themes/provider.tsx",
+      "apps/mobile/features/themes/system-color-scheme.ts",
+      "apps/mobile/features/themes/system-color-scheme.web.ts"
+    ]
+  },
+  {
+    "id": "T105",
+    "title": "T105 — Desktop themes and live appearance",
+    "card": "plans/tasks/P10/T105.md",
+    "phase": "P10",
+    "owned": [
+      "apps/desktop/features/themes"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T106",
+    "title": "T106 — Community theme and voice catalog service",
+    "card": "plans/tasks/P10/T106.md",
+    "phase": "P10",
+    "owned": [
+      "services/api/features/catalog",
+      "apps/mobile/features/community"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T107",
+    "title": "T107 — Entitlement policy and preview gates",
+    "card": "plans/tasks/P10/T107.md",
+    "phase": "P10",
+    "owned": [
+      "packages/entitlements"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T108",
+    "title": "T108 — Mobile PIN and biometric App Lock",
+    "card": "plans/tasks/P10/T108.md",
+    "phase": "P10",
+    "owned": [
+      "modules/app-lock",
+      "apps/mobile/features/app-lock"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T109",
+    "title": "T109 — Authenticated PIN recovery service",
+    "card": "plans/tasks/P10/T109.md",
+    "phase": "P10",
+    "owned": [
+      "services/api/features/lock-recovery",
+      "packages/security/recovery"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T110",
+    "title": "T110 — Encrypted backup and restore",
+    "card": "plans/tasks/P10/T110.md",
+    "phase": "P10",
+    "owned": [
+      "packages/backup",
+      "services/api/features/backup",
+      "apps/mobile/features/backup"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T111",
+    "title": "T111 — Optional accounts and password recovery",
+    "card": "plans/tasks/P10/T111.md",
+    "phase": "P10",
+    "owned": [
+      "services/api/features/auth",
+      "apps/mobile/features/account"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T112",
+    "title": "T112 — Store purchases, restoration and family entitlement",
+    "card": "plans/tasks/P10/T112.md",
+    "phase": "P10",
+    "owned": [
+      "modules/billing",
+      "services/api/features/billing",
+      "apps/mobile/features/billing"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T113",
+    "title": "T113 — Support board, attachments and release updates",
+    "card": "plans/tasks/P10/T113.md",
+    "phase": "P10",
+    "owned": [
+      "services/api/features/support",
+      "apps/mobile/features/support"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T114",
+    "title": "T114 — iOS widgets and Live Activities",
+    "card": "plans/tasks/P10/T114.md",
+    "phase": "P10",
+    "owned": [
+      "modules/widgets/ios",
+      "apps/mobile/features/widgets-ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T115",
+    "title": "T115 — Android widgets and equivalent quick actions",
+    "card": "plans/tasks/P10/T115.md",
+    "phase": "P10",
+    "owned": [
+      "modules/widgets/android",
+      "apps/mobile/features/widgets-android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T116",
+    "title": "T116 — App Intents and typed deep-link automation",
+    "card": "plans/tasks/P10/T116.md",
+    "phase": "P10",
+    "owned": [
+      "modules/app-intents/ios",
+      "packages/automation",
+      "apps/companion/automation"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117",
+    "title": "T117 — Twenty-two Shortcut recipes integration gate",
+    "card": "plans/tasks/P10/T117.md",
+    "phase": "P10",
+    "owned": [
+      "apps/mobile/composition/workflows",
+      "packages/workflows/integration"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117A",
+    "title": "T117A — Article, meeting and speech summaries",
+    "card": "plans/tasks/P10/T117A.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/summaries"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117B",
+    "title": "T117B — Writing and rewriting recipes",
+    "card": "plans/tasks/P10/T117B.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/writing"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117C",
+    "title": "T117C — Story and support recipes",
+    "card": "plans/tasks/P10/T117C.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/creative"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117D",
+    "title": "T117D — Screenshot OCR and business cards",
+    "card": "plans/tasks/P10/T117D.md",
+    "phase": "P10",
+    "owned": [
+      "modules/ocr/ios",
+      "packages/workflows/camera"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117E",
+    "title": "T117E — Food and travel recipes",
+    "card": "plans/tasks/P10/T117E.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/planning"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117F",
+    "title": "T117F — Voice and search shortcut recipes",
+    "card": "plans/tasks/P10/T117F.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/voice-actions"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117G",
+    "title": "T117G — Context and clipboard translation recipes",
+    "card": "plans/tasks/P10/T117G.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/context",
+      "packages/workflows/translation"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T117H",
+    "title": "T117H — Weather and scheduled news recipes",
+    "card": "plans/tasks/P10/T117H.md",
+    "phase": "P10",
+    "owned": [
+      "packages/workflows/briefings",
+      "services/api/features/news"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T118",
+    "title": "T118 — Diagnostics, analytics and benchmark consent",
+    "card": "plans/tasks/P10/T118.md",
+    "phase": "P10",
+    "owned": [
+      "packages/diagnostics",
+      "services/api/features/metrics",
+      "apps/mobile/features/diagnostics"
+    ],
+    "existingOwned": [
+      "apps/mobile/features/diagnostics"
+    ],
+    "source": [
+      "apps/mobile/features/diagnostics/context.ts",
+      "apps/mobile/features/diagnostics/error-notice.tsx",
+      "apps/mobile/features/diagnostics/errors.ts",
+      "apps/mobile/features/diagnostics/provider.tsx",
+      "apps/mobile/features/diagnostics/sanitization.ts",
+      "apps/mobile/features/diagnostics/screen.tsx",
+      "apps/mobile/features/diagnostics/trace-fetch.ts",
+      "apps/mobile/features/diagnostics/trace-log.ts"
+    ]
+  },
+  {
+    "id": "T119",
+    "title": "T119 — iPhone localization and accessibility",
+    "card": "plans/tasks/P10/T119.md",
+    "phase": "P10",
+    "owned": [
+      "packages/localization",
+      "apps/mobile/features/responsive/iphone"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T119B",
+    "title": "T119B — iPad layout, Settings and Pencil",
+    "card": "plans/tasks/P10/T119B.md",
+    "phase": "P10",
+    "owned": [
+      "apps/mobile/features/responsive/ipad",
+      "apps/mobile/features/settings-ipad",
+      "modules/pencil/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T120",
+    "title": "T120 — Low battery, glass, full-width and app icons",
+    "card": "plans/tasks/P10/T120.md",
+    "phase": "P10",
+    "owned": [
+      "packages/appearance/behavior",
+      "apps/mobile/features/appearance-behavior",
+      "modules/app-icons/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T121",
+    "title": "T121 — Deep cross-platform evidence aggregation",
+    "card": "plans/tasks/P11/T121.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/full-matrix"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T122",
+    "title": "T122 — Performance, battery and lifecycle audit",
+    "card": "plans/tasks/P11/T122.md",
+    "phase": "P11",
+    "owned": [
+      "tests/performance",
+      "docs/implementation/performance"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T123",
+    "title": "T123 — Privacy and security integration audit",
+    "card": "plans/tasks/P11/T123.md",
+    "phase": "P11",
+    "owned": [
+      "tests/security",
+      "docs/implementation/security"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T124",
+    "title": "T124 — Desktop installers and companion release pipeline",
+    "card": "plans/tasks/P11/T124.md",
+    "phase": "P11",
+    "owned": [
+      "build/desktop",
+      ".github/workflows/desktop-release.yml"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T125",
+    "title": "T125 — Android native builds and distribution pipeline",
+    "card": "plans/tasks/P11/T125.md",
+    "phase": "P11",
+    "owned": [
+      "build/mobile",
+      ".github/workflows/mobile-release.yml",
+      "apps/mobile/config/release"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T126",
+    "title": "T126 — Learning guides and module walkthroughs",
+    "card": "plans/tasks/P11/T126.md",
+    "phase": "P11",
+    "owned": [
+      "docs/implementation/learning",
+      "docs/implementation/operations"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T127",
+    "title": "T127 — Final parity, graph and artifact audit",
+    "card": "plans/tasks/P11/T127.md",
+    "phase": "P11",
+    "owned": [
+      "docs/implementation/release-audit"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T128",
+    "title": "T128 — Working iPhone full-feature build milestone",
+    "card": "plans/tasks/P11/T128.md",
+    "phase": "P11",
+    "owned": [
+      "apps/mobile/composition/iphone-complete",
+      "tests/smoke/iphone-complete",
+      "apps/mobile/app/chat.tsx",
+      "apps/mobile/app/(main)"
+    ],
+    "existingOwned": [
+      "apps/mobile/app/chat.tsx"
+    ],
+    "source": [
+      "apps/mobile/app/chat.tsx"
+    ]
+  },
+  {
+    "id": "T129",
+    "title": "T129 — Android runtime, download and chat parity gate",
+    "card": "plans/tasks/P11/T129.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/android-core",
+      "apps/mobile/composition/android-core"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T130",
+    "title": "T130 — Android Whisper native port",
+    "card": "plans/tasks/P11/T130.md",
+    "phase": "P11",
+    "owned": [
+      "modules/whisper/android"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T131",
+    "title": "T131 — Android voice and call parity gate",
+    "card": "plans/tasks/P11/T131.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/android-voice",
+      "apps/mobile/composition/android-voice"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T132",
+    "title": "T132 — Android images, automation and accessibility gate",
+    "card": "plans/tasks/P11/T132.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/android-media",
+      "apps/mobile/composition/android-media"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T133",
+    "title": "T133 — Windows and Linux system speech adapters",
+    "card": "plans/tasks/P11/T133.md",
+    "phase": "P11",
+    "owned": [
+      "apps/companion/speech/windows",
+      "apps/companion/speech/linux"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T134",
+    "title": "T134 — Working Mac, Windows and Linux desktop milestone",
+    "card": "plans/tasks/P11/T134.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/composition/full",
+      "tests/smoke/desktop-full"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T135",
+    "title": "T135 — Final cross-platform parity and release gate",
+    "card": "plans/tasks/P11/T135.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/release"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T136",
+    "title": "T136 — Desktop connection settings and discovery",
+    "card": "plans/tasks/P11/T136.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/connections"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T137",
+    "title": "T137 — Desktop model-management screens and remote lifecycle",
+    "card": "plans/tasks/P11/T137.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/models"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T138",
+    "title": "T138 — Desktop conversation folders, list and text search",
+    "card": "plans/tasks/P11/T138.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/library",
+      "apps/desktop/features/archives"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T139",
+    "title": "T139 — Desktop per-chat and model parameter settings ui",
+    "card": "plans/tasks/P11/T139.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/chat-settings"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T140",
+    "title": "T140 — Desktop persona library, profiles and seed rules",
+    "card": "plans/tasks/P11/T140.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/personas",
+      "apps/desktop/features/persona-sync"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T141",
+    "title": "T141 — Desktop ai persona generator",
+    "card": "plans/tasks/P11/T141.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/persona-generator"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T142",
+    "title": "T142 — Desktop memory extraction and management",
+    "card": "plans/tasks/P11/T142.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/memory"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T143",
+    "title": "T143 — Desktop persona model, voice, params and workflow bindings",
+    "card": "plans/tasks/P11/T143.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/persona-bindings"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T144",
+    "title": "T144 — Desktop group setup and participant editor",
+    "card": "plans/tasks/P11/T144.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/group-setup"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T145",
+    "title": "T145 — Desktop group transcript, per-participant tools and voice ui",
+    "card": "plans/tasks/P11/T145.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/group-chat"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T146",
+    "title": "T146 — Desktop arena discovery, history and apply ui",
+    "card": "plans/tasks/P11/T146.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/arena"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T147",
+    "title": "T147 — Desktop built-ins and mcp naming/settings",
+    "card": "plans/tasks/P11/T147.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/tool-settings"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T148",
+    "title": "T148 — Desktop transcript tools, search chips and errors",
+    "card": "plans/tasks/P11/T148.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/tools"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T149",
+    "title": "T149 — Desktop voice settings, tests and transcription player",
+    "card": "plans/tasks/P11/T149.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/voice"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T150",
+    "title": "T150 — Desktop community theme and voice catalog service",
+    "card": "plans/tasks/P11/T150.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/community"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T151",
+    "title": "T151 — Desktop App Lock and PIN recovery UI",
+    "card": "plans/tasks/P11/T151.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/app-lock"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T152",
+    "title": "T152 — Desktop encrypted backup and restore",
+    "card": "plans/tasks/P11/T152.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/backup"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T153",
+    "title": "T153 — Desktop optional accounts and password recovery",
+    "card": "plans/tasks/P11/T153.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/account"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T154",
+    "title": "T154 — Desktop support board, attachments and release updates",
+    "card": "plans/tasks/P11/T154.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/support"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T155",
+    "title": "T155 — Desktop diagnostics, analytics and benchmark consent",
+    "card": "plans/tasks/P11/T155.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/diagnostics"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T156",
+    "title": "T156 — Desktop low battery, glass, full-width and app icons",
+    "card": "plans/tasks/P11/T156.md",
+    "phase": "P11",
+    "owned": [
+      "apps/desktop/features/appearance-behavior"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T157",
+    "title": "T157 — Working iPad full-feature milestone",
+    "card": "plans/tasks/P11/T157.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/ipad",
+      "docs/implementation/ipad"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T158",
+    "title": "T158 — First working iPhone offline and OpenAI chat",
+    "card": "plans/tasks/P04/T158.md",
+    "phase": "P04",
+    "owned": [
+      "apps/mobile/composition/first-run-chat",
+      "tests/smoke/iphone-offline",
+      "tests/smoke/iphone-openai",
+      "apps/mobile/app/chat.tsx"
+    ],
+    "existingOwned": [
+      "apps/mobile/composition/first-run-chat",
+      "tests/smoke/iphone-offline",
+      "tests/smoke/iphone-openai",
+      "apps/mobile/app/chat.tsx"
+    ],
+    "source": [
+      "apps/mobile/composition/first-run-chat/index.ts",
+      "tests/smoke/iphone-offline/README.md",
+      "tests/smoke/iphone-openai/README.md",
+      "apps/mobile/app/chat.tsx"
+    ]
+  },
+  {
+    "id": "T159",
+    "title": "T159 — Deep-verified iPhone internal release gate",
+    "card": "plans/tasks/P11/T159.md",
+    "phase": "P11",
+    "owned": [
+      "build/ios"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159A",
+    "title": "T159A — iPhone onboarding, models and providers deep checks",
+    "card": "plans/tasks/P11/T159A.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159a",
+      "docs/implementation/evidence/iphone/t159a"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159B",
+    "title": "T159B — iPhone Personas, memory and groups deep checks",
+    "card": "plans/tasks/P11/T159B.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159b",
+      "docs/implementation/evidence/iphone/t159b"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159C",
+    "title": "T159C — iPhone voice and media deep checks",
+    "card": "plans/tasks/P11/T159C.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159c",
+      "docs/implementation/evidence/iphone/t159c"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159D",
+    "title": "T159D — iPhone remote, sync and automation deep checks",
+    "card": "plans/tasks/P11/T159D.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159d",
+      "docs/implementation/evidence/iphone/t159d"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159E",
+    "title": "T159E — iPhone lock, accounts, purchases and data deep checks",
+    "card": "plans/tasks/P11/T159E.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159e",
+      "docs/implementation/evidence/iphone/t159e"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159F",
+    "title": "T159F — iPhone chat, files and parameters deep checks",
+    "card": "plans/tasks/P11/T159F.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159f",
+      "docs/implementation/evidence/iphone/t159f"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159G",
+    "title": "T159G — iPhone Arena and tool-loop deep checks",
+    "card": "plans/tasks/P11/T159G.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159g",
+      "docs/implementation/evidence/iphone/t159g"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T159H",
+    "title": "T159H — iPhone interface, accessibility and native appearance deep checks",
+    "card": "plans/tasks/P11/T159H.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/iphone/t159h",
+      "docs/implementation/evidence/iphone/t159h"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T160",
+    "title": "T160 — Android core, providers and chat parity",
+    "card": "plans/tasks/P11/T160.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t160",
+      "docs/implementation/evidence/parity/t160"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T161",
+    "title": "T161 — Android orchestration, tools and automation parity",
+    "card": "plans/tasks/P11/T161.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t161",
+      "docs/implementation/evidence/parity/t161"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T162",
+    "title": "T162 — Android speech and media parity",
+    "card": "plans/tasks/P11/T162.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t162",
+      "docs/implementation/evidence/parity/t162"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T163",
+    "title": "T163 — iPad layout and native parity",
+    "card": "plans/tasks/P11/T163.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t163",
+      "docs/implementation/evidence/parity/t163"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T164",
+    "title": "T164 — Mac full-client parity",
+    "card": "plans/tasks/P11/T164.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t164",
+      "docs/implementation/evidence/parity/t164"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T165",
+    "title": "T165 — Windows full-client parity",
+    "card": "plans/tasks/P11/T165.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t165",
+      "docs/implementation/evidence/parity/t165"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T166",
+    "title": "T166 — Linux full-client parity",
+    "card": "plans/tasks/P11/T166.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t166",
+      "docs/implementation/evidence/parity/t166"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T167",
+    "title": "T167 — Cross-device sync, service, privacy and failure parity",
+    "card": "plans/tasks/P11/T167.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t167",
+      "docs/implementation/evidence/parity/t167"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T168",
+    "title": "T168 — Android chat, files and parameter parity",
+    "card": "plans/tasks/P11/T168.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t168",
+      "docs/implementation/evidence/parity/t168"
+    ],
+    "existingOwned": [],
+    "source": []
+  },
+  {
+    "id": "T169",
+    "title": "T169 — Android Arena and tool parity",
+    "card": "plans/tasks/P11/T169.md",
+    "phase": "P11",
+    "owned": [
+      "tests/e2e/parity/t169",
+      "docs/implementation/evidence/parity/t169"
+    ],
+    "existingOwned": [],
+    "source": []
+  }
+]

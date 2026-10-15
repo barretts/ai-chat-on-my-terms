@@ -1,0 +1,29 @@
+{
+  "name": "@locallab/remote-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.mts"
+  },
+  "dependencies": {
+    "@locallab/contracts": "workspace:*",
+    "@locallab/remote-binary": "workspace:*",
+    "@locallab/remote-client": "workspace:*",
+    "@locallab/remote-crypto": "workspace:*",
+    "@locallab/service-contracts": "workspace:*",
+    "@locallab/sync-merge": "workspace:*",
+    "@locallab/sync-transport": "workspace:*",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@locallab/relay": "workspace:*",
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

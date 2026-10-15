@@ -1,0 +1,231 @@
+/**
+ * T098C (SY-01, SY-08) — live paired sync transport over the sealed
+ * pairing channel.
+ *
+ * - The queue holds ONLY the frozen wire payloads from the relay contract:
+ *   `sync-batch {records}` (≤ MAX_SYNC_RECORDS_PER_BATCH per batch) and
+ *   `sync-ack {recordIds}`; the composition layer seals them with the
+ *   pair's session keys before they touch the relay, so nothing here ever
+ *   sees plaintext crossing a network and nothing here can leak a batch
+ *   for a pair that has not opted in (`allowed()` is consulted on every
+ *   enqueue AND every pump step — a disabled pair never queues or sends).
+ * - At-least-once delivery with a resume cursor: a batch leaves the queue
+ *   only once every record id in it has been acked; the cursor advances
+ *   monotonically, so dropped, reordered or duplicated frames (sends or
+ *   acks) resume idempotently — replays collapse in the receiver's
+ *   revision merge (T098B) and stale acks are ignored here.
+ * - Retries are BOUNDED per batch (SY-08): after `maxAttempts` the
+ *   transport suspends with a user-visible failure note ("toggle Sync
+ *   chats off and on to retry" copy lives in the mobile feature) and
+ *   stays suspended until `wake()` — host wake / sleep resume.
+ */
+import { SyncRecordSchema, TombstoneSchema } from "@locallab/contracts/entities";
+import { createUuidV7 } from "@locallab/remote-crypto";
+import {
+  EncryptedPayloadSchema,
+  MAX_SYNC_RECORDS_PER_BATCH,
+  type EncryptedPayload,
+} from "@locallab/service-contracts/relay";
+import { z } from "zod";
+
+type SyncRecord = z.infer<typeof SyncRecordSchema>;
+type Tombstone = z.infer<typeof TombstoneSchema>;
+export type SyncChange = SyncRecord | Tombstone;
+type SyncBatchPayload = Extract<EncryptedPayload, { tag: "sync-batch" }>;
+type SyncAckPayload = Extract<EncryptedPayload, { tag: "sync-ack" }>;
+
+export class SyncTransportError extends Error {
+  readonly kind: "malformed";
+  constructor(kind: "malformed", message: string) {
+    super(message);
+    this.kind = kind;
+    this.name = "SyncTransportError";
+  }
+}
+
+/** Composition injects the sealed send (seal → relay socket). */
+export type SyncSendPort = (
+  payload: SyncBatchPayload,
+  requestId: string,
+) => Promise<void>;
+
+export type SyncTransportState = "idle" | "retrying" | "failed" | "disabled";
+
+export interface SyncTransportStatus {
+  state: SyncTransportState;
+  /** User-facing note; empty when healthy. Feed into syncFailureNote (SY-08). */
+  note: string;
+  pendingRecords: number;
+  resumeCursor: number;
+  attempts: number;
+}
+
+export interface SyncTransportOptions {
+  routeId: string;
+  send: SyncSendPort;
+  /** The single preferences gate (T098A `syncDataAllowed`). */
+  allowed: () => boolean;
+  maxAttempts?: number;
+  retryDelayMs?: number;
+  onStatus?: (status: SyncTransportStatus) => void;
+  /** Injectable delay so callers own timers (RN-safe; no node imports). */
+  delay?: (ms: number) => Promise<void>;
+}
+
+const CHANGE_SCHEMA = z.union([SyncRecordSchema, TombstoneSchema]);
+
+function defaultDelay(ms: number) {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
+}
+
+export class SyncTransport {
+  private readonly opts: Required<Omit<SyncTransportOptions, "onStatus">> & {
+    onStatus?: (status: SyncTransportStatus) => void;
+  };
+  private queue: SyncBatchPayload[] = [];
+  private readonly ackedIds = new Set<string>();
+  private cursor = 0;
+  private attempts = 0;
+  private suspended = false;
+  private noteText = "";
+  private state: SyncTransportState = "idle";
+
+  constructor(options: SyncTransportOptions) {
+    this.opts = {
+      routeId: options.routeId,
+      send: options.send,
+      allowed: options.allowed,
+      maxAttempts: options.maxAttempts ?? 5,
+      retryDelayMs: options.retryDelayMs ?? 50,
+      delay: options.delay ?? defaultDelay,
+      ...(options.onStatus !== undefined ? { onStatus: options.onStatus } : {}),
+    };
+  }
+
+  /** Queue validated records as ≤500-record encrypted-batch payloads. */
+  enqueue(records: readonly unknown[]): number {
+    if (!this.opts.allowed()) {
+      this.mark("disabled", "Sync is off for this pair.");
+      return 0;
+    }
+    const changes: SyncChange[] = [];
+    for (const raw of records) {
+      const parsed = CHANGE_SCHEMA.safeParse(raw);
+      if (!parsed.success)
+        throw new SyncTransportError("malformed", "record does not match the sync batch contract");
+      changes.push(parsed.data);
+    }
+    for (let i = 0; i < changes.length; i += MAX_SYNC_RECORDS_PER_BATCH) {
+      this.queue.push({ tag: "sync-batch", records: changes.slice(i, i + MAX_SYNC_RECORDS_PER_BATCH) });
+    }
+    this.publish();
+    return changes.length;
+  }
+
+  /** Apply a `sync-ack {recordIds}` frame; idempotent under replay/reorder. */
+  handleAck(frame: unknown): void {
+    const parsed = EncryptedPayloadSchema.safeParse(frame);
+    if (!parsed.success || parsed.data.tag !== "sync-ack")
+      throw new SyncTransportError("malformed", "not a sync-ack payload");
+    const ack = parsed.data as SyncAckPayload;
+    for (const id of ack.recordIds) this.ackedIds.add(id);
+    while (this.queue.length > 0 && this.isFullyAcked(this.queue[0]!)) {
+      this.queue.shift();
+      this.cursor += 1;
+      this.attempts = 0;
+      if (this.queue.length === 0 && !this.suspended) {
+        this.noteText = "";
+        this.state = "idle";
+      }
+    }
+    this.publish();
+  }
+
+  /** Pump the queue with bounded per-batch retries. */
+  async sendPending(): Promise<void> {
+    if (!this.opts.allowed()) {
+      this.mark("disabled", "Sync is off for this pair.");
+      return;
+    }
+    if (this.suspended) return;
+    while (this.queue.length > 0) {
+      if (!this.opts.allowed() || this.suspended) return;
+      const head = this.queue[0]!;
+      if (this.isFullyAcked(head)) {
+        this.queue.shift();
+        this.cursor += 1;
+        this.attempts = 0;
+        continue;
+      }
+      try {
+        // requestId must be UUIDv7 (the pairing wire contract rejects v4).
+        await this.opts.send(head, createUuidV7());
+        // Acks arrive asynchronously on the receive socket; stop this pass
+        // (window of one in flight) so we never spin — the composition
+        // re-invokes sendPending on ack timeout / reconnect / host wake.
+        if (!this.isFullyAcked(head)) return;
+        this.attempts = 0;
+      } catch {
+        this.attempts += 1;
+        if (this.attempts >= this.opts.maxAttempts) {
+          this.suspended = true;
+          this.mark("failed", `Sync failed: the paired device is unreachable (pair ${this.opts.routeId}).`);
+          return;
+        }
+        this.mark("retrying", `Sync retrying (attempt ${this.attempts + 1}).`);
+        await this.opts.delay(this.opts.retryDelayMs);
+      }
+    }
+    this.publish();
+  }
+
+  /** Host wake / off-on toggle: clear the suspension and resume pumping. */
+  wake(): void {
+    this.suspended = false;
+    this.noteText = "";
+    this.attempts = 0;
+    this.state = "idle";
+    this.publish();
+  }
+
+  status(): SyncTransportStatus {
+    return {
+      state: this.opts.allowed() ? this.state : "disabled",
+      note: this.opts.allowed() ? this.noteText : "Sync is off for this pair.",
+      pendingRecords: this.queue.reduce((sum, batch) => sum + batch.records.length, 0),
+      resumeCursor: this.cursor,
+      attempts: this.attempts,
+    };
+  }
+
+  private mark(state: SyncTransportState, note: string) {
+    this.state = state;
+    this.noteText = note;
+    this.publish();
+  }
+
+  private publish() {
+    this.opts.onStatus?.(this.status());
+  }
+
+  private isFullyAcked(batch: SyncBatchPayload): boolean {
+    return batch.records.every((record) => this.ackedIds.has(record.id));
+  }
+}
+
+/**
+ * Receiver helper the composition runs on the peer side: ack ONLY the
+ * record ids the local store accepted (malformed records in a batch are
+ * dropped, never acked, and a replayed batch re-acks harmlessly).
+ */
+export function syncAckPayload(recordIds: readonly string[]): SyncAckPayload {
+  const parsed = z
+    .object({ tag: z.literal("sync-ack"), recordIds: z.array(z.string().regex(/^[0-9a-f-]{36}$/i)).max(MAX_SYNC_RECORDS_PER_BATCH) })
+    .strict()
+    .safeParse({ tag: "sync-ack", recordIds: [...recordIds] });
+  if (!parsed.success)
+    throw new SyncTransportError("malformed", "ack ids exceed the batch contract");
+  return parsed.data as SyncAckPayload;
+}

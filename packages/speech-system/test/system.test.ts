@@ -125,6 +125,17 @@ describe("dictation permission", () => {
     const result = await listening;
     expect(result).toEqual({ ok: true, value: "hello world" });
   });
+
+  it("finalizes the capture when the listening cap elapses", async () => {
+    const native = new FakeNative();
+    const input = createSpeechSystemInput(native);
+    const result = await input.listen({
+      signal: new AbortController().signal,
+      maxListeningMs: 20,
+    });
+    expect(result).toEqual({ ok: true, value: "hello world" });
+    expect(native.calls.some((call) => call.startsWith("stop:"))).toBe(true);
+  });
 });
 
 describe("dictation locale and on-device policy", () => {

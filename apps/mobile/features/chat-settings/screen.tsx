@@ -28,6 +28,14 @@ import {
   useWorkspaceLayout,
 } from "@locallab/ui-native-primitives";
 import { useAppTheme } from "../themes/provider";
+import { AppearanceBehaviorSection } from "../appearance-behavior/section";
+import { AppLockSection } from "../app-lock/section";
+import { BackupSection } from "../backup/section";
+import { AccountSection } from "../account/section";
+import { BillingSection } from "../billing/section";
+import { CommunitySection } from "../community/section";
+import { SupportSection } from "../support/section";
+import { AnalyticsSection } from "../diagnostics/analytics-section";
 import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
 import { useDiagnostics } from "../diagnostics/context";
@@ -93,7 +101,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
     () => createStyles(paperTheme, phone),
     [paperTheme, phone],
   );
-  const { themePreference, setThemePreference } = useAppTheme();
+  const { themePreference, setThemePreference, openThemeEditor } = useAppTheme();
   const [presets, setPresets] = useState<SettingsPresets>(EMPTY_PRESETS);
   const [appearance, setAppearance] = useState<ChatAppearance>({});
   const [scope, setScope] = useState<SettingsScope>("chat");
@@ -522,6 +530,23 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
           ))}
         </View>
       )}
+      <View style={styles.row}>
+        <NativeButton
+          mode="outlined"
+          accessibilityLabel="Open the theme editor"
+          onPress={() => openThemeEditor()}
+        >
+          Customize theme…
+        </NativeButton>
+      </View>
+      <AppearanceBehaviorSection />
+      <AppLockSection />
+      <BackupSection />
+      <AccountSection />
+      <BillingSection />
+      <CommunitySection />
+      <SupportSection />
+      <AnalyticsSection />
       <SettingsSection
         phone={phone}
         title="Settings scope"

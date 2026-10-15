@@ -3,6 +3,10 @@ export interface SpeechVoice {
   name: string;
   modelId: string;
   speakerId: number;
+  /** BCP-47 tag of the language this voice speaks. */
+  language: string;
+  /** Language name shown to users, e.g. in the pack filter. */
+  languageName: string;
   description: string;
 }
 

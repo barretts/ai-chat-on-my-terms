@@ -1,0 +1,24 @@
+{
+  "name": "@locallab/remote-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.mts"
+  },
+  "dependencies": {
+    "@locallab/remote-crypto": "workspace:*",
+    "@locallab/service-contracts": "workspace:*",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@locallab/relay": "workspace:*",
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3"
+  }
+}

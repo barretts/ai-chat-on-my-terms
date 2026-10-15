@@ -6,6 +6,10 @@ import type {
   PersonaRecord,
   PersonaSwitchIntent,
 } from "@locallab/personas-library";
+import type { PersonaModelConnectionOption } from "../persona-bindings";
+import type {
+  PersonaGenerateHandler,
+} from "../persona-generator";
 
 export interface PersonaAvatar {
   attachmentId: string;
@@ -35,6 +39,17 @@ export interface PersonaFeatureProps {
   /** Refreshes the host's selected profile after a durable profile mutation. */
   onProfilesChanged?: () => Promise<void> | void;
   onClose?: () => void;
+  /** Optional AI Persona Generator (PE-06); results are review-only drafts. */
+  generatePersona?: PersonaGenerateHandler;
+  /** Global memory switches shown as defaults in the Persona editor. */
+  globalMemorySettings?: { extract: boolean; inject: boolean };
+  /** Persists the Persona sharing switch to the memory scope store. */
+  onPersonaMemoryPolicy?: (
+    personaId: string,
+    share: boolean,
+  ) => Promise<void> | void;
+  /** Saved provider connections offered as Persona model bindings (PE-02). */
+  modelConnections?: readonly PersonaModelConnectionOption[];
 }
 
 export interface PersonaEditorDraft {

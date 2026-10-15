@@ -1,0 +1,22 @@
+# Deployment definition for the paired-device relay.
+# Build context is the repository root:
+#   docker compose -f services/relay/docker-compose.relay.yml up -d --build
+services:
+  relay:
+    build:
+      context: ../..
+      dockerfile: services/relay/Dockerfile
+    ports:
+      - "8790:8790"
+    environment:
+      RELAY_PORT: "8790"
+      RELAY_MAX_CONNECTIONS: "64"
+      RELAY_MSGS_PER_SEC: "100"
+      RELAY_BYTES_PER_SEC: "4194304"
+      RELAY_HIGH_WATER_BYTES: "524288"
+      RELAY_ROUTE_TTL_MS: "2592000000"
+      RELAY_IDLE_TIMEOUT_MS: "30000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp

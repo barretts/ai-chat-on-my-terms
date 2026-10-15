@@ -1,0 +1,141 @@
+{
+  "protocol": "1.0",
+  "pairingSecretBase64Url": "oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8",
+  "mobileSaltBase64Url": "EBESExQVFhcYGRobHB0eHw",
+  "companionSaltBase64Url": "ICEiIyQlJicoKSorLC0uLw",
+  "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+  "mobileRouteTicketBase64Url": "MDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk8",
+  "mobileRouteTicketHash": "d8b46c6fe1aee8bdcd319edef3ae5de5cb7470e6a5522ca08d424c15fac3278c",
+  "helloKeyHex": "ad4bff47ccf90b7f4f5b3a6db3d9e718eb17c5d413c0b8cd76bde7434bff7a21",
+  "helloProofBase64Url": "qXVnELCt4eJe2WMdN15LhnUBXvAhNtcLnmcAFsILMq8",
+  "mobileToCompanionKeyHex": "67be8c7e3658d5b070e33ee21a4094df2dfe33838d2e1d5226fea631d95dc9f8",
+  "companionToMobileKeyHex": "1eb83b573a041cec37fc579134710bb6cb2ca3eba872853eb9e80775570d8b87",
+  "sealed": [
+    {
+      "name": "mobile-to-companion-seq0",
+      "direction": "mobile-to-companion",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
+      "sequence": 0,
+      "contentTag": "request",
+      "payloadJson": "{\"tag\":\"request\",\"body\":{\"kind\":\"ping\"}}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
+        "sequence": 0,
+        "nonceBase64Url": "VLmXKGHy8M1R4gxG",
+        "contentTag": "request",
+        "declaredSize": 56,
+        "ciphertextBase64Url": "ylyO9SXjUZGALZLkaNm2YksydWsOOKmbZahcf_xS3iguaTquJdWgGHtvQAIygW0rE7NbPQ7kpt0"
+      }
+    },
+    {
+      "name": "mobile-to-companion-seq1",
+      "direction": "mobile-to-companion",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
+      "sequence": 1,
+      "contentTag": "event",
+      "payloadJson": "{\"tag\":\"event\",\"event\":{\"runId\":\"0198f2a3-0000-7000-8000-0000000000d1\",\"sequence\":0,\"timestamp\":\"2026-10-14T00:00:00.000Z\",\"type\":\"RunStarted\"}}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
+        "sequence": 1,
+        "nonceBase64Url": "Apt0cbKk3yLtmeoy",
+        "contentTag": "event",
+        "declaredSize": 160,
+        "ciphertextBase64Url": "JqwrjhsrM2YLNp5WyIFfCS4-vRCCkn_O6qyPQZNBPqKhlaZZyweRtqVLGN3AlPZqXU0buEqZZeqARc7IoiJj5D2Wixp3qQUWPmWEEQ4CvdRck8QtFOTteKUrh_g-qC9lLaWCocVjAc5sE5I2ThtkgVZfJy0uKHBMt4N-TsEqUMSwcC_vU4Z4iyMDNxnblu2o6uVEGtAisfKXWg1UN4bJZg"
+      }
+    },
+    {
+      "name": "mobile-to-companion-seq5",
+      "direction": "mobile-to-companion",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
+      "sequence": 5,
+      "contentTag": "health",
+      "payloadJson": "{\"tag\":\"health\",\"nonce\":\"session-health-nonce-0001\"}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
+        "sequence": 5,
+        "nonceBase64Url": "gkKNziqo0GfoCUT0",
+        "contentTag": "health",
+        "declaredSize": 68,
+        "ciphertextBase64Url": "FvPH-olKusHkEYMsJsmyhsknb49J9Uy__eQgRn9NFvfyWFgOhrkZLolA1Du_HwZpWh9BeCj2wc3ShD8wd6tFOO75j00"
+      }
+    },
+    {
+      "name": "companion-to-mobile-seq0",
+      "direction": "companion-to-mobile",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
+      "sequence": 0,
+      "contentTag": "request",
+      "payloadJson": "{\"tag\":\"request\",\"body\":{\"kind\":\"ping\"}}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
+        "sequence": 0,
+        "nonceBase64Url": "BFsbCFGTXX3_l2Bt",
+        "contentTag": "request",
+        "declaredSize": 56,
+        "ciphertextBase64Url": "CKkTxMReh5BrQIWnn_vWeFCPyeFMWaKh1u1ztW_AbzSZi2GNlzdh4QxOVZ3b3psvKJoM7k6Oz8I"
+      }
+    },
+    {
+      "name": "companion-to-mobile-seq1",
+      "direction": "companion-to-mobile",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
+      "sequence": 1,
+      "contentTag": "event",
+      "payloadJson": "{\"tag\":\"event\",\"event\":{\"runId\":\"0198f2a3-0000-7000-8000-0000000000d1\",\"sequence\":0,\"timestamp\":\"2026-10-14T00:00:00.000Z\",\"type\":\"RunStarted\"}}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
+        "sequence": 1,
+        "nonceBase64Url": "GgfKiNBVKOugI0GX",
+        "contentTag": "event",
+        "declaredSize": 160,
+        "ciphertextBase64Url": "Dd-JeT09KE5Dz3kczEie2jGz0i2wnjS-dyzL3XHl2U3v2k7MNsuK3lRHw3Vjoj1Jw8Z-nHlyX5ONiFLIdpLtOD-CU-h7CqiUqbVNXGqPu0JQFPBPV92zsCb223LYJoHX6OD2N-tpmNcyLgTvZFosf_-qs4L5RjmrnBmIkFIzYtrQ3D9cOHo1Noh3qNYS82Oo3Inxbr5FjyV-fSbxPglf_g"
+      }
+    },
+    {
+      "name": "companion-to-mobile-seq5",
+      "direction": "companion-to-mobile",
+      "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
+      "sequence": 5,
+      "contentTag": "health",
+      "payloadJson": "{\"tag\":\"health\",\"nonce\":\"session-health-nonce-0001\"}",
+      "frame": {
+        "protocol": {
+          "major": 1,
+          "minor": 0
+        },
+        "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+        "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
+        "sequence": 5,
+        "nonceBase64Url": "h1v3nDpmEdTwKRcC",
+        "contentTag": "health",
+        "declaredSize": 68,
+        "ciphertextBase64Url": "Sqxm-1AAfubAVVPeK_L0-kcmBtwIrH1bvikEePHeZ4CwoaT4LKRDq-yDmxX5neZG_NTwCx_8ioLYrps1kTH3AkEY4MY"
+      }
+    }
+  ]
+}

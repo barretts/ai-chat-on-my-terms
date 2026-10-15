@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Linking, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Icon, List, ProgressBar, Switch, Text, useTheme } from "react-native-paper";
+import { Chip, Icon, List, ProgressBar, Switch, Text, useTheme } from "react-native-paper";
 import {
   NativeButton,
   NativeInput,
@@ -11,6 +11,7 @@ import {
 } from "@locallab/ui-native-primitives";
 import {
   mobileSpeech,
+  speechLanguages,
   speechModels,
   speechVoices,
 } from "../../platform/speech";
@@ -61,6 +62,13 @@ export function SpeechPanel({
   const feedbackMessage = actionError || stateError || actionNotice || state.message;
   const voice = speechVoices.find((item) => item.id === state.selectedVoiceId)!;
   const installed = state.installedModelIds.includes(voice.modelId);
+  const [languageFilter, setLanguageFilter] = useState("all");
+  const visibleVoices = speechVoices.filter(
+    (item) => languageFilter === "all" || item.language === languageFilter,
+  );
+  const visibleModels = speechModels.filter((model) =>
+    visibleVoices.some((item) => item.modelId === model.id),
+  );
   useEffect(() => {
     let active = true;
     mounted.current = true;
@@ -317,10 +325,23 @@ export function SpeechPanel({
             variant="bodyMedium"
             style={{ color: theme.colors.onSurfaceVariant }}
           >
-            One download can include several voices.
+            Each language downloads separately and keeps working offline.
           </Text>
         </View>
-        {speechModels.map((model) => (
+        <View style={styles.languageRow} testID="speech-language-filter">
+          {[{ tag: "all", label: "All" }, ...speechLanguages].map((item) => (
+            <Chip
+              key={item.tag}
+              testID={`speech-language-${item.tag}`}
+              selected={languageFilter === item.tag}
+              onPress={() => setLanguageFilter(item.tag)}
+              accessibilityLabel={`Filter voice packs by ${item.label}`}
+            >
+              {item.label}
+            </Chip>
+          ))}
+        </View>
+        {visibleModels.map((model) => (
           <NativeSurface
             key={model.id}
             accessibilityLabel={`${model.name} offline speech model`}
@@ -345,7 +366,7 @@ export function SpeechPanel({
               ) : null}
             </View>
             <View style={styles.phoneVoiceList}>
-              {speechVoices
+              {visibleVoices
                 .filter((item) => item.modelId === model.id)
                 .map((item) => (
                   <List.Item
@@ -621,7 +642,20 @@ export function SpeechPanel({
         {feedbackMessage}
         {state.progress === null ? "" : ` ${Math.round(state.progress * 100)}%`}
       </Text> : null}
-      {speechModels.map((model) => (
+      <View style={styles.languageRow} testID="speech-language-filter">
+        {[{ tag: "all", label: "All" }, ...speechLanguages].map((item) => (
+          <Chip
+            key={item.tag}
+            testID={`speech-language-${item.tag}`}
+            selected={languageFilter === item.tag}
+            onPress={() => setLanguageFilter(item.tag)}
+            accessibilityLabel={`Filter voice packs by ${item.label}`}
+          >
+            {item.label}
+          </Chip>
+        ))}
+      </View>
+      {visibleModels.map((model) => (
         <NativeSurface
           key={model.id}
           accessibilityLabel={`${model.name} offline speech model`}
@@ -631,7 +665,7 @@ export function SpeechPanel({
           <Text>
             {model.sizeLabel} · {model.license}
           </Text>
-          {speechVoices
+          {visibleVoices
             .filter((item) => item.modelId === model.id)
             .map((item) => (
               <View key={item.id} style={styles.voice}>
@@ -770,6 +804,7 @@ const styles = StyleSheet.create({
   phonePackHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   phonePackTitle: { flex: 1, gap: 4 },
   phoneVoiceList: { gap: 4 },
+  languageRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   phoneVoiceRow: { minHeight: 64, paddingHorizontal: 0 },
   phoneDisclosure: { backgroundColor: "transparent", padding: 0 },
   phoneDisclosureTitle: { fontSize: 14, fontWeight: "600" },

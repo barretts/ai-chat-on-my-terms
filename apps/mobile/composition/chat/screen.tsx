@@ -46,12 +46,24 @@ import {
 import { openMobileDatabase } from "../../platform/database-open";
 import { retryMobileDatabaseOpen } from "../../platform/database-retry";
 import { memoryModelControlPrompt } from "./persona-memory";
+import { resolvePersonaModelBinding } from "@locallab/personas-bindings";
+import { SQLiteGroupConfigStore } from "@locallab/groups-config";
+import { GroupSetupPanel } from "../../features/group-setup/screen";
+import { createMediaRuntime, type MediaRuntime } from "../media/providers";
+import { MediaPanel } from "../../features/media/screen";
+import { DEFAULT_WORKFLOW as DEFAULT_MEDIA_WORKFLOW } from "../../features/media";
+import { onChatTurnCompleted } from "@locallab/chat-media-hooks";
+import type { PersonaGroupIntent } from "@locallab/personas-library";
 import { createLocalChatPort } from "../../platform/local-chat-provider";
 import { createId as createChatId } from "../../platform/crypto";
 import { providerFetch } from "../../platform/provider-fetch";
 import { writeClipboardMarkdown } from "../../platform/clipboard";
 import { SpeechPanel } from "../../features/speech/screen";
-import { mobileSpeech } from "../../platform/speech";
+import {
+  mobileSpeech,
+  speechLanguages,
+  speechVoices,
+} from "../../platform/speech";
 import { listInstalledModels } from "../../platform/model-download";
 import {
   createGenerationSession,
@@ -104,6 +116,7 @@ import {
   withWorkspaceFileOutput,
   withVerifiedWorkspaceFileSave,
 } from "./workspace-file-output";
+import { ProviderPersonaGenerator } from "@locallab/personas-generator";
 import { mobileArchiveZip } from "./archives/zip";
 import {
   createSQLiteChatFeatureBindings,
@@ -132,6 +145,29 @@ import {
 } from "./dictation";
 import { dictationInput } from "../audio/dictation-input";
 import {
+  VoiceSettingsPanel,
+  type VoiceStudioPersona,
+} from "../../features/voice/screen";
+import {
+  createVoiceStudio,
+  type VoiceStudio,
+} from "../../features/voice/container";
+import {
+  DEFAULT_VOICE_PREFERENCES,
+  parsePersonaVoice,
+  personaVoicePatch,
+  resolveReadAloudTarget,
+  SQLiteTranscriptionImportStore,
+  SQLiteVoicePreferenceStore,
+  type ImportedTranscription,
+  type PersonaVoicePatchInput,
+  type VoicePreferences,
+} from "../../features/voice";
+import { whisperTranscription } from "../../platform/whisper";
+import { systemSpeechOutput } from "../audio/system-speech-output";
+import { SQLiteConnectionRepository } from "../../features/connections";
+import * as FileSystem from "expo-file-system/legacy";
+import {
   SQLiteToolSettingsStore,
   resolveToolPolicy,
 } from "../../features/tool-settings/settings";
@@ -156,9 +192,10 @@ import {
   managedBlobIdFromModelId,
   readTranscript,
 } from "../first-run-chat";
-import type {
-  AssistantTranscriptMessage,
-  UserTranscriptMessage,
+import {
+  assistantPlainText,
+  type AssistantTranscriptMessage,
+  type UserTranscriptMessage,
 } from "../../features/transcript/core";
 import {
   initializeMobileChatComposition,
@@ -254,11 +291,16 @@ type ChatRuntime = {
   webSettings: SQLiteWebResearchSettings;
   preferences: SQLiteComposerPreferenceStore;
   dictation: SQLiteDictationPreferenceStore;
+  voice: SQLiteVoicePreferenceStore;
+  voiceImports: SQLiteTranscriptionImportStore;
+  voiceStudio: VoiceStudio;
+  connectionRepo: SQLiteConnectionRepository;
   toolSettings: SQLiteToolSettingsStore;
   mcpServers: SQLiteMcpServerStore;
   lmStudioIntegrations: SQLiteLmStudioIntegrationStore;
   toolInvocations: SQLiteToolInvocationStore;
   identities: Awaited<ReturnType<typeof initializePersonaMemoryChat>>;
+  media: MediaRuntime;
 };
 type LocalModel = { id: string; label: string; sha256: string };
 type PendingLeave = { kind: "new" } | { kind: "open"; conversationId: string };
@@ -273,6 +315,16 @@ function conversationCleanupPorts(
     removeBlobReference: (blobId, owner) =>
       blobs.removeReference(blobId, owner),
   };
+}
+
+function toVoiceStudioPersonas(
+  personas: readonly PersonaRecord[],
+): VoiceStudioPersona[] {
+  return personas.map((persona) => ({
+    id: persona.id,
+    name: persona.name,
+    voice: parsePersonaVoice(persona.profile),
+  }));
 }
 
 const announce = (text: string) =>
@@ -325,6 +377,55 @@ export default function CompleteChatScreen() {
   );
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [runtime, setRuntime] = useState<ChatRuntime | null>(null);
+  const [personaMemorySwitches, setPersonaMemorySwitches] = useState({
+    extract: true,
+    inject: true,
+  });
+  useEffect(() => {
+    if (panel !== "personas" || !runtime) return;
+    void runtime.identities.memory
+      .preferences()
+      .then((value) =>
+        setPersonaMemorySwitches({
+          extract: value.extractionEnabled,
+          inject: value.injectionEnabled,
+        }),
+      );
+  }, [panel, runtime]);
+  const [personaConnections, setPersonaConnections] = useState<
+    { id: string; label: string; modelId: string }[]
+  >([]);
+  useEffect(() => {
+    if ((panel !== "personas" && panel !== "groups") || !runtime) return;
+    let active = true;
+    void runtime.registry
+      .list()
+      .then((registrations) => {
+        if (active)
+          setPersonaConnections(
+            registrations
+              .filter(
+                (registration) =>
+                  registration.modelId !== "model-discovery",
+              )
+              .map((registration) => ({
+                id: registration.id,
+                label: registration.label,
+                modelId: registration.modelId,
+              })),
+          );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [panel, runtime]);
+  const [pendingGroupSeat, setPendingGroupSeat] =
+    useState<PersonaGroupIntent | null>(null);
+  const groupConfigStore = useMemo(
+    () => (runtime ? new SQLiteGroupConfigStore(runtime.db) : null),
+    [runtime],
+  );
   const [mode, setMode] = useState<FirstRunMode>("local");
   const [models, setModels] = useState<LocalModel[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
@@ -499,6 +600,7 @@ export default function CompleteChatScreen() {
         const setup = new SQLiteOpenAIEndpointSetupRepository(database);
         const blobs = await openMobileBlobStore(database);
         await blobs.recoverImports();
+        const media = await createMediaRuntime({ db: database, blobs });
         const composition = await initializeMobileChatComposition(database);
         const identities = await initializePersonaMemoryChat(
           database,
@@ -537,6 +639,8 @@ export default function CompleteChatScreen() {
           modelId: process.env.EXPO_PUBLIC_STRATA_MODEL_ID,
         });
         const webSettings = new SQLiteWebResearchSettings(database);
+        const voiceImports = new SQLiteTranscriptionImportStore(database);
+        const connectionRepo = new SQLiteConnectionRepository(database);
         await database.execAsync(
           "CREATE TABLE IF NOT EXISTS phone_model_choice_local (singleton INTEGER PRIMARY KEY CHECK(singleton=1), provider_id TEXT NOT NULL)",
         );
@@ -578,6 +682,7 @@ export default function CompleteChatScreen() {
             },
           }),
           blobs,
+          media,
           connectionId: fallback?.connectionId ?? connectionId,
           fallbackModelId: fallback?.modelId ?? null,
           conversationId: activeConversationId,
@@ -591,6 +696,17 @@ export default function CompleteChatScreen() {
           webSettings,
           preferences: new SQLiteComposerPreferenceStore(database),
           dictation: new SQLiteDictationPreferenceStore(database),
+          voice: new SQLiteVoicePreferenceStore(database),
+          voiceImports,
+          voiceStudio: createVoiceStudio({
+            whisper: whisperTranscription,
+            imports: voiceImports,
+            offlineSpeech: mobileSpeech,
+            systemSpeech: systemSpeechOutput,
+            secrets: secretStore,
+            connections: connectionRepo,
+          }),
+          connectionRepo,
           toolSettings: new SQLiteToolSettingsStore(database),
           mcpServers: new SQLiteMcpServerStore(database),
           lmStudioIntegrations: new SQLiteLmStudioIntegrationStore(database),
@@ -713,9 +829,208 @@ export default function CompleteChatScreen() {
     },
     [],
   );
+  const [voicePrefs, setVoicePrefs] =
+    useState<VoicePreferences>(DEFAULT_VOICE_PREFERENCES);
+  const voicePrefsRef = useRef(voicePrefs);
+  voicePrefsRef.current = voicePrefs;
+  const [voiceImports, setVoiceImports] = useState<ImportedTranscription[]>(
+    [],
+  );
+  const [voiceImportBusy, setVoiceImportBusy] = useState(false);
+  const [voicePlaybackId, setVoicePlaybackId] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState("");
+  const [voiceNotice, setVoiceNotice] = useState("");
+  const [voicePersonas, setVoicePersonas] = useState<VoiceStudioPersona[]>([]);
+  const [voiceConnections, setVoiceConnections] = useState<
+    readonly { id: string; name: string; kind: string }[]
+  >([]);
+  const voiceWhisper = useSyncExternalStore(
+    whisperTranscription.subscribe,
+    whisperTranscription.snapshot,
+    whisperTranscription.snapshot,
+  );
+  useEffect(() => {
+    if (!runtime) return;
+    let active = true;
+    void runtime.voice
+      .load()
+      .then((stored) => {
+        if (active) setVoicePrefs(stored ?? DEFAULT_VOICE_PREFERENCES);
+      })
+      .catch(() => {});
+    void Promise.all([
+      runtime.voiceImports.list(),
+      runtime.identities.personas.list(),
+      runtime.connectionRepo.list(),
+    ])
+      .then(([imports, personas, connections]) => {
+        if (!active) return;
+        setVoiceImports(imports);
+        setVoicePersonas(toVoiceStudioPersonas(personas));
+        setVoiceConnections(
+          connections
+            .filter(
+              (connection) =>
+                connection.kind === "elevenlabs" ||
+                connection.kind === "xai",
+            )
+            .map((connection) => ({
+              id: connection.id,
+              name: connection.name,
+              kind: connection.kind,
+            })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [runtime]);
+  const saveVoicePrefs = useCallback(
+    (update: Partial<VoicePreferences>) => {
+      const next = { ...voicePrefsRef.current, ...update };
+      setVoicePrefs(next);
+      const store = liveRuntime.current?.voice;
+      if (!store) return;
+      void store.save(next).catch((cause: unknown) =>
+        setVoiceError(
+          describeError(cause, {
+            operation: "Save voice preference",
+            recovery:
+              "Choose the option again to retry. It may reset after reopening the app.",
+          }),
+        ),
+      );
+    },
+    [],
+  );
+  const bindPersonaVoice = useCallback(
+    (personaId: string, patch: PersonaVoicePatchInput) => {
+      const current = liveRuntime.current;
+      if (!current) return;
+      void current.identities.personas
+        .update(personaId, { profile: personaVoicePatch(patch) })
+        .then(() => current.identities.personas.list())
+        .then((personas) => setVoicePersonas(toVoiceStudioPersonas(personas)))
+        .catch((cause: unknown) =>
+          setVoiceError(
+            describeError(cause, {
+              operation: "Save Persona voice",
+              recovery:
+                "Pick the Persona voice again. If it keeps failing, reopen Personas.",
+            }),
+          ),
+        );
+    },
+    [],
+  );
+  const importVoiceFile = useCallback(() => {
+    const current = liveRuntime.current;
+    if (!current) return;
+    setVoiceError("");
+    setVoiceNotice("");
+    setVoiceImportBusy(true);
+    void current.voiceStudio
+      .importFile(undefined, voicePrefsRef.current.locale || undefined)
+      .then((row) => {
+        setVoiceNotice(
+          row.text
+            ? `Transcribed "${row.name}". It stays playable here.`
+            : `"${row.name}" is playable, but its transcription failed.`,
+        );
+        return current.voiceImports.list().then(setVoiceImports);
+      })
+      .catch((cause: unknown) =>
+        setVoiceError(
+          describeError(cause, {
+            operation: "Transcribe an audio file",
+            recovery:
+              "Download a Whisper model in Voices first, then import the file again.",
+          }),
+        ),
+      )
+      .finally(() => setVoiceImportBusy(false));
+  }, []);
+  const playVoiceImport = useCallback((item: ImportedTranscription) => {
+    const current = liveRuntime.current;
+    if (!current) return;
+    setVoiceError("");
+    setVoicePlaybackId(item.id);
+    void current.voiceStudio
+      .play(item.audioUri)
+      .catch((cause: unknown) =>
+        setVoiceError(
+          describeError(cause, {
+            operation: "Play imported audio",
+            recovery: "Re-import the file if it no longer plays.",
+          }),
+        ),
+      )
+      .finally(() =>
+        setVoicePlaybackId((id) => (id === item.id ? null : id)),
+      );
+  }, []);
+  const stopVoicePlayback = useCallback(() => {
+    void (liveRuntime.current?.voiceStudio.stopPlayback() ?? Promise.resolve())
+      .catch((cause: unknown) =>
+        setVoiceError(
+          describeError(cause, {
+            operation: "Stop audio playback",
+            recovery: "Play the file again, then stop it once more.",
+          }),
+        ),
+      );
+  }, []);
+  const removeVoiceImport = useCallback(
+    (item: ImportedTranscription) => {
+      const current = liveRuntime.current;
+      if (!current) return;
+      setVoiceError("");
+      void (async () => {
+        if (voicePlaybackId === item.id)
+          await current.voiceStudio.stopPlayback();
+        await current.voiceImports.remove(item.id);
+        await FileSystem.deleteAsync(item.audioUri, { idempotent: true });
+        return current.voiceImports.list();
+      })()
+        .then(setVoiceImports)
+        .catch((cause: unknown) =>
+          setVoiceError(
+            describeError(cause, {
+              operation: "Delete imported audio",
+              recovery: "Try deleting the file again.",
+            }),
+          ),
+        );
+    },
+    [voicePlaybackId],
+  );
+  const testVoiceSample = useCallback(() => {
+    const current = liveRuntime.current;
+    if (!current) return;
+    setVoiceError("");
+    void current.voiceStudio
+      .readAloud(
+        resolveReadAloudTarget(voicePrefsRef.current, undefined),
+        "Hello. This is how your selected voice will read replies aloud.",
+        voicePrefsRef.current.locale,
+      )
+      .catch((cause: unknown) =>
+        setVoiceError(
+          describeError(cause, {
+            operation: "Test the selected voice",
+            recovery:
+              "Pick another engine or install the voice pack, then test again.",
+          }),
+        ),
+      );
+  }, []);
   const startDictation = useCallback(
     (handlers: { onPartial: (text: string) => void }) =>
-      dictation.start(handlers, dictationPrefsRef.current.locale),
+      dictation.start(handlers, dictationPrefsRef.current.locale, {
+        silenceTimeoutMs: voicePrefsRef.current.silenceTimeoutMs,
+        maxListeningMs: voicePrefsRef.current.maxListeningMs,
+      }),
     [dictation],
   );
   useEffect(() => {
@@ -1076,9 +1391,19 @@ export default function CompleteChatScreen() {
         let providerId: string;
         let connectionId: string;
         let port: ProviderPort<any>;
-        const selected = await runtime.registry.selected(
-          runtime.conversationId,
+        const personaBinding = await resolvePersonaModelBinding(
+          identity.profile,
+          (boundId) => runtime.registry.get(boundId),
         );
+        if (personaBinding.status === "missing") {
+          const message =
+            personaBinding.message ?? "Persona model is unavailable.";
+          setError(message);
+          throw new Error(message);
+        }
+        const selected =
+          personaBinding.registration ??
+          (await runtime.registry.selected(runtime.conversationId));
         // Refresh each send: the same model can be restarted with a different limit.
         const detectedContext = selected
           ? await discoverRegisteredModelContext(selected, {
@@ -1634,14 +1959,18 @@ export default function CompleteChatScreen() {
             `${handle.contextUsage.inputTokens} / ${handle.contextUsage.tokenBudget} input tokens  -  ${handle.contextUsage.omittedMessageIds.length} messages omitted`,
           );
           let runFailed = false;
+          let runCanceled = false;
+          let finalAssistant = "";
           for await (const event of handle.events) {
             if (event.type === "RunFailed") runFailed = true;
             if (event.type === "RunStarted")
               traceLog.event("Generate response", "start");
             if (event.type === "RunCompleted")
               traceLog.event("Generate response", "complete");
-            if (event.type === "RunCanceled")
+            if (event.type === "RunCanceled") {
+              runCanceled = true;
               traceLog.event("Generate response", "cancelled");
+            }
             if (event.type === "RunFailed")
               setError(
                 describeError(chatFailureCause(event.error), {
@@ -1657,8 +1986,64 @@ export default function CompleteChatScreen() {
             );
             setUsers(transcript.users);
             setAssistants(transcript.assistants);
+            const lastAssistant = transcript.assistants.at(-1);
+            if (lastAssistant)
+              finalAssistant = assistantPlainText(lastAssistant);
           }
           if (runFailed) return false;
+          if (
+            runtime.media.service &&
+            !runCanceled &&
+            AppState.currentState === "active"
+          )
+            void onChatTurnCompleted(
+              {
+                conversationId: runtime.conversationId,
+                assistantText: finalAssistant,
+                finalState: "completed",
+                personaProfile: identity.profile,
+              },
+              {
+                service: runtime.media.service,
+                defaultWorkflow: DEFAULT_MEDIA_WORKFLOW,
+                findWorkflow: (workflowName) =>
+                  workflowName === DEFAULT_MEDIA_WORKFLOW.name
+                    ? DEFAULT_MEDIA_WORKFLOW
+                    : undefined,
+              },
+            ).catch((cause: unknown) =>
+              traceLog.event("Image request from reply", "failed", {
+                errorName:
+                  cause instanceof Error ? cause.name : "unknown",
+              }),
+            );
+          if (
+            voicePrefsRef.current.autoRead &&
+            finalAssistant.trim() !== "" &&
+            !runCanceled &&
+            screenMounted.current &&
+            AppState.currentState === "active"
+          ) {
+            traceLog.event("Read reply aloud", "start");
+            void runtime.voiceStudio
+              .readAloud(
+                resolveReadAloudTarget(
+                  voicePrefsRef.current,
+                  persona ?? undefined,
+                ),
+                finalAssistant,
+                voicePrefsRef.current.locale,
+              )
+              .catch((cause: unknown) =>
+                setError(
+                  describeError(cause, {
+                    operation: "Read reply aloud",
+                    recovery:
+                      "Open Voice settings, choose a ready voice, or turn auto-read off.",
+                  }),
+                ),
+              );
+          }
           if (
             memoryPolicy.extract &&
             screenMounted.current &&
@@ -2370,6 +2755,8 @@ export default function CompleteChatScreen() {
                   "diagnostics",
                   "archives",
                   "personas",
+                  "groups",
+                  "media",
                   "memory",
                 ] as const
               )
@@ -2397,6 +2784,8 @@ export default function CompleteChatScreen() {
                               diagnostics: "bug-outline",
                               archives: "archive-outline",
                               personas: "account-outline",
+                              groups: "account-group-outline",
+                              media: "image-outline",
                               tools: "wrench-outline",
                               memory: "bookmark-outline",
                             } as const
@@ -2575,7 +2964,9 @@ export default function CompleteChatScreen() {
                     "archives",
                     "providers",
                     "voices",
+                    "voice",
                     "personas",
+                    "groups",
                     "memory",
                   ] as const
                 )
@@ -2589,6 +2980,7 @@ export default function CompleteChatScreen() {
                         "settings",
                         "providers",
                         "voices",
+                        "voice",
                         "tools",
                       ].includes(value),
                   )
@@ -2887,6 +3279,35 @@ export default function CompleteChatScreen() {
             onAutosendChange: (autosend) => saveDictationPrefs({ autosend }),
           }}
         />
+      ) : panel === "voice" ? (
+        <VoiceSettingsPanel
+          prefs={voicePrefs}
+          onPrefsChange={saveVoicePrefs}
+          voices={speechVoices.map((voice) => ({
+            id: voice.id,
+            name: voice.name,
+          }))}
+          locales={speechLanguages.map((language) => language.tag)}
+          personas={voicePersonas}
+          cloudConnections={voiceConnections}
+          onBinding={bindPersonaVoice}
+          imports={voiceImports}
+          whisper={{
+            phase: voiceWhisper.phase,
+            progress: voiceWhisper.progress,
+            message: voiceWhisper.message,
+            installed: voiceWhisper.installedModelIds.length > 0,
+          }}
+          busy={voiceImportBusy}
+          playingId={voicePlaybackId}
+          error={voiceError}
+          notice={voiceNotice}
+          onImport={importVoiceFile}
+          onPlay={playVoiceImport}
+          onStopPlayback={stopVoicePlayback}
+          onRemove={removeVoiceImport}
+          onTestVoice={testVoiceSample}
+        />
       ) : panel === "providers" ? (
         <ProviderSetupPanel
           registry={runtime.registry}
@@ -2905,10 +3326,50 @@ export default function CompleteChatScreen() {
       ) : panel === "personas" ? (
         <PersonaScreen
           library={runtime.identities.personas}
-          groupUnavailableReason="Group chats are not available in this build."
           createId={createChatId}
           currentConversationId={runtime.conversationId}
           {...(avatarPort ? { avatarPort } : {})}
+          globalMemorySettings={personaMemorySwitches}
+          onPersonaMemoryPolicy={async (personaId, share) => {
+            await runtime.identities.memoryScope.setPolicy(personaId, { share });
+          }}
+          modelConnections={personaConnections}
+          generatePersona={async (idea, signal) => {
+            const selected = await runtime.registry.selected(
+              runtime.conversationId,
+            );
+            if (!selected || selected.modelId === "model-discovery")
+              return {
+                status: "failed",
+                message:
+                  "Choose a model in Connections before generating a Persona.",
+              } as const;
+            try {
+              return await new ProviderPersonaGenerator({
+                port: createRegisteredChatProvider(selected, {
+                  toolsEnabled: false,
+                  ninferThinkingControl: false,
+                  fetch: providerFetch as FetchLike,
+                  secrets: runtime.secrets,
+                  lmStudioIntegrations: () =>
+                    runtime.lmStudioIntegrations.load(),
+                  nativePort: (value) =>
+                    value.kind === "local-gguf"
+                      ? createLocalChatPort(runtime.blobs)
+                      : undefined,
+                }),
+                providerConnectionId: selected.id,
+                modelId: selected.modelId,
+                createId: createChatId,
+              }).generate({ idea, signal });
+            } catch {
+              return {
+                status: "failed",
+                message:
+                  "The selected provider could not start the generation.",
+              } as const;
+            }
+          }}
           {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
           onProfilesChanged={async () => {
             setPersona(
@@ -2943,10 +3404,37 @@ export default function CompleteChatScreen() {
               );
             await openConversation(intent.conversationId);
           }}
-          onAddToGroup={() => {
-            throw new Error("Group chats are not available in this build.");
+          onAddToGroup={(intent) => {
+            setPendingGroupSeat(intent);
+            setPanel("groups");
           }}
         />
+      ) : panel === "groups" && groupConfigStore ? (
+        <GroupSetupPanel
+          store={groupConfigStore}
+          library={runtime.identities.personas}
+          connections={personaConnections}
+          conversationId={runtime.conversationId}
+          createId={createChatId}
+          pendingSeat={pendingGroupSeat}
+          onPendingSeatConsumed={() => setPendingGroupSeat(null)}
+        />
+      ) : panel === "media" && runtime.media ? (
+        runtime.media.service ? (
+          <MediaPanel
+            service={runtime.media.service}
+            scheduler={runtime.media.scheduler}
+            settings={runtime.media.settings}
+            reviews={runtime.media.reviews}
+            workflows={[DEFAULT_MEDIA_WORKFLOW]}
+            conversationId={runtime.conversationId}
+          />
+        ) : (
+          <Text style={{ padding: 16 }}>
+            {runtime.media.failure?.message ??
+              "Image generation is not configured on this device."}
+          </Text>
+        )
       ) : panel === "memory" ? (
         <MemoryScreen
           store={runtime.identities.memory}
@@ -3014,7 +3502,11 @@ export default function CompleteChatScreen() {
           secrets={runtime.secrets}
           {...(!layout.phone ? { onClose: () => setPanel(null) } : {})}
         />
-      ) : panel && panel !== "archives" && panel !== "files" ? (
+      ) : panel &&
+        panel !== "archives" &&
+        panel !== "files" &&
+        panel !== "groups" &&
+        panel !== "media" ? (
         <ChatPanels
           panel={panel}
           hideBackButton={layout.phone}
@@ -3218,26 +3710,23 @@ export default function CompleteChatScreen() {
                 }
               : {})}
             onReadAloud={(text) => {
-              void mobileSpeech
-                .refresh()
-                .then(() =>
-                  mobileSpeech.speak(
-                    text,
-                    typeof persona?.profile.speechVoiceId === "string" &&
-                      persona.profile.speechVoiceId !== "default"
-                      ? persona.profile.speechVoiceId
-                      : undefined,
-                    typeof persona?.profile.speechRate === "number"
-                      ? persona.profile.speechRate
-                      : undefined,
+              const current = liveRuntime.current;
+              if (!current) return;
+              void current.voiceStudio
+                .readAloud(
+                  resolveReadAloudTarget(
+                    voicePrefsRef.current,
+                    persona ?? undefined,
                   ),
+                  text,
+                  voicePrefsRef.current.locale,
                 )
                 .catch((cause: unknown) => {
                   setError(
                     describeError(cause, {
                       operation: "Read response aloud",
                       recovery:
-                        "Open Voices and select a fully installed voice, then retry reading aloud.",
+                        "Open Voice settings, pick a ready voice, and try again.",
                     }),
                   );
                 });

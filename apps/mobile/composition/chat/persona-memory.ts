@@ -1,5 +1,4 @@
 import {
-  DEFAULT_PERSONA_ID,
   SQLitePersonaLibrary,
   type PersonaRunSnapshot,
 } from "@locallab/personas-library";
@@ -9,6 +8,7 @@ import {
   type MemoryPolicy,
   type MemoryPreferences,
 } from "@locallab/memory-extraction";
+import { SQLitePersonaMemoryScope, scopedMemoryPolicy } from "@locallab/memory-scope";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
 
 /** The app migration runner creates the base optional tables before these stores open. */
@@ -20,28 +20,23 @@ export async function initializePersonaMemoryChat(
   await personas.initialize();
   const memory = new SQLiteMemoryStore(db, { createId });
   await memory.initialize();
+  const memoryScope = new SQLitePersonaMemoryScope(db);
+  await memoryScope.initialize();
   await memory.recoverInterruptedExtractions();
   return {
     personas,
     memory,
+    memoryScope,
     memoryExtraction: new MemoryExtractionCoordinator(memory),
   };
 }
 
-/** Custom Personas keep their own facts until explicit sharing is implemented. */
+/** Per-Persona profile switches override the global memory switches. */
 export function personaMemoryPolicy(
-  identity: Pick<PersonaRunSnapshot, "personaId">,
+  identity: Pick<PersonaRunSnapshot, "personaId" | "profile">,
   preferences: MemoryPreferences,
 ): MemoryPolicy {
-  const isDefault = identity.personaId === DEFAULT_PERSONA_ID;
-  return {
-    extract: preferences.extractionEnabled,
-    inject: preferences.injectionEnabled,
-    scope: isDefault
-      ? { scope: "global", scopeId: null }
-      : { scope: "persona", scopeId: identity.personaId },
-    includeGlobal: isDefault,
-  };
+  return scopedMemoryPolicy(identity, preferences);
 }
 
 export function personaSystemPrompt(

@@ -90,6 +90,12 @@ export class AudioSessionCoordinator {
                   options.onPartial?.(text);
               },
             }),
+        ...(options.silenceTimeoutMs === undefined
+          ? {}
+          : { silenceTimeoutMs: options.silenceTimeoutMs }),
+        ...(options.maxListeningMs === undefined
+          ? {}
+          : { maxListeningMs: options.maxListeningMs }),
       });
     } catch (cause) {
       result = audioFailure(

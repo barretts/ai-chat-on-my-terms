@@ -10,7 +10,8 @@
     "test": "tsx --test test/scheduler.test.ts test/sqlite-store.test.ts"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./memory-store": "./src/memory-store.ts"
   },
   "dependencies": {
     "@locallab/contracts": "workspace:*",

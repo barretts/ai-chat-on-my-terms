@@ -19,12 +19,14 @@ export {
   personaMemoryPolicy,
   personaSystemPrompt,
 } from "./persona-memory";
+import { SQLiteGroupConfigStore } from "@locallab/groups-config";
 
 /** Initializes additive chat features after the app core schema exists. */
 export async function initializeMobileChatComposition(db: SQLiteDatabasePort) {
   await initializeChatHistory(db);
   await initializeConversationLibrary(db);
   await SQLiteChatSettingsStore.initialize(db);
+  await SQLiteGroupConfigStore.initialize(db);
   return {
     library: new SQLiteConversationLibrary(db),
     settingsForConversation: (conversationId: string) =>

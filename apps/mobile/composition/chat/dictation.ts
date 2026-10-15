@@ -84,6 +84,7 @@ export class DictationController {
   async start(
     handlers: { onPartial: (text: string) => void },
     locale: string,
+    limits: { silenceTimeoutMs: number; maxListeningMs: number },
   ): Promise<DictationOutcome> {
     this.cancel();
     const controller = new AbortController();
@@ -92,6 +93,8 @@ export class DictationController {
       ...(locale ? { locale } : {}),
       signal: controller.signal,
       onPartial: handlers.onPartial,
+      silenceTimeoutMs: limits.silenceTimeoutMs,
+      maxListeningMs: limits.maxListeningMs,
     });
     if (this.active === controller) this.active = null;
     const info = this.input.operationInfo();

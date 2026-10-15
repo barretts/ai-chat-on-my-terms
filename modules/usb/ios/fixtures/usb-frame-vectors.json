@@ -1,0 +1,21 @@
+{
+  "protocol": "locallab-usb-v1",
+  "maxPayloadBytes": 1048576,
+  "frames": [
+    {
+      "name": "empty",
+      "payloadBase64Url": "",
+      "frameHex": "00000000"
+    },
+    {
+      "name": "ascii-hi",
+      "payloadBase64Url": "aGk",
+      "frameHex": "000000026869"
+    },
+    {
+      "name": "usb-hello-sample",
+      "payloadBase64Url": "eyJ0YWciOiJ1c2ItaGVsbG8iLCJzaWRlIjoibW9iaWxlIiwicHJvdG9jb2wiOiJsb2NhbGxhYi11c2ItdjEiLCJyb3V0ZUlkIjoiMDE5OGYyYTMtMDAwMC03MDAwLTgwMDAtMDAwMDAwMDAwMGMzIiwicHJvb2YiOiJfVDBzVmQ3eFJ6MFhLMVZXN0M3a1oxbVM1TjJwUTh3TDllQjN5SDZhSzBxIn0",
+      "frameHex": "000000a77b22746167223a227573622d68656c6c6f222c2273696465223a226d6f62696c65222c2270726f746f636f6c223a226c6f63616c6c61622d7573622d7631222c22726f7574654964223a2230313938663261332d303030302d373030302d383030302d303030303030303030306333222c2270726f6f66223a225f54307356643778527a30584b3156573743376b5a316d53354e32705138774c39654233794836614b3071227d"
+    }
+  ]
+}

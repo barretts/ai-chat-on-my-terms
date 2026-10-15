@@ -2,7 +2,9 @@ import {
   audioFailure,
   type AudioAvailability,
   type AudioResult,
+  type SpeakOptions,
   type SpeechInputPort,
+  type SpeechOutputPort,
 } from "@locallab/audio-session";
 
 export type NativePermission =
@@ -50,6 +52,10 @@ export interface DictationListenOptions {
   locale?: string;
   signal: AbortSignal;
   onPartial?: (text: string) => void;
+  /** Silence that may end dictation early; device speech applies it. */
+  silenceTimeoutMs?: number;
+  /** Hard cap on listening; recognition finalizes automatically once elapsed. */
+  maxListeningMs?: number;
 }
 
 /**
@@ -213,7 +219,12 @@ export function createSpeechSystemInput(
         listenOptions.signal?.addEventListener("abort", finalize, {
           once: true,
         });
+        const timer =
+          listenOptions.maxListeningMs === undefined
+            ? undefined
+            : setTimeout(finalize, listenOptions.maxListeningMs);
         final = await promise;
+        clearTimeout(timer);
       }
       release(entry);
       return final;
@@ -224,6 +235,242 @@ export function createSpeechSystemInput(
     operationInfo: () => info,
     async dispose() {
       await settleActive();
+    },
+  };
+}
+
+/** A system text-to-speech voice installed on the device. */
+export interface SystemVoice {
+  identifier: string;
+  language: string;
+  name: string;
+}
+
+export interface NativeSpeakOptions {
+  text: string;
+  language?: string;
+  voiceIdentifier?: string;
+  /** Rate multiplier around the system default; 1.0 = normal. */
+  rate: number;
+  /** Pitch multiplier; 1.0 = normal. */
+  pitch: number;
+}
+
+/**
+ * T072 system-output half: the native module exposes AVSpeechSynthesizer
+ * here while capture stays on `NativeSpeechSystem`. The `speak` promise
+ * settles when playback finishes, is stopped or is interrupted.
+ */
+export interface NativeSystemSpeechOutput {
+  getSpeakAvailability(): Promise<
+    NativeResult<{ availability: AudioAvailability }>
+  >;
+  getSpeechVoices(): Promise<NativeResult<SystemVoice[]>>;
+  isSpeaking(): boolean;
+  speak(options: NativeSpeakOptions): Promise<NativeResult<null>>;
+  stopSpeaking(): Promise<NativeResult<null>>;
+}
+
+export interface SystemSpeechOutputPort extends SpeechOutputPort {
+  getVoices(): Promise<AudioResult<SystemVoice[]>>;
+}
+
+function nativeErrorMessage(cause: unknown, fallback: string): string {
+  return cause instanceof Error ? cause.message : fallback;
+}
+
+function mapOutputFailure(
+  error: { code: string; message: string },
+): AudioResult<never> {
+  if (error.code === "UNAVAILABLE")
+    return audioFailure("unavailable", error.message, false);
+  if (error.code === "BUSY")
+    return audioFailure("busy", error.message, true);
+  if (error.code === "CANCELED")
+    return audioFailure("canceled", error.message, true);
+  return audioFailure("failed", error.message, true);
+}
+
+export function createSystemSpeechOutput(
+  native: NativeSystemSpeechOutput,
+): SystemSpeechOutputPort {
+  let disposed = false;
+  return {
+    async getAvailability(): Promise<AudioResult<AudioAvailability>> {
+      if (disposed)
+        return audioFailure(
+          "unavailable",
+          "The system voice was disposed.",
+          false,
+        );
+      try {
+        const result = await native.getSpeakAvailability();
+        if (!result.ok) return mapOutputFailure(result.error);
+        return { ok: true, value: result.value.availability };
+      } catch (cause) {
+        return audioFailure(
+          "unavailable",
+          nativeErrorMessage(cause, "The system voice is unavailable."),
+          false,
+        );
+      }
+    },
+    async getVoices(): Promise<AudioResult<SystemVoice[]>> {
+      try {
+        const result = await native.getSpeechVoices();
+        if (!result.ok) return mapOutputFailure(result.error);
+        return { ok: true, value: result.value };
+      } catch (cause) {
+        return audioFailure(
+          "unavailable",
+          nativeErrorMessage(cause, "System voices could not be listed."),
+          false,
+        );
+      }
+    },
+    isSpeaking(): boolean {
+      try {
+        return native.isSpeaking();
+      } catch {
+        return false;
+      }
+    },
+    async speak(text, options): Promise<AudioResult<void>> {
+      if (disposed)
+        return audioFailure(
+          "unavailable",
+          "The system voice was disposed.",
+          false,
+        );
+      if (text.trim() === "") return { ok: true, value: undefined };
+      const signal = options.signal;
+      if (signal?.aborted)
+        return audioFailure(
+          "canceled",
+          "Playback was canceled before it started.",
+          true,
+        );
+      const request: NativeSpeakOptions = {
+        text,
+        rate: options.rate ?? 1,
+        pitch: options.pitch ?? 1,
+      };
+      if (options.language !== undefined) request.language = options.language;
+      if (options.voiceId !== undefined)
+        request.voiceIdentifier = options.voiceId;
+      try {
+        const started = native.speak(request);
+        if (!signal) {
+          const result = await started;
+          return result.ok
+            ? { ok: true, value: undefined }
+            : mapOutputFailure(result.error);
+        }
+        const { promise: canceled, resolve: resolveCanceled } =
+          Promise.withResolvers<AudioResult<void>>();
+        signal.addEventListener(
+          "abort",
+          () => {
+            // Stopping is best-effort; the canceled outcome is already final.
+            void native.stopSpeaking().catch(() => {});
+            resolveCanceled(
+              audioFailure("canceled", "Playback was canceled.", true),
+            );
+          },
+          { once: true },
+        );
+        return await Promise.race([
+          started.then((result) =>
+            result.ok
+              ? { ok: true as const, value: undefined }
+              : mapOutputFailure(result.error),
+          ),
+          canceled,
+        ]);
+      } catch (cause) {
+        return audioFailure(
+          "failed",
+          nativeErrorMessage(cause, "System playback failed."),
+          true,
+        );
+      }
+    },
+    async stop(): Promise<AudioResult<void>> {
+      try {
+        const result = await native.stopSpeaking();
+        if (!result.ok) return mapOutputFailure(result.error);
+        return { ok: true, value: undefined };
+      } catch (cause) {
+        return audioFailure(
+          "failed",
+          nativeErrorMessage(cause, "System playback could not be stopped."),
+          true,
+        );
+      }
+    },
+    async dispose(): Promise<void> {
+      disposed = true;
+      try {
+        await native.stopSpeaking();
+      } catch {
+        // Idle disposal must stay safe.
+      }
+    },
+  };
+}
+
+/**
+ * Raw PCM capture half of the native module (T077 local Whisper). Capture is
+ * exclusive: the module rejects a second owner while dictation or another
+ * capture holds the microphone.
+ */
+export interface NativePcmCaptureModule {
+  requestCapturePermission(): Promise<NativeResult<{ granted: boolean }>>;
+  startCapture(options: { sampleRate: number }): Promise<NativeResult<null>>;
+  stopCapture(): Promise<
+    NativeResult<{ sampleRate: number; samples: number[] }>
+  >;
+  cancelCapture(): Promise<NativeResult<null>>;
+}
+
+export interface PcmCapturePort {
+  requestPermission(): Promise<boolean>;
+  start(sampleRate: number): Promise<void>;
+  stop(): Promise<{ sampleRate: number; samples: number[] }>;
+  cancel(): Promise<void>;
+}
+
+export function createPcmCapture(
+  native: NativePcmCaptureModule,
+): PcmCapturePort {
+  return {
+    async requestPermission(): Promise<boolean> {
+      try {
+        const result = await native.requestCapturePermission();
+        return result.ok && result.value.granted;
+      } catch {
+        return false;
+      }
+    },
+    async start(sampleRate: number): Promise<void> {
+      const result = await native.startCapture({ sampleRate });
+      if (!result.ok)
+        throw new Error(result.error.message || "Could not start audio capture.");
+    },
+    async stop(): Promise<{ sampleRate: number; samples: number[] }> {
+      const result = await native.stopCapture();
+      if (!result.ok)
+        throw new Error(
+          result.error.message || "Audio capture could not be finalized.",
+        );
+      return result.value;
+    },
+    async cancel(): Promise<void> {
+      try {
+        await native.cancelCapture();
+      } catch {
+        // Discarding a capture is best-effort.
+      }
     },
   };
 }

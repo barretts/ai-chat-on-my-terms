@@ -9,6 +9,8 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
+    "@locallab/tools-hosted-search": "workspace:*",
+    "@locallab/tools-sandbox": "workspace:*",
     "fastify": "4.28.1"
   },
   "devDependencies": {

@@ -1,0 +1,323 @@
+import { z } from "zod";
+
+export const THEMES_SCHEMA_VERSION = 1;
+
+export type ThemeScheme = "light" | "dark";
+export type BubbleStyle = "classic" | "rounded" | "sharp";
+export type FontChoice = "system" | "serif" | "mono";
+export type AvatarSize = "small" | "medium" | "large";
+export type AvatarPlacement = "leading" | "trailing" | "hidden";
+
+export interface PaletteV1 {
+  background: string;
+  surface: string;
+  primary: string;
+  text: string;
+}
+
+export interface GradientV1 {
+  from: string;
+  to: string;
+  angleDegrees: number;
+}
+
+export interface ThemeControlsV1 {
+  fontScale: number;
+  bubbleStyle: BubbleStyle;
+  gradient: GradientV1 | null;
+  backgroundDim: number;
+  avatarSize: AvatarSize;
+  avatarPlacement: AvatarPlacement;
+  fontChoice: FontChoice;
+}
+
+export interface ThemeV1 {
+  version: 1;
+  id: string;
+  name: string;
+  kind: "builtin" | "custom";
+  scheme: ThemeScheme;
+  palette: PaletteV1;
+  controls: ThemeControlsV1;
+}
+
+export interface AppearanceOverrideV1 {
+  version: 1;
+  themeId?: string;
+  fontScale?: number;
+  bubbleStyle?: BubbleStyle;
+  gradient?: GradientV1 | null;
+  backgroundDim?: number;
+  avatarSize?: AvatarSize;
+  avatarPlacement?: AvatarPlacement;
+  fontChoice?: FontChoice;
+}
+
+const HEX_COLOR_RE = /^#[0-9a-f]{6}$/;
+const THEME_ID_RE = /^[a-z0-9][a-z0-9-]{1,62}$/;
+
+const FONT_SCALE_MIN = 0.8;
+const FONT_SCALE_MAX = 2.0;
+const BACKGROUND_DIM_MIN = 0;
+const BACKGROUND_DIM_MAX = 0.6;
+
+const DEFAULT_CONTROLS: ThemeControlsV1 = {
+  fontScale: 1,
+  bubbleStyle: "classic",
+  gradient: null,
+  backgroundDim: 0,
+  avatarSize: "medium",
+  avatarPlacement: "leading",
+  fontChoice: "system",
+};
+
+const BUBBLE_STYLES: Record<string, true> = { classic: true, rounded: true, sharp: true };
+const FONT_CHOICES: Record<string, true> = { system: true, serif: true, mono: true };
+const AVATAR_SIZES: Record<string, true> = { small: true, medium: true, large: true };
+const AVATAR_PLACEMENTS: Record<string, true> = {
+  leading: true,
+  trailing: true,
+  hidden: true,
+};
+
+export const BUILTIN_THEME_IDS = ["builtin", "light", "dark"] as const;
+
+export const BUILTIN_THEMES: readonly ThemeV1[] = [
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "builtin",
+    name: "Locallab Default",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#faf9f7",
+      surface: "#ffffff",
+      primary: "#59328b",
+      text: "#26232b",
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "light",
+    name: "Light",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#ffffff",
+      surface: "#f2f1ef",
+      primary: "#59328b",
+      text: "#1c1a20",
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "dark",
+    name: "Dark",
+    kind: "builtin",
+    scheme: "dark",
+    palette: {
+      background: "#19171c",
+      surface: "#242128",
+      primary: "#d3b0ff",
+      text: "#f2edf5",
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+];
+
+export function isHexColor(value: string): boolean {
+  return HEX_COLOR_RE.test(value);
+}
+
+const hexColorSchema = z.string().regex(HEX_COLOR_RE);
+const fontScaleSchema = z.number().min(FONT_SCALE_MIN).max(FONT_SCALE_MAX);
+const backgroundDimSchema = z
+  .number()
+  .min(BACKGROUND_DIM_MIN)
+  .max(BACKGROUND_DIM_MAX);
+const angleSchema = z.number().int().min(0).max(359);
+
+const gradientSchema = z
+  .object({ from: hexColorSchema, to: hexColorSchema, angleDegrees: angleSchema })
+  .strict();
+
+const paletteSchema = z
+  .object({
+    background: hexColorSchema,
+    surface: hexColorSchema,
+    primary: hexColorSchema,
+    text: hexColorSchema,
+  })
+  .strict();
+
+const importControlsSchema = z
+  .object({
+    fontScale: fontScaleSchema,
+    bubbleStyle: z.enum(["classic", "rounded", "sharp"]),
+    gradient: gradientSchema.nullable(),
+    backgroundDim: backgroundDimSchema,
+    avatarSize: z.enum(["small", "medium", "large"]),
+    avatarPlacement: z.enum(["leading", "trailing", "hidden"]),
+    fontChoice: z.enum(["system", "serif", "mono"]),
+  })
+  .strict();
+
+const themeImportSchema = z
+  .object({
+    version: z.literal(1),
+    id: z.string().regex(THEME_ID_RE),
+    name: z.string().min(1).max(48),
+    kind: z.enum(["builtin", "custom"]).optional(),
+    scheme: z.enum(["light", "dark"]),
+    palette: paletteSchema,
+    controls: importControlsSchema,
+  })
+  .strict();
+
+const overrideImportSchema = z
+  .object({
+    version: z.literal(1),
+    themeId: z.string().min(1).max(64).optional(),
+    fontScale: fontScaleSchema.optional(),
+    bubbleStyle: z.enum(["classic", "rounded", "sharp"]).optional(),
+    gradient: gradientSchema.nullable().optional(),
+    backgroundDim: backgroundDimSchema.optional(),
+    avatarSize: z.enum(["small", "medium", "large"]).optional(),
+    avatarPlacement: z.enum(["leading", "trailing", "hidden"]).optional(),
+    fontChoice: z.enum(["system", "serif", "mono"]).optional(),
+  })
+  .strict();
+
+function formatIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const where = issue.path.join(".") || "(root)";
+      const expected = "expected" in issue ? ` (expected ${issue.expected})` : "";
+      return `${where}: ${issue.message}${expected}`;
+    })
+    .join("; ");
+}
+
+function clampNumber(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampGradient(gradient: GradientV1 | null): GradientV1 | null {
+  if (gradient === null) return null;
+  return {
+    ...gradient,
+    angleDegrees: clampNumber(Math.round(gradient.angleDegrees), 0, 359, 0),
+  };
+}
+
+function pickEnum<T extends string>(
+  value: T | undefined,
+  allowed: Record<string, true>,
+  fallback: T,
+): T {
+  return value !== undefined && value in allowed ? value : fallback;
+}
+
+function normalizeControls(partial: Partial<ThemeControlsV1>): ThemeControlsV1 {
+  return {
+    fontScale:
+      partial.fontScale === undefined
+        ? DEFAULT_CONTROLS.fontScale
+        : clampNumber(partial.fontScale, FONT_SCALE_MIN, FONT_SCALE_MAX, 1),
+    bubbleStyle: pickEnum(partial.bubbleStyle, BUBBLE_STYLES, DEFAULT_CONTROLS.bubbleStyle),
+    gradient:
+      partial.gradient === undefined
+        ? null
+        : clampGradient(partial.gradient),
+    backgroundDim:
+      partial.backgroundDim === undefined
+        ? DEFAULT_CONTROLS.backgroundDim
+        : clampNumber(
+            partial.backgroundDim,
+            BACKGROUND_DIM_MIN,
+            BACKGROUND_DIM_MAX,
+            0,
+          ),
+    avatarSize: pickEnum(partial.avatarSize, AVATAR_SIZES, DEFAULT_CONTROLS.avatarSize),
+    avatarPlacement: pickEnum(
+      partial.avatarPlacement,
+      AVATAR_PLACEMENTS,
+      DEFAULT_CONTROLS.avatarPlacement,
+    ),
+    fontChoice: pickEnum(partial.fontChoice, FONT_CHOICES, DEFAULT_CONTROLS.fontChoice),
+  };
+}
+
+export function clampControls(partial: Partial<ThemeControlsV1>): ThemeControlsV1 {
+  return normalizeControls(partial);
+}
+
+export function resolveAppearance(
+  theme: ThemeV1,
+  override: AppearanceOverrideV1 | null,
+  allThemes: readonly ThemeV1[],
+) {
+  let resolvedTheme = theme;
+  if (override?.themeId !== undefined) {
+    const found = allThemes.find((candidate) => candidate.id === override.themeId);
+    if (found !== undefined) resolvedTheme = found;
+  }
+  const controls = normalizeControls(resolvedTheme.controls);
+  if (override === null) return { theme: resolvedTheme, controls };
+  return {
+    theme: resolvedTheme,
+    controls: normalizeControls({
+      ...controls,
+      ...(override.fontScale !== undefined ? { fontScale: override.fontScale } : {}),
+      ...(override.bubbleStyle !== undefined ? { bubbleStyle: override.bubbleStyle } : {}),
+      ...(override.gradient !== undefined ? { gradient: override.gradient } : {}),
+      ...(override.backgroundDim !== undefined ? { backgroundDim: override.backgroundDim } : {}),
+      ...(override.avatarSize !== undefined ? { avatarSize: override.avatarSize } : {}),
+      ...(override.avatarPlacement !== undefined
+        ? { avatarPlacement: override.avatarPlacement }
+        : {}),
+      ...(override.fontChoice !== undefined ? { fontChoice: override.fontChoice } : {}),
+    }),
+  };
+}
+
+export function parseThemeImport(
+  raw: unknown,
+): { ok: true; theme: ThemeV1 } | { ok: false; reason: string } {
+  const parsed = themeImportSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, reason: formatIssues(parsed.error) };
+  return {
+    ok: true as const,
+    theme: {
+      version: THEMES_SCHEMA_VERSION,
+      id: parsed.data.id,
+      name: parsed.data.name,
+      kind: "custom" as const,
+      scheme: parsed.data.scheme,
+      palette: parsed.data.palette,
+      controls: parsed.data.controls,
+    },
+  };
+}
+
+export function parseOverrideImport(
+  raw: unknown,
+): { ok: true; override: AppearanceOverrideV1 } | { ok: false; reason: string } {
+  const parsed = overrideImportSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, reason: formatIssues(parsed.error) };
+  const override: AppearanceOverrideV1 = { version: THEMES_SCHEMA_VERSION };
+  if (parsed.data.themeId !== undefined) override.themeId = parsed.data.themeId;
+  if (parsed.data.fontScale !== undefined) override.fontScale = parsed.data.fontScale;
+  if (parsed.data.bubbleStyle !== undefined) override.bubbleStyle = parsed.data.bubbleStyle;
+  if (parsed.data.gradient !== undefined) override.gradient = parsed.data.gradient;
+  if (parsed.data.backgroundDim !== undefined) override.backgroundDim = parsed.data.backgroundDim;
+  if (parsed.data.avatarSize !== undefined) override.avatarSize = parsed.data.avatarSize;
+  if (parsed.data.avatarPlacement !== undefined) {
+    override.avatarPlacement = parsed.data.avatarPlacement;
+  }
+  if (parsed.data.fontChoice !== undefined) override.fontChoice = parsed.data.fontChoice;
+  return { ok: true as const, override };
+}

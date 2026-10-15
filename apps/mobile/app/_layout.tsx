@@ -6,7 +6,16 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppThemeProvider } from "../features/themes/provider";
 import { MessengerDesktop } from "../features/themes/messenger-desktop";
 import { installNativeAbortCompatibility } from "../platform/abort-compatibility";
+import { AppLockProvider } from "../features/app-lock/provider";
+import { BackupProvider } from "../features/backup/provider";
+import { AccountProvider } from "../features/account/provider";
 import { DiagnosticsProvider } from "../features/diagnostics/provider";
+import { BillingProvider, useBilling } from "../features/billing/provider";
+import { CommunityProvider } from "../features/community/provider";
+import { SupportProvider } from "../features/support/provider";
+import type { ReactNode } from "react";
+import { AppearanceBehaviorProvider } from "../features/appearance-behavior/provider";
+import { reactNativeBatterySource } from "../features/appearance-behavior/battery-rn";
 import { ErrorNotice } from "../features/diagnostics/error-notice";
 import { describeError } from "../features/diagnostics/errors";
 
@@ -60,13 +69,40 @@ function RootNavigator() {
   );
 }
 
+function ProAwareLockProvider({ children }: { children: ReactNode }) {
+  const { entitlementPort } = useBilling();
+  return (
+    <AppLockProvider
+      {...(entitlementPort === null ? {} : { entitlements: entitlementPort })}
+    >
+      {children}
+    </AppLockProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-        <DiagnosticsProvider>
-          <RootNavigator />
-        </DiagnosticsProvider>
+        <AppearanceBehaviorProvider
+          batterySource={reactNativeBatterySource()}
+        >
+          <AccountProvider>
+            <BillingProvider>
+              <CommunityProvider>
+                <SupportProvider>
+                  <ProAwareLockProvider>
+                    <BackupProvider>
+                      <DiagnosticsProvider>
+                        <RootNavigator />
+                      </DiagnosticsProvider>
+                    </BackupProvider>
+                  </ProAwareLockProvider>
+                </SupportProvider>
+              </CommunityProvider>
+            </BillingProvider>
+          </AccountProvider>
+        </AppearanceBehaviorProvider>
       </AppThemeProvider>
     </SafeAreaProvider>
   );

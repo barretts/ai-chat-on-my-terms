@@ -19,6 +19,15 @@ public final class SpeechSystemModule: Module {
 
   private var engine: AVAudioEngine?
   private var active: [String: ActiveRequest] = [:]
+  private lazy var synthesizer: AVSpeechSynthesizer = {
+    let synth = AVSpeechSynthesizer()
+    synth.delegate = self
+    return synth
+  }()
+  private var speakPromise: Promise?
+  private var captureEngine: AVAudioEngine?
+  private var captureBuffer: [Float] = []
+  private var captureRate: Double = 16000
 
   private final class StartOptions: Record {
     @Field var requestId: String = ""
@@ -28,6 +37,18 @@ public final class SpeechSystemModule: Module {
 
   private final class RequestOptions: Record {
     @Field var requestId: String = ""
+  }
+
+  private final class SpeakOptions: Record {
+    @Field var text: String = ""
+    @Field var language: String? = nil
+    @Field var voiceIdentifier: String? = nil
+    @Field var rate: Double = 1.0
+    @Field var pitch: Double = 1.0
+  }
+
+  private final class CaptureOptions: Record {
+    @Field var sampleRate: Double = 16000
   }
 
   public func definition() -> ModuleDefinition {
@@ -200,6 +221,152 @@ public final class SpeechSystemModule: Module {
       }
       return ["ok": true, "value": NSNull()]
     }
+
+    // MARK: - System text-to-speech (T072 system output half)
+
+    Function("isSpeaking") { () -> Bool in
+      self.synthesizer.isSpeaking
+    }
+
+    AsyncFunction("getSpeakAvailability") { () -> [String: Any] in
+      ["ok": true, "value": ["availability": "ready"]]
+    }
+
+    AsyncFunction("getSpeechVoices") { () -> [String: Any] in
+      let voices = AVSpeechSynthesisVoice.speechVoices().map { voice in
+        [
+          "identifier": voice.identifier,
+          "language": voice.language,
+          "name": voice.name,
+        ]
+      }
+      return ["ok": true, "value": voices]
+    }
+
+    AsyncFunction("speak") { (options: SpeakOptions, promise: Promise) in
+      guard !options.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        promise.resolve(["ok": true, "value": NSNull()])
+        return
+      }
+      guard self.speakPromise == nil, !self.synthesizer.isSpeaking else {
+        promise.resolve(Self.failure("BUSY", "The system voice is already speaking."))
+        return
+      }
+      let utterance = AVSpeechUtterance(string: options.text)
+      let rate = max(0.5, min(2.0, options.rate))
+      let pitch = max(0.5, min(2.0, options.pitch))
+      utterance.rate = AVSpeechUtteranceDefaultSpeechRate * Float(rate)
+      utterance.pitchMultiplier = Float(pitch)
+      if let identifier = options.voiceIdentifier,
+         let voice = AVSpeechSynthesisVoice(identifier: identifier) {
+        utterance.voice = voice
+      } else if let language = options.language {
+        utterance.voice = AVSpeechSynthesisVoice(language: language)
+      }
+      self.speakPromise = promise
+      self.synthesizer.speak(utterance)
+    }
+
+    AsyncFunction("stopSpeaking") { () -> [String: Any] in
+      self.stopSpeak(["ok": true, "value": NSNull()])
+      return ["ok": true, "value": NSNull()]
+    }
+
+    // MARK: - Raw PCM capture for local Whisper (T077)
+
+    AsyncFunction("requestCapturePermission") { (promise: Promise) in
+      if AVAudioApplication.shared.recordPermission == .granted {
+        promise.resolve(["ok": true, "value": ["granted": true]])
+        return
+      }
+      AVAudioApplication.requestRecordPermission { granted in
+        DispatchQueue.main.async {
+          promise.resolve(["ok": true, "value": ["granted": granted]])
+        }
+      }
+    }
+
+    AsyncFunction("startCapture") { (options: CaptureOptions, promise: Promise) in
+      guard self.captureEngine == nil else {
+        promise.resolve(Self.failure("BUSY", "Audio capture is already running."))
+        return
+      }
+      guard self.active.isEmpty else {
+        promise.resolve(Self.failure("BUSY", "Dictation is using the microphone."))
+        return
+      }
+      do {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
+        let engine = AVAudioEngine()
+        let input = engine.inputNode
+        let inputFormat = input.outputFormat(forBus: 0)
+        let rate = options.sampleRate > 0 ? options.sampleRate : 16000
+        guard let target = AVAudioFormat(
+          commonFormat: .pcmFormatFloat32,
+          sampleRate: rate,
+          channels: 1,
+          interleaved: false
+        ), let converter = AVAudioConverter(from: inputFormat, to: target) else {
+          throw NSError(
+            domain: "SpeechSystem",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "Could not configure the audio converter."]
+          )
+        }
+        self.captureBuffer.removeAll()
+        self.captureRate = rate
+        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+          guard let self else { return }
+          let ratio = target.sampleRate / inputFormat.sampleRate
+          let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 1
+          guard let out = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else {
+            return
+          }
+          var fed = false
+          var conversionError: NSError?
+          converter.convert(to: out, error: &conversionError) { status, outCondition in
+            if fed {
+              status.pointee = .noDataNow
+              return nil
+            }
+            fed = true
+            status.pointee = .haveData
+            return buffer
+          }
+          guard conversionError == nil, out.frameLength > 0,
+                let channel = out.floatChannelData?[0] else { return }
+          self.captureBuffer.append(contentsOf: channel[0..<Int(out.frameLength)])
+        }
+        engine.prepare()
+        engine.start()
+        self.captureEngine = engine
+        promise.resolve(["ok": true, "value": NSNull()])
+      } catch {
+        self.teardownCapture()
+        promise.resolve(
+          Self.failure("FAILED", "Could not start audio capture: \(error.localizedDescription)")
+        )
+      }
+    }
+
+    AsyncFunction("stopCapture") { () -> [String: Any] in
+      self.teardownCapture()
+      return [
+        "ok": true,
+        "value": [
+          "sampleRate": self.captureRate,
+          "samples": self.captureBuffer
+        ]
+      ]
+    }
+
+    AsyncFunction("cancelCapture") { () -> [String: Any] in
+      self.teardownCapture()
+      self.captureBuffer.removeAll()
+      return ["ok": true, "value": NSNull()]
+    }
   }
 
   private func configureAudioSession() -> String? {
@@ -232,7 +399,51 @@ public final class SpeechSystemModule: Module {
     engine = nil
   }
 
+  /// Settles the pending `speak` promise once, before any delegate callback
+  /// for the same utterance can touch it again.
+  private func stopSpeak(_ result: [String: Any]) {
+    guard let promise = speakPromise else {
+      return
+    }
+    speakPromise = nil
+    if synthesizer.isSpeaking || synthesizer.isPaused {
+      synthesizer.stopSpeaking(at: .immediate)
+    }
+    DispatchQueue.main.async {
+      promise.resolve(result)
+    }
+  }
+  private func teardownCapture() {
+    if let engine = captureEngine {
+      engine.inputNode.removeTap(onBus: 0)
+      engine.stop()
+    }
+    captureEngine = nil
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+  }
   private static func failure(_ code: String, _ message: String) -> [String: Any] {
     ["ok": false, "error": ["code": code, "message": message]]
+  }
+}
+
+extension SpeechSystemModule: AVSpeechSynthesizerDelegate {
+  public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    DispatchQueue.main.async {
+      guard let promise = self.speakPromise else {
+        return
+      }
+      self.speakPromise = nil
+      promise.resolve(["ok": true, "value": NSNull()])
+    }
+  }
+
+  public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    DispatchQueue.main.async {
+      guard let promise = self.speakPromise else {
+        return
+      }
+      self.speakPromise = nil
+      promise.resolve(Self.failure("CANCELED", "System playback was interrupted."))
+    }
   }
 }

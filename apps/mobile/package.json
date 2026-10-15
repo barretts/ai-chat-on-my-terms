@@ -31,6 +31,7 @@
     "@locallab/generation-lifecycle-ios": "workspace:*",
     "@locallab/gguf-ios": "workspace:*",
     "@locallab/jobs": "workspace:*",
+    "@locallab/localization": "workspace:*",
     "@locallab/memory-extraction": "workspace:*",
     "@locallab/models-catalog": "workspace:*",
     "@locallab/models-fit": "workspace:*",
@@ -53,7 +54,9 @@
     "@locallab/security-secrets": "workspace:*",
     "@locallab/storage-blobs": "workspace:*",
     "@locallab/storage-sqlite-core": "workspace:*",
+    "@locallab/themes-schema": "workspace:*",
     "@locallab/tools-engine": "workspace:*",
+    "@locallab/workflows-integration": "workspace:*",
     "@locallab/ui-native-primitives": "workspace:*",
     "@noble/hashes": "1.8.0",
     "@siteed/sherpa-onnx.rn": "1.3.2-beta.0",
@@ -92,7 +95,10 @@
     "@locallab/tools-builtins": "workspace:*",
     "@locallab/tools-mcp-http": "workspace:*",
     "@locallab/tools-mcp-lmstudio": "workspace:*",
-    "@locallab/tools-searxng": "workspace:*"
+    "@locallab/tools-searxng": "workspace:*",
+    "@locallab/remote-binary": "workspace:*",
+    "@locallab/remote-client": "workspace:*",
+    "@locallab/sync-transport": "workspace:*"
   },
   "devDependencies": {
     "@react-native/metro-config": "0.86.3",

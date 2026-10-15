@@ -17,6 +17,8 @@ import { dictationInput as webDictationInput } from "../audio/dictation-input.we
 interface Capture {
   signal: AbortSignal;
   onPartial?: (text: string) => void;
+  silenceTimeoutMs?: number;
+  maxListeningMs?: number;
   settle: (result: AudioResult<string>) => void;
   canceled: boolean;
 }
@@ -67,6 +69,12 @@ function fakeInput(behaviour: "final" | "permission-denied" = "final") {
         signal: options.signal ?? new AbortController().signal,
         // The session coordinator hands the wrapped partial callback here.
         onPartial: options.onPartial,
+        ...(options.silenceTimeoutMs === undefined
+          ? {}
+          : { silenceTimeoutMs: options.silenceTimeoutMs }),
+        ...(options.maxListeningMs === undefined
+          ? {}
+          : { maxListeningMs: options.maxListeningMs }),
         canceled: false,
         settle: pending.resolve,
       };
@@ -116,7 +124,11 @@ it("stop finalizes the capture once with disclosed locale and on-device status",
   const { input } = fakeInput();
   const controller = new DictationController(input, fakeSpeech());
   const partials: string[] = [];
-  const run = controller.start({ onPartial: (text) => partials.push(text) }, "");
+  const run = controller.start(
+    { onPartial: (text) => partials.push(text) },
+    "",
+    { silenceTimeoutMs: 1500, maxListeningMs: 45000 },
+  );
   await flushMicrotasks();
   controller.stop();
   const outcome = await run;
@@ -129,10 +141,27 @@ it("stop finalizes the capture once with disclosed locale and on-device status",
   expect(partials).toEqual(["half of the sentence"]);
 });
 
+it("listening limits reach the recognizer through the session coordinator", async () => {
+  const { input, captureAt } = fakeInput();
+  const controller = new DictationController(input, fakeSpeech());
+  const run = controller.start({ onPartial: () => {} }, "", {
+    silenceTimeoutMs: 2500,
+    maxListeningMs: 60000,
+  });
+  await flushMicrotasks();
+  expect(captureAt(0).silenceTimeoutMs).toBe(2500);
+  expect(captureAt(0).maxListeningMs).toBe(60000);
+  controller.cancel();
+  expect((await run).status).toBe("canceled");
+});
+
 it("cancel discards the capture and tells the recognizer to discard the result", async () => {
   const { input, cancelCount } = fakeInput();
   const controller = new DictationController(input, fakeSpeech());
-  const run = controller.start({ onPartial: () => {} }, "");
+  const run = controller.start({ onPartial: () => {} }, "", {
+    silenceTimeoutMs: 1500,
+    maxListeningMs: 45000,
+  });
   await flushMicrotasks();
   controller.cancel();
   const outcome = await run;
@@ -151,12 +180,14 @@ it("a newer dictation pre-empts the older capture and delivers one outcome each"
   const first = controller.start(
     { onPartial: (text) => firstPartials.push(text) },
     "",
+    { silenceTimeoutMs: 1500, maxListeningMs: 45000 },
   );
   await flushMicrotasks();
   const staleCapture = captureAt(0);
   const second = controller.start(
     { onPartial: (text) => secondPartials.push(text) },
     "fr-FR",
+    { silenceTimeoutMs: 1500, maxListeningMs: 45000 },
   );
   await flushMicrotasks();
   expect(await first).toEqual({ status: "canceled" });
@@ -179,7 +210,10 @@ it("a newer dictation pre-empts the older capture and delivers one outcome each"
 it("surfaces permission failures with honest recovery guidance", async () => {
   const { input } = fakeInput("permission-denied");
   const controller = new DictationController(input, fakeSpeech());
-  const outcome = await controller.start({ onPartial: () => {} }, "");
+  const outcome = await controller.start({ onPartial: () => {} }, "", {
+    silenceTimeoutMs: 1500,
+    maxListeningMs: 45000,
+  });
   expect(outcome.status === "error" && outcome.code).toBe("permission");
   expect(
     outcome.status === "error" &&
@@ -189,7 +223,10 @@ it("surfaces permission failures with honest recovery guidance", async () => {
 
 it("the web stub reports unavailability without ever capturing", async () => {
   const controller = new DictationController(webDictationInput, fakeSpeech());
-  const outcome = await controller.start({ onPartial: () => {} }, "");
+  const outcome = await controller.start({ onPartial: () => {} }, "", {
+    silenceTimeoutMs: 1500,
+    maxListeningMs: 45000,
+  });
   expect(outcome.status === "error" && outcome.code).toBe("unavailable");
   expect(
     outcome.status === "error" &&
@@ -201,7 +238,10 @@ it("after dispose no capture can start", async () => {
   const { input } = fakeInput();
   const controller = new DictationController(input, fakeSpeech());
   await controller.dispose();
-  const outcome = await controller.start({ onPartial: () => {} }, "");
+  const outcome = await controller.start({ onPartial: () => {} }, "", {
+    silenceTimeoutMs: 1500,
+    maxListeningMs: 45000,
+  });
   expect(outcome.status === "error" && outcome.code).toBe("draining");
 });
 

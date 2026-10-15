@@ -1,0 +1,1392 @@
+{
+  "asOf": "2026-10-14T17:58:50.994Z",
+  "head": "49e9d85750184b0ce07d1d927211f73a3bdfb533",
+  "sourceAudit": "source-audit.json",
+  "scope": "All original and continuation task cards. Source review only for blockers, crashes, severe data loss, security release blockers, and core feature disabling defects. No implementation edits or product tests. Unimplemented and held tasks are recorded separately; runtime milestone completion is not asserted.",
+  "reviewed": {
+    "T001": {
+      "status": "source_reviewed",
+      "notes": "Reviewed executable entry points, Expo/Tauri configuration, workspace and mobile manifests, CI frozen install and companion/API shells. Startup dependency blocker recorded. No native builds executed.",
+      "sources": "apps/mobile/app/_layout.tsx;apps/mobile/app/index.tsx;apps/mobile/app/chat.tsx;apps/mobile/package.json;pnpm-workspace.yaml;apps/mobile/eas.json;apps/mobile/app.json;apps/desktop/src-tauri/tauri.conf.json;apps/companion/src/main.rs;services/api/src/index.ts;infra/docker/compose.yml;.github/workflows/initial-checks.yml"
+    },
+    "T001A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed executable entry points, Expo/Tauri configuration, workspace and mobile manifests, CI frozen install and companion/API shells. Startup dependency blocker recorded. No native builds executed.",
+      "sources": "apps/mobile/app/_layout.tsx;apps/mobile/app/index.tsx;apps/mobile/app/chat.tsx;apps/mobile/package.json;pnpm-workspace.yaml;apps/mobile/eas.json;apps/mobile/app.json;apps/desktop/src-tauri/tauri.conf.json;apps/companion/src/main.rs;services/api/src/index.ts;infra/docker/compose.yml;.github/workflows/initial-checks.yml"
+    },
+    "T002": {
+      "status": "source_reviewed",
+      "notes": "Reviewed identity, revision ordering, entity/run/request validation and pairing/relay bounds. No additional blocker established in these contract definitions; integration defects are assigned to their consumers.",
+      "sources": "packages/contracts/src/identity.ts;packages/contracts/src/entities.ts;packages/contracts/src/run-events.ts;packages/service-contracts/src/relay.ts;packages/service-contracts/src/pairing.ts"
+    },
+    "T007": {
+      "status": "source_reviewed",
+      "notes": "Reviewed identity, revision ordering, entity/run/request validation and pairing/relay bounds. No additional blocker established in these contract definitions; integration defects are assigned to their consumers.",
+      "sources": "packages/contracts/src/identity.ts;packages/contracts/src/entities.ts;packages/contracts/src/run-events.ts;packages/service-contracts/src/relay.ts;packages/service-contracts/src/pairing.ts"
+    },
+    "T003": {
+      "status": "source_reviewed",
+      "notes": "Reviewed immutable core/optional DDL, ledger validation, transactional migration application, embedded migration entry point and app transaction adapter. No severe defect established in the reviewed migration paths.",
+      "sources": "packages/schema/core/001_core.sql;packages/schema/extensions/0002_optional_features.sql;packages/schema/extensions/0003_scheduled_jobs.sql;packages/schema/extensions/0004_persona_library.sql;packages/schema/extensions/0005_memory_extraction.sql;packages/schema/extensions/0008_conversation_archive.sql;packages/schema/migrations/apply.ts;packages/schema/migrations/baseline.ts;packages/schema/migrations/registry.ts;packages/schema/migrations/embedded.ts;apps/mobile/platform/migrations.ts;apps/mobile/platform/database.ts"
+    },
+    "T003A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed immutable core/optional DDL, ledger validation, transactional migration application, embedded migration entry point and app transaction adapter. No severe defect established in the reviewed migration paths.",
+      "sources": "packages/schema/core/001_core.sql;packages/schema/extensions/0002_optional_features.sql;packages/schema/extensions/0003_scheduled_jobs.sql;packages/schema/extensions/0004_persona_library.sql;packages/schema/extensions/0005_memory_extraction.sql;packages/schema/extensions/0008_conversation_archive.sql;packages/schema/migrations/apply.ts;packages/schema/migrations/baseline.ts;packages/schema/migrations/registry.ts;packages/schema/migrations/embedded.ts;apps/mobile/platform/migrations.ts;apps/mobile/platform/database.ts"
+    },
+    "T004": {
+      "status": "support_reviewed",
+      "notes": "Reviewed CI installation/typecheck/fixture separation. Support task rather than an app execution path. No tests executed and no historical green results treated as current runtime proof.",
+      "sources": ".github/workflows/initial-checks.yml"
+    },
+    "T005": {
+      "status": "documentation_reviewed",
+      "notes": "Feasibility baseline explicitly leaves physical hardware measurements pending. No false native-completion assumption used in this review.",
+      "sources": "docs/implementation/feasibility/P00-baseline.md"
+    },
+    "T005A": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed streaming/SQLite/GGUF/Apple capability probe facades and Mac sidecar probe. Native implementation/hardware claims remain unverified; no executed device evidence added.",
+      "sources": "packages/compat-probes/expo-transport/src/provider.ts;packages/compat-probes/expo-transport/src/expo-runtime.ts;packages/compat-probes/expo-transport/src/sqlite-probe.ts;packages/compat-probes/gguf-ios/src/index.ts;packages/compat-probes/apple-ml/src/index.ts;packages/compat-probes/apple-ml/src/expo.ts;packages/compat-probes/mac-host/src/probe.ts"
+    },
+    "T005B": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed streaming/SQLite/GGUF/Apple capability probe facades and Mac sidecar probe. Native implementation/hardware claims remain unverified; no executed device evidence added.",
+      "sources": "packages/compat-probes/expo-transport/src/provider.ts;packages/compat-probes/expo-transport/src/expo-runtime.ts;packages/compat-probes/expo-transport/src/sqlite-probe.ts;packages/compat-probes/gguf-ios/src/index.ts;packages/compat-probes/apple-ml/src/index.ts;packages/compat-probes/apple-ml/src/expo.ts;packages/compat-probes/mac-host/src/probe.ts"
+    },
+    "T005C": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed streaming/SQLite/GGUF/Apple capability probe facades and Mac sidecar probe. Native implementation/hardware claims remain unverified; no executed device evidence added.",
+      "sources": "packages/compat-probes/expo-transport/src/provider.ts;packages/compat-probes/expo-transport/src/expo-runtime.ts;packages/compat-probes/expo-transport/src/sqlite-probe.ts;packages/compat-probes/gguf-ios/src/index.ts;packages/compat-probes/apple-ml/src/index.ts;packages/compat-probes/apple-ml/src/expo.ts;packages/compat-probes/mac-host/src/probe.ts"
+    },
+    "T005D": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed streaming/SQLite/GGUF/Apple capability probe facades and Mac sidecar probe. Native implementation/hardware claims remain unverified; no executed device evidence added.",
+      "sources": "packages/compat-probes/expo-transport/src/provider.ts;packages/compat-probes/expo-transport/src/expo-runtime.ts;packages/compat-probes/expo-transport/src/sqlite-probe.ts;packages/compat-probes/gguf-ios/src/index.ts;packages/compat-probes/apple-ml/src/index.ts;packages/compat-probes/apple-ml/src/expo.ts;packages/compat-probes/mac-host/src/probe.ts"
+    },
+    "T006": {
+      "status": "source_reviewed",
+      "notes": "Reviewed native primitive input/button/dropdown and layout/theme paths for render blockers. No severe defect established.",
+      "sources": "packages/ui-native/primitives/src/native-input.tsx;packages/ui-native/primitives/src/native-button.tsx;packages/ui-native/primitives/src/native-dropdown.tsx;packages/ui-native/primitives/src/use-workspace-layout.ts;packages/ui-native/primitives/src/theme.ts"
+    },
+    "T006A": {
+      "status": "no_implementation",
+      "notes": "Owned packages/ui-web/primitives path is absent. Later desktop work has no implementation here to review.",
+      "sources": "plans/tasks/P00/T006A.md;packages/ui-web/primitives (absent)"
+    },
+    "T008": {
+      "status": "source_reviewed",
+      "notes": "Reviewed atomic begin/complete run persistence and optional entity repositories. Writes use transaction-scoped connections. No additional severe defect established.",
+      "sources": "packages/storage/sqlite/core/src/index.ts;packages/storage/sqlite/extensions/src/index.ts;apps/mobile/platform/database.ts;apps/mobile/platform/database-open.ts"
+    },
+    "T008B": {
+      "status": "source_reviewed",
+      "notes": "Reviewed atomic begin/complete run persistence and optional entity repositories. Writes use transaction-scoped connections. No additional severe defect established.",
+      "sources": "packages/storage/sqlite/core/src/index.ts;packages/storage/sqlite/extensions/src/index.ts;apps/mobile/platform/database.ts;apps/mobile/platform/database-open.ts"
+    },
+    "T009": {
+      "status": "source_reviewed",
+      "notes": "Reviewed opaque references, host binding, secure-store failure cleanup and export redaction. No severe source defect established. Native OS key storage not exercised.",
+      "sources": "packages/security/secrets/src/index.ts;apps/mobile/platform/secrets/index.ts;apps/mobile/platform/crypto.ts"
+    },
+    "T010": {
+      "status": "source_reviewed",
+      "notes": "Completed platform adapter inspection: native managed path confinement, browser IndexedDB transactions and blob catalog/lease/import recovery. No severe counterexample established. File/OS behavior not exercised.",
+      "sources": "packages/storage/blobs/src/index.ts;apps/mobile/platform/files/index.ts;apps/mobile/platform/files/index.web.ts;apps/desktop/platform/files/index.ts"
+    },
+    "T011": {
+      "status": "source_reviewed",
+      "notes": "Reviewed scheduler admission, recovery, cancel/terminal transitions and transactional SQLite store. No additional severe defect established in shared scheduler code; media recovery wiring remains a later review.",
+      "sources": "packages/jobs/src/scheduler.ts;packages/jobs/src/sqlite-store.ts"
+    },
+    "T012": {
+      "status": "source_reviewed",
+      "notes": "Reviewed parameter precedence, capability filtering, context reload intent and conservative feature gates. No severe defect established.",
+      "sources": "packages/parameters/src/index.ts;packages/capabilities/src/index.ts"
+    },
+    "T015": {
+      "status": "source_reviewed",
+      "notes": "Reviewed parameter precedence, capability filtering, context reload intent and conservative feature gates. No severe defect established.",
+      "sources": "packages/parameters/src/index.ts;packages/capabilities/src/index.ts"
+    },
+    "T013": {
+      "status": "source_reviewed",
+      "notes": "Reviewed required-message retention, atomic tool groups, context packing/compaction and run projection replay/terminal transitions. No blocker established in normal app source paths. Runtime cancellation behavior not executed.",
+      "sources": "packages/context/src/index.ts;packages/chat-projection/src/index.ts"
+    },
+    "T014": {
+      "status": "source_reviewed",
+      "notes": "Reviewed required-message retention, atomic tool groups, context packing/compaction and run projection replay/terminal transitions. No blocker established in normal app source paths. Runtime cancellation behavior not executed.",
+      "sources": "packages/context/src/index.ts;packages/chat-projection/src/index.ts"
+    },
+    "T016": {
+      "status": "source_reviewed",
+      "notes": "Reviewed exact-origin/cleartext policy, manual redirects, SSE read limits, timeout/cancel lifetime and error reading. Source review only; real native network/permission paths not exercised.",
+      "sources": "packages/network/http/src/index.ts"
+    },
+    "T017": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T018": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T019": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T020": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T021": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T021A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T022": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T023": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T024": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T025": {
+      "status": "source_reviewed",
+      "notes": "Reviewed provider streaming, request encoding, auth binding, model lifecycle and actual mobile provider dispatch/connection CRUD. Cloud tool replay blocker R011 applies to T021/T022. Native/live vendor behavior not executed.",
+      "sources": "packages/providers/ollama/chat/src/index.ts;packages/providers/ollama/models/src/index.ts;packages/providers/lmstudio/src/index.ts;packages/providers/compatible-local/src/index.ts;packages/providers/cloud/openai-advanced/src/index.ts;packages/providers/cloud/anthropic/src/index.ts;packages/providers/openai-first-run/src/index.ts;packages/providers/cloud/gemini/src/index.ts;packages/providers/cloud/mistral/src/index.ts;packages/providers/cloud/compatible/src/index.ts;packages/providers/conformance/src/index.ts;modules/lan-discovery/src/index.ts;apps/mobile/features/connections/index.ts;apps/mobile/features/models/connections.ts;apps/mobile/composition/chat/providers.ts"
+    },
+    "T026": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed managed model admission, inference parameter bounds, token stream/cancellation/resource drainage and MLX folder validation. iOS MLX bridge remains unmounted/native-unverified; no claim of device success.",
+      "sources": "modules/gguf/ios/src/index.ts;apps/mobile/platform/local-chat-provider.ts;modules/mlx/ios/src/index.ts;modules/mlx/ios/Sources/LocalLabMlxIOS/MLXInferenceAdapter.swift"
+    },
+    "T028": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed managed model admission, inference parameter bounds, token stream/cancellation/resource drainage and MLX folder validation. iOS MLX bridge remains unmounted/native-unverified; no claim of device success.",
+      "sources": "modules/gguf/ios/src/index.ts;apps/mobile/platform/local-chat-provider.ts;modules/mlx/ios/src/index.ts;modules/mlx/ios/Sources/LocalLabMlxIOS/MLXInferenceAdapter.swift"
+    },
+    "T027": {
+      "status": "no_implementation",
+      "notes": "Owned Android runtime/downloader paths do not exist. These are later platform tasks, not completed implementations.",
+      "sources": "plans/tasks/P03/T027.md;plans/tasks/P03/T032.md;modules/gguf/android (absent);modules/downloads/android (absent)"
+    },
+    "T032": {
+      "status": "no_implementation",
+      "notes": "Owned Android runtime/downloader paths do not exist. These are later platform tasks, not completed implementations.",
+      "sources": "plans/tasks/P03/T027.md;plans/tasks/P03/T032.md;modules/gguf/android (absent);modules/downloads/android (absent)"
+    },
+    "T029": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed sidecar launch/control, process status and shutdown paths. Native sidecar packaging/readiness and real inference remain unverified; no additional blocker established beyond incomplete host integration.",
+      "sources": "workers/gguf/src/lib.rs;workers/gguf/src/main.rs;apps/companion/runtimes/gguf/mod.rs"
+    },
+    "T030": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed Swift runtime/worker and Rust process bridge. Confirmed actor starvation blocker R009. Real Mac inference not executed.",
+      "sources": "workers/mlx-macos/Sources/LocalLabMlxWorker/main.swift;workers/mlx-macos/Sources/LocalLabMlxMac/MLXMacRuntime.swift;apps/companion/runtimes/mlx/mod.rs"
+    },
+    "T031": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed durable background task state/reconciliation and native URLSession pause/resume. Confirmed Swift type blocker R010. App currently uses a separate foreground download route; native background downloader is not mounted or compiled here.",
+      "sources": "modules/downloads/ios/src/index.ts;modules/downloads/ios/native/BackgroundTransferSession.swift;apps/mobile/platform/model-download.ts"
+    },
+    "T033": {
+      "status": "source_reviewed",
+      "notes": "Reviewed curated catalog identity, safe GGUF/MLX import admission, Hugging Face enqueue, hardware fit/onboarding state and runtime routing/lease checks. R012 blocks the typed Hugging Face enqueue API. Device-backed integration and remaining import UI are pending implementation/proof.",
+      "sources": "packages/models/catalog/src/index.ts;packages/models/imports/src/index.ts;packages/models/fit/src/index.ts;apps/mobile/features/onboarding/index.ts;packages/models/integration/src/index.ts;apps/mobile/platform/model-download.ts;apps/mobile/features/models/selection.ts"
+    },
+    "T035": {
+      "status": "source_reviewed",
+      "notes": "Reviewed curated catalog identity, safe GGUF/MLX import admission, Hugging Face enqueue, hardware fit/onboarding state and runtime routing/lease checks. R012 blocks the typed Hugging Face enqueue API. Device-backed integration and remaining import UI are pending implementation/proof.",
+      "sources": "packages/models/catalog/src/index.ts;packages/models/imports/src/index.ts;packages/models/fit/src/index.ts;apps/mobile/features/onboarding/index.ts;packages/models/integration/src/index.ts;apps/mobile/platform/model-download.ts;apps/mobile/features/models/selection.ts"
+    },
+    "T036": {
+      "status": "source_reviewed",
+      "notes": "Reviewed curated catalog identity, safe GGUF/MLX import admission, Hugging Face enqueue, hardware fit/onboarding state and runtime routing/lease checks. R012 blocks the typed Hugging Face enqueue API. Device-backed integration and remaining import UI are pending implementation/proof.",
+      "sources": "packages/models/catalog/src/index.ts;packages/models/imports/src/index.ts;packages/models/fit/src/index.ts;apps/mobile/features/onboarding/index.ts;packages/models/integration/src/index.ts;apps/mobile/platform/model-download.ts;apps/mobile/features/models/selection.ts"
+    },
+    "T037": {
+      "status": "source_reviewed",
+      "notes": "Reviewed durable send/regeneration, scoped atomic event writes, stop/terminal persistence, context packing/retry and history/variant/continuation handling. No additional blocker established in these shared paths.",
+      "sources": "packages/chat/engine/core/src/index.ts;packages/chat/engine/advanced/src/index.ts;packages/chat/history/src/index.ts"
+    },
+    "T037A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed durable send/regeneration, scoped atomic event writes, stop/terminal persistence, context packing/retry and history/variant/continuation handling. No additional blocker established in these shared paths.",
+      "sources": "packages/chat/engine/core/src/index.ts;packages/chat/engine/advanced/src/index.ts;packages/chat/history/src/index.ts"
+    },
+    "T038": {
+      "status": "source_reviewed",
+      "notes": "Reviewed durable send/regeneration, scoped atomic event writes, stop/terminal persistence, context packing/retry and history/variant/continuation handling. No additional blocker established in these shared paths.",
+      "sources": "packages/chat/engine/core/src/index.ts;packages/chat/engine/advanced/src/index.ts;packages/chat/history/src/index.ts"
+    },
+    "T034": {
+      "status": "source_reviewed",
+      "notes": "Reviewed exact model selection persistence, registered-provider inventory and remote lifecycle dispatch. Existing GGUF download route checks size/header and uses managed storage; remaining general imports/native lifecycle are partial features, not claimed complete.",
+      "sources": "apps/mobile/features/models/index.ts;apps/mobile/features/models/selection.ts;apps/mobile/features/models/connections.ts;apps/mobile/features/models/registered-connections.ts;apps/mobile/platform/model-download.ts;apps/mobile/platform/model-storage.ts"
+    },
+    "T039": {
+      "status": "source_reviewed",
+      "notes": "Reviewed transcript ordering/stream status/render branches, inert Markdown parser, draft acceptance/preservation, attachment and dictation controls. No additional severe blocker established. Device UI not exercised.",
+      "sources": "apps/mobile/features/transcript/core/index.ts;apps/mobile/features/transcript/core/transcript.tsx;apps/mobile/features/transcript/rich/markdown.ts;apps/mobile/features/composer/core/composer.tsx;apps/mobile/features/composer/advanced/index.ts;apps/mobile/features/composer/advanced/composer.tsx"
+    },
+    "T039A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed transcript ordering/stream status/render branches, inert Markdown parser, draft acceptance/preservation, attachment and dictation controls. No additional severe blocker established. Device UI not exercised.",
+      "sources": "apps/mobile/features/transcript/core/index.ts;apps/mobile/features/transcript/core/transcript.tsx;apps/mobile/features/transcript/rich/markdown.ts;apps/mobile/features/composer/core/composer.tsx;apps/mobile/features/composer/advanced/index.ts;apps/mobile/features/composer/advanced/composer.tsx"
+    },
+    "T041": {
+      "status": "source_reviewed",
+      "notes": "Reviewed transcript ordering/stream status/render branches, inert Markdown parser, draft acceptance/preservation, attachment and dictation controls. No additional severe blocker established. Device UI not exercised.",
+      "sources": "apps/mobile/features/transcript/core/index.ts;apps/mobile/features/transcript/core/transcript.tsx;apps/mobile/features/transcript/rich/markdown.ts;apps/mobile/features/composer/core/composer.tsx;apps/mobile/features/composer/advanced/index.ts;apps/mobile/features/composer/advanced/composer.tsx"
+    },
+    "T041A": {
+      "status": "source_reviewed",
+      "notes": "Reviewed transcript ordering/stream status/render branches, inert Markdown parser, draft acceptance/preservation, attachment and dictation controls. No additional severe blocker established. Device UI not exercised.",
+      "sources": "apps/mobile/features/transcript/core/index.ts;apps/mobile/features/transcript/core/transcript.tsx;apps/mobile/features/transcript/rich/markdown.ts;apps/mobile/features/composer/core/composer.tsx;apps/mobile/features/composer/advanced/index.ts;apps/mobile/features/composer/advanced/composer.tsx"
+    },
+    "T040": {
+      "status": "no_implementation",
+      "notes": "Owned desktop transcript/composer and Android lifecycle paths are absent. Later platform tasks have no implementation here to review.",
+      "sources": "plans/tasks/P04/T040.md;plans/tasks/P04/T048.md;apps/desktop/features/transcript (absent);modules/generation-lifecycle/android (absent)"
+    },
+    "T048": {
+      "status": "no_implementation",
+      "notes": "Owned desktop transcript/composer and Android lifecycle paths are absent. Later platform tasks have no implementation here to review.",
+      "sources": "plans/tasks/P04/T040.md;plans/tasks/P04/T048.md;apps/desktop/features/transcript (absent);modules/generation-lifecycle/android (absent)"
+    },
+    "T042": {
+      "status": "source_reviewed",
+      "notes": "Reviewed folder moves/deletion, archive/unarchive, title/message search and history previews. Scoped transactions preserve conversation data; no additional severe defect established.",
+      "sources": "packages/conversations/library/src/index.ts;apps/mobile/composition/chat/conversation-lifecycle.ts"
+    },
+    "T043": {
+      "status": "source_reviewed",
+      "notes": "Reviewed size/type admission, managed intake-before-extraction, retained owners, vision mapping and native file/image picker wiring. PDF/XLSX extraction is explicitly unavailable without host codecs; native codecs remain unfinished, not treated as runtime passes.",
+      "sources": "packages/attachments/src/index.ts;apps/mobile/composition/chat/attachments.ts;packages/chat/integration/src/features.ts"
+    },
+    "T044": {
+      "status": "source_reviewed",
+      "notes": "Reviewed archive validation, managed ID/blob remapping, scoped import transaction, staged blob cleanup and ZIP central-directory bounds/CRC checks. No additional severe blocker established. Native pick/share/PDF render not exercised.",
+      "sources": "packages/archives/src/index.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/chat/archives/zip.ts"
+    },
+    "T045": {
+      "status": "source_reviewed",
+      "notes": "Reviewed local runtime identity selection, vector validation, reindex/purge, FTS fallback and scoped index writes. Usable native embeddings remain an unfinished integration; no additional severe defect established in these abstractions.",
+      "sources": "packages/search/semantic/src/index.ts;modules/embeddings/src/index.ts"
+    },
+    "T046": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed settings precedence/capability controls and generation lifecycle start/record/suspend/reconcile with scoped transactions. No additional blocker established. Background execution and notifications remain injected native seams.",
+      "sources": "apps/mobile/features/chat-settings/index.ts;modules/generation-lifecycle/ios/src/index.ts"
+    },
+    "T047": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed settings precedence/capability controls and generation lifecycle start/record/suspend/reconcile with scoped transactions. No additional blocker established. Background execution and notifications remain injected native seams.",
+      "sources": "apps/mobile/features/chat-settings/index.ts;modules/generation-lifecycle/ios/src/index.ts"
+    },
+    "T049": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Finished source review of startup/recovery, current shared database ownership, send setup/stream completion/tool research, voice/media/extraction side effects, app background and unmount cleanup, saved-chat navigation/deletion, archive ownership and mounted Persona/group/media/voice panels. Blockers listed in findings include clean installation, scoped transaction deadlocks, native speech build and tool discovery stalls. Runtime native/full-feature milestone evidence is unavailable; completed source review is not a declaration that these milestones pass.",
+      "sources": "apps/mobile/app/chat.tsx;apps/mobile/composition/first-run-chat/index.ts;apps/mobile/composition/chat/screen.tsx;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/chat/conversation-lifecycle.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/voice/container.ts;apps/mobile/platform/speech/index.ts;apps/mobile/platform/speech/index.web.ts"
+    },
+    "T158": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Finished source review of startup/recovery, current shared database ownership, send setup/stream completion/tool research, voice/media/extraction side effects, app background and unmount cleanup, saved-chat navigation/deletion, archive ownership and mounted Persona/group/media/voice panels. Blockers listed in findings include clean installation, scoped transaction deadlocks, native speech build and tool discovery stalls. Runtime native/full-feature milestone evidence is unavailable; completed source review is not a declaration that these milestones pass.",
+      "sources": "apps/mobile/app/chat.tsx;apps/mobile/composition/first-run-chat/index.ts;apps/mobile/composition/chat/screen.tsx;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/chat/conversation-lifecycle.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/voice/container.ts;apps/mobile/platform/speech/index.ts;apps/mobile/platform/speech/index.web.ts"
+    },
+    "T008A": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed Rust SQLite FFI ownership, migrations, entity writes, revisions and outbox storage. Mac compilation and execution remain unverified; no additional severe defect established.",
+      "sources": "apps/companion/platform/storage/mod.rs"
+    },
+    "T050": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T051": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T052": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T053": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T054": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T055": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T056": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T057": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T058": {
+      "status": "source_reviewed",
+      "notes": "Reviewed Persona CRUD/immutable run snapshots and seed/tombstone protection; generator bounds and cancellation; extraction admission, scoped atomic commits, policy and prompt resolution; group validation, serial/parallel turns, lease acquisition and attributed playback. R003/R004 remain database blockers. Memory reset is a package API defect; current UI reachability was not established. Source-only review, native/device execution unverified.",
+      "sources": "packages/personas/library/src/index.ts;packages/personas/generator/src/index.ts;packages/personas/bindings/src/index.ts;packages/memory/extraction/src/store.ts;packages/memory/extraction/src/coordinator.ts;packages/memory/extraction/src/extractor.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts;packages/groups/turns/src/index.ts;packages/groups/parallel/src/index.ts;apps/mobile/features/personas/screen.tsx;apps/mobile/features/memory/screen.tsx;apps/mobile/features/persona-generator/screen.tsx;apps/mobile/features/group-setup/screen.tsx;apps/mobile/features/group-chat/index.ts;apps/mobile/features/group-chat/screen.tsx"
+    },
+    "T059": {
+      "status": "source_reviewed",
+      "notes": "Reviewed race admission, bounded snapshots/output/events, independent terminal persistence, cancellation, model drainage and scoped SQLite recovery. No additional severe blocker established in this unmounted engine. Runtime/provider execution not performed.",
+      "sources": "packages/arena/engine/src/index.ts;packages/arena/engine/src/sqlite-store.ts"
+    },
+    "T060": {
+      "status": "held_no_implementation",
+      "notes": "Arena UI is explicitly held in current task progress. No owned implementation exists to review; do not confuse the held feature with a defect in a completed implementation.",
+      "sources": "plans/tasks/P05/T060.md;handoffs/qwen3.8-flash-next-2026-10-08/PROGRESS.md"
+    },
+    "T061": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed existing Persona/memory/group integration through current mobile composition and package paths. Group-save blocker recorded; Arena UI held and device/provider integration gate remains unverified.",
+      "sources": "apps/mobile/composition/chat/screen.tsx;packages/personas/library/src/index.ts;packages/memory/scope/src/index.ts;packages/groups/config/src/index.ts"
+    },
+    "T062": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T063": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T064": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T065": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T066": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T067": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T068": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T069": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T070": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed bounded tool-loop admission/deadlines/claiming/replay, scoped durable invocation storage, SearXNG origin redirects/result normalization, HTTP MCP handshake/framing/discovery and LM Studio names, built-ins/settings persistence, hosted-search facade/route and Docker sandbox runner/worker isolation. R011/R013/R014/R015 block tool integration. Hosted search/sandbox routes are modules not registered by API startup; native/network/container execution remains unverified. Native Buffer/global assumptions still need broader composition audit.",
+      "sources": "packages/tools/engine/src/index.ts;packages/tools/engine/src/sqlite.ts;packages/tools/searxng/src/client.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;packages/tools/builtins/src/index.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/hosted-search/src/index.ts;services/api/features/search/index.ts;packages/tools/sandbox/src/index.ts;services/api/features/sandbox/index.ts;workers/sandbox/worker.mjs;workers/sandbox/Dockerfile;services/api/src/index.ts"
+    },
+    "T071": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T072": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T075": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T077": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T079": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T080": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T081": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T083": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed audio capture/playback coordination, system speech TypeScript/native Swift bridge, native offline voice install/load/drain/playback, Whisper model/capture/transcription core and native wiring, cloud voice credential/request/stream paths and Voice Studio import/read-aloud composition. R005 disables Voice Studio list initialization; R017 prevents compiling the declared iOS speech module. Native/provider execution and continuous Call Mode integration remain unverified. Browser speech variants still require remaining mobile composition audit.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/platform/speech/index.ts;apps/mobile/platform/whisper/core.ts;apps/mobile/platform/whisper/index.ts;packages/speech/cloud/src/shared.ts;packages/speech/cloud/src/elevenlabs.ts;packages/speech/cloud/src/xai.ts;apps/mobile/features/voice/container.ts;apps/mobile/features/voice/imports.ts;packages/audio/conversation/src/index.ts"
+    },
+    "T073": {
+      "status": "no_implementation",
+      "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+      "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+    },
+    "T074": {
+      "status": "no_implementation",
+      "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+      "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+    },
+    "T076": {
+      "status": "no_implementation",
+      "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+      "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+    },
+    "T078": {
+      "status": "no_implementation",
+      "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+      "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+    },
+    "T082": {
+      "status": "no_implementation",
+      "notes": "Owned Android/desktop speech and persistent voice worker paths are absent. Later platform work has no owned implementation to review. Shared native/browser adapters reviewed under their actual current task paths do not establish completion of these platform tasks.",
+      "sources": "plans/tasks/P07/T073.md;plans/tasks/P07/T074.md;plans/tasks/P07/T076.md;plans/tasks/P07/T078.md;plans/tasks/P07/T082.md"
+    },
+    "T084": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T085": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T086": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T087": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T089": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T091": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T092": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed media scheduling/review idempotency, A1111 request/result decoding, ComfyUI graph construction/submission/history/output handling, ledger recovery, binary artifact recognition, mobile queue/gallery mapping and Persona completed-turn hooks. Confirmed R018 successful-response rejection and R019 LoRA graph corruption. Native/global assumptions and real backend integration remain unverified. Gallery currently uses ref metadata placeholders rather than a verified playable image/video integration.",
+      "sources": "packages/media/engine/src/index.ts;packages/media/a1111/src/index.ts;packages/media/comfyui/src/index.ts;packages/media/queue/src/index.ts;packages/media/video/src/index.ts;packages/media/integration/src/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/media/index.ts;apps/mobile/features/media/screen.tsx;packages/personas/media/src/index.ts;packages/chat/media-hooks/src/index.ts"
+    },
+    "T088": {
+      "status": "no_implementation",
+      "notes": "Owned Core ML diffusion and desktop media UI paths are absent; later platform features have no implementation here to review.",
+      "sources": "plans/tasks/P08/T088.md;plans/tasks/P08/T090.md"
+    },
+    "T090": {
+      "status": "no_implementation",
+      "notes": "Owned Core ML diffusion and desktop media UI paths are absent; later platform features have no implementation here to review.",
+      "sources": "plans/tasks/P08/T088.md;plans/tasks/P08/T090.md"
+    },
+    "T093": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T094": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T095": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T096": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T097": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T098": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T098A": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T098B": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T098C": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T099": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T100": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T101": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T102": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "T103": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed pairing key/nonce derivation and replay state in TypeScript/Rust, relay authentication/limits/deployment, loopback routing/cancelled byte forwarding, binary framing/integrity/credit, pairing UI state model, sync preferences/merge/batch acknowledgement/initial replacement and selective Persona gates, iCloud adapter async queue, USB handshake/framing/mode guard and sharing/tray lifecycle. R006/R007/R008/R016/R020/R021/R022/R023 are concrete blockers. T100-T102 shared abstractions are in-progress; native CloudKit/usbmux/tray and mounted end-to-end transports remain unverified and largely unimplemented.",
+      "sources": "packages/remote/crypto/src/index.ts;apps/companion/remote/crypto/mod.rs;services/relay/src/index.ts;services/relay/Dockerfile;packages/remote/client/src/index.ts;apps/mobile/features/remote/index.ts;apps/companion/remote/routes/mod.rs;packages/remote/binary/src/index.ts;apps/companion/remote/media/mod.rs;packages/sync/preferences/src/index.ts;packages/sync/core/merge/src/index.ts;packages/sync/core/transport/src/index.ts;packages/sync/core/composition/src/index.ts;packages/sync/personas/src/index.ts;packages/sync/icloud/src/index.ts;modules/icloud/src/index.ts;modules/usb/ios/src/index.ts;apps/companion/usb/session/mod.rs;apps/companion/usb/frames/mod.rs;apps/companion/usb/guard/mod.rs;apps/companion/features/sharing/mod.rs;apps/companion/lifecycle/mod.rs"
+    },
+    "C01": {
+      "status": "source_reviewed",
+      "notes": "Reviewed persisted auto/manual/off policy, inheritance/veto/capability admission, provider/key migration and cleanup, public/manual research parsing and bounded evidence assembly, autonomous web tools and configured SearXNG path. Cloud tool continuation blocker R011 and MCP setup blocking defects remain. Source-only review; real search services not executed.",
+      "sources": "apps/mobile/composition/chat/web-research-settings.ts;apps/mobile/composition/chat/web-research.ts;apps/mobile/composition/chat/web-research-tools.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/searxng/src/client.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C02": {
+      "status": "source_reviewed",
+      "notes": "Reviewed persisted auto/manual/off policy, inheritance/veto/capability admission, provider/key migration and cleanup, public/manual research parsing and bounded evidence assembly, autonomous web tools and configured SearXNG path. Cloud tool continuation blocker R011 and MCP setup blocking defects remain. Source-only review; real search services not executed.",
+      "sources": "apps/mobile/composition/chat/web-research-settings.ts;apps/mobile/composition/chat/web-research.ts;apps/mobile/composition/chat/web-research-tools.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/searxng/src/client.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C08": {
+      "status": "source_reviewed",
+      "notes": "Reviewed persisted auto/manual/off policy, inheritance/veto/capability admission, provider/key migration and cleanup, public/manual research parsing and bounded evidence assembly, autonomous web tools and configured SearXNG path. Cloud tool continuation blocker R011 and MCP setup blocking defects remain. Source-only review; real search services not executed.",
+      "sources": "apps/mobile/composition/chat/web-research-settings.ts;apps/mobile/composition/chat/web-research.ts;apps/mobile/composition/chat/web-research-tools.ts;apps/mobile/composition/chat/searxng-web-search.ts;packages/tools/searxng/src/client.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C03": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed shared audio admission/drain, native system dictation bridge, stop/discard controller, composer final/autosend draft handling, voice preference persistence and app background/unmount cancellation. R017 blocks compiling the native speech module. Native speech/device execution remains unverified.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/audio/offline-speech-output.ts;apps/mobile/features/composer/advanced/composer.tsx;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C04": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed shared audio admission/drain, native system dictation bridge, stop/discard controller, composer final/autosend draft handling, voice preference persistence and app background/unmount cancellation. R017 blocks compiling the native speech module. Native speech/device execution remains unverified.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/audio/offline-speech-output.ts;apps/mobile/features/composer/advanced/composer.tsx;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C05": {
+      "status": "source_reviewed_native_unverified",
+      "notes": "Reviewed shared audio admission/drain, native system dictation bridge, stop/discard controller, composer final/autosend draft handling, voice preference persistence and app background/unmount cancellation. R017 blocks compiling the native speech module. Native speech/device execution remains unverified.",
+      "sources": "packages/audio/session/src/coordinator.ts;packages/speech-system/src/index.ts;packages/speech-system/ios/SpeechSystemModule.swift;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/audio/offline-speech-output.ts;apps/mobile/features/composer/advanced/composer.tsx;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C06": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed persistent master/tool/chat policies and labels, current_time argument validation, remote MCP connection/secrets/discovery/teardown, integrated LM Studio name persistence and selected-provider routing. Priority integration remains blocked by R011/R013/R014/R015/R017. Native globals and live backend behavior are not asserted as tested.",
+      "sources": "apps/mobile/features/tool-settings/settings.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/features/tool-settings/lmstudio-integrations.ts;packages/tools/builtins/src/index.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C07": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed persistent master/tool/chat policies and labels, current_time argument validation, remote MCP connection/secrets/discovery/teardown, integrated LM Studio name persistence and selected-provider routing. Priority integration remains blocked by R011/R013/R014/R015/R017. Native globals and live backend behavior are not asserted as tested.",
+      "sources": "apps/mobile/features/tool-settings/settings.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/features/tool-settings/lmstudio-integrations.ts;packages/tools/builtins/src/index.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C09": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed persistent master/tool/chat policies and labels, current_time argument validation, remote MCP connection/secrets/discovery/teardown, integrated LM Studio name persistence and selected-provider routing. Priority integration remains blocked by R011/R013/R014/R015/R017. Native globals and live backend behavior are not asserted as tested.",
+      "sources": "apps/mobile/features/tool-settings/settings.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/features/tool-settings/lmstudio-integrations.ts;packages/tools/builtins/src/index.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "C10": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Reviewed persistent master/tool/chat policies and labels, current_time argument validation, remote MCP connection/secrets/discovery/teardown, integrated LM Studio name persistence and selected-provider routing. Priority integration remains blocked by R011/R013/R014/R015/R017. Native globals and live backend behavior are not asserted as tested.",
+      "sources": "apps/mobile/features/tool-settings/settings.ts;apps/mobile/features/tool-settings/mcp-servers.ts;apps/mobile/features/tool-settings/lmstudio-integrations.ts;packages/tools/builtins/src/index.ts;packages/tools/mcp-http/src/client.ts;packages/tools/mcp-http/src/tools.ts;packages/tools/mcp-lmstudio/src/index.ts;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/screen.tsx"
+    },
+    "T104": {
+      "status": "source_reviewed",
+      "notes": "Reviewed live theme/layout preference load/save/scoped transaction, diagnostic opt-in metadata bounds/serialization and transport outcome sanitization. No additional severe defect established. This source review does not claim full task feature completion or executed native/browser evidence.",
+      "sources": "apps/mobile/features/themes/provider.tsx;apps/mobile/features/diagnostics/trace-log.ts;apps/mobile/features/diagnostics/trace-fetch.ts;apps/mobile/features/diagnostics/sanitization.ts"
+    },
+    "T118": {
+      "status": "source_reviewed",
+      "notes": "Reviewed live theme/layout preference load/save/scoped transaction, diagnostic opt-in metadata bounds/serialization and transport outcome sanitization. No additional severe defect established. This source review does not claim full task feature completion or executed native/browser evidence.",
+      "sources": "apps/mobile/features/themes/provider.tsx;apps/mobile/features/diagnostics/trace-log.ts;apps/mobile/features/diagnostics/trace-fetch.ts;apps/mobile/features/diagnostics/sanitization.ts"
+    },
+    "T128": {
+      "status": "source_reviewed_integration_unverified",
+      "notes": "Finished source review of startup/recovery, current shared database ownership, send setup/stream completion/tool research, voice/media/extraction side effects, app background and unmount cleanup, saved-chat navigation/deletion, archive ownership and mounted Persona/group/media/voice panels. Blockers listed in findings include clean installation, scoped transaction deadlocks, native speech build and tool discovery stalls. Runtime native/full-feature milestone evidence is unavailable; completed source review is not a declaration that these milestones pass.",
+      "sources": "apps/mobile/app/chat.tsx;apps/mobile/composition/first-run-chat/index.ts;apps/mobile/composition/chat/screen.tsx;apps/mobile/composition/chat/providers.ts;apps/mobile/composition/chat/dictation.ts;apps/mobile/composition/chat/conversation-lifecycle.ts;apps/mobile/composition/chat/archives/index.ts;apps/mobile/composition/media/providers.ts;apps/mobile/features/voice/container.ts;apps/mobile/platform/speech/index.ts;apps/mobile/platform/speech/index.web.ts"
+    },
+    "T105": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T105.md;apps/desktop/features/themes (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T106": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T106.md;services/api/features/catalog (absent);apps/mobile/features/community (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T107": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T107.md;packages/entitlements (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T108": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T108.md;modules/app-lock (absent);apps/mobile/features/app-lock (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T109": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T109.md;services/api/features/lock-recovery (absent);packages/security/recovery (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T110": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T110.md;packages/backup (absent);services/api/features/backup (absent);apps/mobile/features/backup (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T111": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T111.md;services/api/features/auth (absent);apps/mobile/features/account (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T112": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T112.md;modules/billing (absent);services/api/features/billing (absent);apps/mobile/features/billing (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T113": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T113.md;services/api/features/support (absent);apps/mobile/features/support (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T114": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T114.md;modules/widgets/ios (absent);apps/mobile/features/widgets-ios (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T115": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T115.md;modules/widgets/android (absent);apps/mobile/features/widgets-android (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T116": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T116.md;modules/app-intents/ios (absent);packages/automation (absent);apps/companion/automation (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117.md;apps/mobile/composition/workflows (absent);packages/workflows/integration (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117A": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117A.md;packages/workflows/summaries (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117B": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117B.md;packages/workflows/writing (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117C": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117C.md;packages/workflows/creative (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117D": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117D.md;modules/ocr/ios (absent);packages/workflows/camera (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117E": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117E.md;packages/workflows/planning (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117F": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117F.md;packages/workflows/voice-actions (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117G": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117G.md;packages/workflows/context (absent);packages/workflows/translation (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T117H": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T117H.md;packages/workflows/briefings (absent);services/api/features/news (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T119": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T119.md;packages/localization (absent);apps/mobile/features/responsive/iphone (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T119B": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T119B.md;apps/mobile/features/responsive/ipad (absent);apps/mobile/features/settings-ipad (absent);modules/pencil/ios (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T120": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P10/T120.md;packages/appearance/behavior (absent);apps/mobile/features/appearance-behavior (absent);modules/app-icons/ios (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T121": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T121.md;tests/e2e/full-matrix (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T122": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T122.md;tests/performance (absent);docs/implementation/performance (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T123": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T123.md;tests/security (absent);docs/implementation/security (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T124": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T124.md;build/desktop (absent);.github/workflows/desktop-release.yml (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T125": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T125.md;build/mobile (absent);.github/workflows/mobile-release.yml (absent);apps/mobile/config/release (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T126": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T126.md;docs/implementation/learning (absent);docs/implementation/operations (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T127": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T127.md;docs/implementation/release-audit (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T129": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T129.md;tests/e2e/android-core (absent);apps/mobile/composition/android-core (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T130": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T130.md;modules/whisper/android (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T131": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T131.md;tests/e2e/android-voice (absent);apps/mobile/composition/android-voice (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T132": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T132.md;tests/e2e/android-media (absent);apps/mobile/composition/android-media (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T133": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T133.md;apps/companion/speech/windows (absent);apps/companion/speech/linux (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T134": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T134.md;apps/desktop/composition/full (absent);tests/smoke/desktop-full (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T135": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T135.md;tests/e2e/release (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T136": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T136.md;apps/desktop/features/connections (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T137": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T137.md;apps/desktop/features/models (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T138": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T138.md;apps/desktop/features/library (absent);apps/desktop/features/archives (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T139": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T139.md;apps/desktop/features/chat-settings (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T140": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T140.md;apps/desktop/features/personas (absent);apps/desktop/features/persona-sync (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T141": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T141.md;apps/desktop/features/persona-generator (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T142": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T142.md;apps/desktop/features/memory (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T143": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T143.md;apps/desktop/features/persona-bindings (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T144": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T144.md;apps/desktop/features/group-setup (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T145": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T145.md;apps/desktop/features/group-chat (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T146": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T146.md;apps/desktop/features/arena (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T147": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T147.md;apps/desktop/features/tool-settings (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T148": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T148.md;apps/desktop/features/tools (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T149": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T149.md;apps/desktop/features/voice (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T150": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T150.md;apps/desktop/features/community (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T151": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T151.md;apps/desktop/features/app-lock (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T152": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T152.md;apps/desktop/features/backup (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T153": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T153.md;apps/desktop/features/account (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T154": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T154.md;apps/desktop/features/support (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T155": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T155.md;apps/desktop/features/diagnostics (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T156": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T156.md;apps/desktop/features/appearance-behavior (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T157": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T157.md;tests/e2e/ipad (absent);docs/implementation/ipad (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159.md;build/ios (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159A": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159A.md;tests/e2e/iphone/t159a (absent);docs/implementation/evidence/iphone/t159a (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159B": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159B.md;tests/e2e/iphone/t159b (absent);docs/implementation/evidence/iphone/t159b (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159C": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159C.md;tests/e2e/iphone/t159c (absent);docs/implementation/evidence/iphone/t159c (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159D": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159D.md;tests/e2e/iphone/t159d (absent);docs/implementation/evidence/iphone/t159d (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159E": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159E.md;tests/e2e/iphone/t159e (absent);docs/implementation/evidence/iphone/t159e (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159F": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159F.md;tests/e2e/iphone/t159f (absent);docs/implementation/evidence/iphone/t159f (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159G": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159G.md;tests/e2e/iphone/t159g (absent);docs/implementation/evidence/iphone/t159g (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T159H": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T159H.md;tests/e2e/iphone/t159h (absent);docs/implementation/evidence/iphone/t159h (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T160": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T160.md;tests/e2e/parity/t160 (absent);docs/implementation/evidence/parity/t160 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T161": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T161.md;tests/e2e/parity/t161 (absent);docs/implementation/evidence/parity/t161 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T162": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T162.md;tests/e2e/parity/t162 (absent);docs/implementation/evidence/parity/t162 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T163": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T163.md;tests/e2e/parity/t163 (absent);docs/implementation/evidence/parity/t163 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T164": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T164.md;tests/e2e/parity/t164 (absent);docs/implementation/evidence/parity/t164 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T165": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T165.md;tests/e2e/parity/t165 (absent);docs/implementation/evidence/parity/t165 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T166": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T166.md;tests/e2e/parity/t166 (absent);docs/implementation/evidence/parity/t166 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T167": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T167.md;tests/e2e/parity/t167 (absent);docs/implementation/evidence/parity/t167 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T168": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T168.md;tests/e2e/parity/t168 (absent);docs/implementation/evidence/parity/t168 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    },
+    "T169": {
+      "status": "no_implementation",
+      "sources": "plans/tasks/P11/T169.md;tests/e2e/parity/t169 (absent);docs/implementation/evidence/parity/t169 (absent)",
+      "notes": "Reviewed task ownership and current source inventory. The listed implementation/evidence paths are absent. Later planned work has no implementation here to review; this is not a completed-feature defect or a runtime pass."
+    }
+  },
+  "findings": [
+    {
+      "id": "R001",
+      "severity": "P1",
+      "tasks": "T001;T049;T051;T053;T055;T079;T092",
+      "title": "Mobile startup imports depend on undeclared workspace packages",
+      "file": "apps/mobile/package.json",
+      "line": 12,
+      "trigger": "Install dependencies in a fresh checkout and bundle the /chat route.",
+      "impact": "The chat startup graph imports groups-config, personas-generator, memory-scope, speech-cloud and media packages that the mobile manifest does not declare. Local manually created node_modules junctions are not reproduced by a clean install, so bundling can fail before the app opens.",
+      "evidence": "apps/mobile/composition/chat/screen.tsx imports groups-config at line 50 and personas-generator at line 119; persona-memory.ts imports memory-scope; voice/container.ts imports speech-cloud; composition/media/providers.ts imports media-engine and media-integration. These packages are absent from apps/mobile/package.json and the lockfile importers. Existing local links are Windows junctions.",
+      "fix": "Declare every runtime workspace dependency in its consuming package and regenerate the pinned pnpm lockfile.",
+      "verification": "Confirmed by source and dependency-manifest inspection; clean install/bundle not executed.",
+      "owner": "Mobile composition and dependency wiring"
+    },
+    {
+      "id": "R002",
+      "severity": "P1",
+      "tasks": "T001;T098;T098B;T098C;T100",
+      "title": "Sync core packages are excluded from the workspace",
+      "file": "pnpm-workspace.yaml",
+      "line": 6,
+      "trigger": "Resolve @locallab/sync-merge, sync-transport or sync-composition through a clean pnpm workspace install.",
+      "impact": "The new packages live at packages/sync/core/*, one directory deeper than packages/*/*. No matching workspace glob exists. The in-progress sync-icloud package already declares sync-merge as workspace:*, making dependency resolution fail on a clean install.",
+      "evidence": "pnpm-workspace.yaml includes packages/*, packages/*/*, packages/chat/engine/* and other explicit deep patterns but no packages/sync/core/*. packages/sync/icloud/package.json declares @locallab/sync-merge: workspace:*.",
+      "fix": "Add packages/sync/core/* to the workspace and regenerate the lockfile.",
+      "verification": "Confirmed by path and manifest inspection; installer not executed. T100 is in-progress code, not a completed-task regression claim.",
+      "owner": "Workspace configuration"
+    },
+    {
+      "id": "R003",
+      "severity": "P1",
+      "tasks": "T055;T049",
+      "title": "Saving a group deadlocks the app database queue",
+      "file": "packages/groups/config/src/index.ts",
+      "line": 294,
+      "trigger": "Save a valid room from GroupSetupPanel using the app's sharedMobileDatabase connection.",
+      "impact": "dbTransaction awaits a transaction callback that issues writes through the outer this.db. The outer adapter queues those writes behind the transaction that is waiting for them. The transaction never commits and every later database operation, including chat sends, waits indefinitely.",
+      "evidence": "saveRoom calls dbTransaction(this.db, async () => ...) and uses this.db.runAsync inside the callback. dbTransaction passes work directly to withTransactionAsync without exposing its transaction argument. apps/mobile/platform/database.ts queues outer operations and supplies a separate transaction-scoped port.",
+      "fix": "Pass the supplied transaction port into the callback and perform every room and participant write on that port.",
+      "verification": "Confirmed by source control-flow inspection; runtime reproduction not executed.",
+      "owner": "T055 group configuration"
+    },
+    {
+      "id": "R004",
+      "severity": "P1",
+      "tasks": "T053;T049",
+      "title": "Resetting Persona memory scope deadlocks the app database",
+      "file": "packages/memory/scope/src/index.ts",
+      "line": 283,
+      "trigger": "Call SQLitePersonaMemoryScope.resetPersona on the shared mobile database.",
+      "impact": "The transaction callback awaits this.db.runAsync on the outer queue instead of the supplied transaction connection. Its writes wait for the transaction to finish while the transaction waits for its writes, permanently blocking the shared database queue.",
+      "evidence": "resetPersona calls this.db.withTransactionAsync(async () => ...) and both DELETE statements use this.db. The shared database adapter queues external operations after the active transaction.",
+      "fix": "Accept the transaction callback parameter and use that scoped port for both DELETE statements.",
+      "verification": "Confirmed by source control-flow inspection. No current mobile UI caller was found; this is a blocker in the package reset API, not an observed UI freeze. Runtime reproduction not executed.",
+      "owner": "T053 Persona memory scope"
+    },
+    {
+      "id": "R005",
+      "severity": "P1",
+      "tasks": "T080",
+      "title": "Voice Studio reads a nonexistent audio_uri column",
+      "file": "apps/mobile/features/voice/imports.ts",
+      "line": 45,
+      "trigger": "Create a fresh SQLiteTranscriptionImportStore and call list(), including on normal chat-screen initialization.",
+      "impact": "The SELECT fails with no such column: audio_uri. The Promise.all that also loads Personas and cloud voice connections rejects and silently leaves all three lists empty, disabling imported recording playback and Persona cloud voice selection.",
+      "evidence": "ensureSchema creates audio_path at line 34; add writes audio_path; list selects audio_uri AS audioUri. apps/mobile/composition/chat/screen.tsx:861 groups imports, Personas and connection loading in one Promise.all followed by an empty catch.",
+      "fix": "Select audio_path AS audioUri and avoid letting one optional list failure suppress the other lists.",
+      "verification": "Confirmed schema/query contradiction; SQL execution not run.",
+      "owner": "T080 Voice Studio"
+    },
+    {
+      "id": "R006",
+      "severity": "P1",
+      "tasks": "T098;T098B",
+      "title": "Initial copy tombstones the source records it must retain",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 248,
+      "trigger": "Choose copy-phone or copy-mac when both stores share entity IDs, or let the source deliver before the target calls runInitialSync.",
+      "impact": "replaceLocalSet tombstones every live target row with a new wall-clock revision. Source rows retain their older revisions, so shared IDs cannot be restored; source-first delivery is deleted after receipt. Initial sync is then marked done with missing conversations/messages.",
+      "evidence": "runInitialSync separately sends liveSourceRecords or calls replaceLocalSet. replaceLocalSet deletes every live snapshot entry without a source membership set. envelope preserves old revisions, and MergeStore suppresses records older than existing tombstones. Existing copy fixtures run target first and use disjoint IDs.",
+      "fix": "Coordinate the copy using a source snapshot/membership manifest and atomically replace the target with those members, deleting only rows absent from the source.",
+      "verification": "Confirmed by source ordering and merge rules; adversarial scenario not executed.",
+      "owner": "T098 sync composition"
+    },
+    {
+      "id": "R007",
+      "severity": "P1",
+      "tasks": "T093;T096",
+      "title": "Recreating a saved pairing reuses encryption keys and nonces",
+      "file": "packages/remote/client/src/index.ts",
+      "line": 135,
+      "trigger": "Create two client instances from the same saved QR, such as before and after an app restart, and send the first frame from each.",
+      "impact": "The same pairing secret and route derive the same salts, keys and sequence-zero nonce. Reusing an AES-GCM nonce compromises sealed-frame security, while a peer retaining its replay state refuses the restarted client.",
+      "evidence": "deriveSessionSalts is deterministic per QR secret and route. createPairingClient constructs fresh createSessionPairing channels each time. SealingChannel initializes nextSequence to 0 in packages/remote/crypto/src/index.ts:192.",
+      "fix": "Negotiate fresh session material on reconnect before resetting counters, or persist a safe nonce space and peer replay state across restarts.",
+      "verification": "Confirmed by deterministic key/nonce construction; cryptographic runtime probe not executed.",
+      "owner": "T093/T096 pairing protocol implementation"
+    },
+    {
+      "id": "R008",
+      "severity": "P1",
+      "tasks": "T098;T098C",
+      "title": "Asynchronous acknowledgements leave later sync batches unsent",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 190,
+      "trigger": "Enqueue 600 valid records, let sendBatch resolve before the WebSocket acknowledgement arrives, then deliver the acknowledgement for the first 500.",
+      "impact": "sendPending returns after the first unacknowledged send. onFrame handles the acknowledgement and returns without pumping the remaining batch. No acknowledgement timer is scheduled. The remaining 100 rows stay pending indefinitely and initialSyncDone may already be recorded.",
+      "evidence": "transport/src/index.ts:167 returns when head is not yet acknowledged; composition/src/index.ts:190 calls handleAck and immediately returns; neither implementation schedules acknowledgement retries. The 600-record fixture invokes handleAck inside send, hiding asynchronous delivery.",
+      "fix": "Pump the next batch after an acknowledgement and schedule a bounded acknowledgement timeout/retry without overlapping send pumps.",
+      "verification": "Confirmed by source control flow and fixture structure; real WebSocket scenario not executed.",
+      "owner": "T098C transport and T098 composition"
+    },
+    {
+      "id": "R009",
+      "severity": "P1",
+      "tasks": "T030",
+      "title": "Mac MLX worker blocks its own inference tasks while reading stdin",
+      "file": "workers/mlx-macos/Sources/LocalLabMlxWorker/main.swift",
+      "line": 51,
+      "trigger": "Keep the worker stdin open and send a load or generate command, then wait for a result.",
+      "impact": "Worker.run is MainActor-isolated and calls synchronous readLine in a loop without suspending. The load/generation Task closures inherit that actor and cannot execute while the loop blocks waiting for another line. Normal persistent-worker inference never begins.",
+      "evidence": "The Worker class is annotated @MainActor. run contains while let line = readLine(). The load/unload/generate cases create Task closures but do not await or yield. Both runtime work and completion events are inside those closures.",
+      "fix": "Read stdin on a dedicated blocking thread or feed commands through an asynchronous stream so the actor can execute generation and cancellation tasks.",
+      "verification": "Confirmed actor/control-flow defect by source inspection; Mac worker not executed.",
+      "owner": "T030 Mac MLX worker"
+    },
+    {
+      "id": "R010",
+      "severity": "P1",
+      "tasks": "T031",
+      "title": "Native download pause method has an incompatible Swift return type",
+      "file": "modules/downloads/ios/native/BackgroundTransferSession.swift",
+      "line": 79,
+      "trigger": "Compile BackgroundTransferSession.swift into the native downloader.",
+      "impact": "pause is declared to return Data?, but its checked continuation resumes with data?.base64EncodedString(), which is String?. The native implementation cannot type-check as written, blocking the background downloader build.",
+      "evidence": "The declaration at line 79 is async throws -> Data?. Line 84 passes the optional base64 String to continuation.resume(returning:). The TypeScript bridge expects resumeData as a string.",
+      "fix": "Make the Swift return type String? to match the bridge, or return Data and perform encoding in a correctly typed bridge layer.",
+      "verification": "Confirmed static type contradiction; Swift compilation not available/executed on this Windows review host.",
+      "owner": "T031 native downloader"
+    },
+    {
+      "id": "R011",
+      "severity": "P1",
+      "tasks": "T021;T022;T062;T070;C02;C10",
+      "title": "Cloud adapters discard the tool results required by the next tool round",
+      "file": "packages/providers/cloud/anthropic/src/index.ts",
+      "line": 57,
+      "trigger": "Run a registered tool such as current_time or web_search with Anthropic, OpenAI advanced, Gemini or Mistral and start the following model round.",
+      "impact": "The app uses ToolLoopEngine's canonical assistant/tool exchange, but these provider encoders discard every kind=tool entry instead of translating its result. Several also omit the assistant tool-call structure. The model never receives the tool output, so autonomous tool requests cannot reliably reach a grounded final reply and may repeat until the loop limit.",
+      "evidence": "appendToolExchange creates kind=tool rows in packages/tools/engine/src/index.ts:743. Mobile constructs ToolLoopEngine without appendExchange at screen.tsx:1754. Anthropic encoder accepts only user/assistant after system handling; OpenAI advanced line 50, Gemini line 304 and Mistral line 316 likewise filter out tool. No provider-specific replay mapper is supplied by composition.",
+      "fix": "Implement vendor-specific tool call/result replay in each affected adapter or supply a matching appendExchange mapper; preserve native call IDs and required reasoning blocks where applicable.",
+      "verification": "Confirmed by tracing canonical exchange into source encoders; live provider rounds not executed.",
+      "owner": "Provider encoders and T070 tool integration"
+    },
+    {
+      "id": "R012",
+      "severity": "P1",
+      "tasks": "T033",
+      "title": "Hugging Face enqueue API rejects its declared revision argument",
+      "file": "packages/models/imports/src/index.ts",
+      "line": 260,
+      "trigger": "Call ModelLifecycleRegistry.enqueueHuggingFace with any string revision as required by its public TypeScript signature.",
+      "impact": "RevisionSchema requires a strict object containing wallMs, counter and deviceId, so every correctly typed string argument throws before jobs.create. The package's Hugging Face enqueue path is unusable to typed consumers.",
+      "evidence": "enqueueHuggingFace declares revision: string at line 253 and then calls RevisionSchema.parse(revision) at line 260. The contract in packages/contracts/src/identity.ts requires an object. Existing descriptor tests never call enqueueHuggingFace.",
+      "fix": "Type the argument as Revision and pass that validated object to JobStore.create, or explicitly parse a serialized revision before validation if serialization is the intended API.",
+      "verification": "Confirmed signature/schema contradiction; method not executed and mobile Hugging Face UI is not currently mounted.",
+      "owner": "T033 model import lifecycle"
+    },
+    {
+      "id": "R013",
+      "severity": "P1",
+      "tasks": "T064;T070",
+      "title": "Legacy MCP SSE transport waits for replies on the wrong channel",
+      "file": "packages/tools/mcp-http/src/client.ts",
+      "line": 641,
+      "trigger": "Connect to a legacy HTTP+SSE MCP server whose POST accepts messages and whose GET stream delivers JSON-RPC replies.",
+      "impact": "Initialization POST acceptance is parsed as if it contained a JSON-RPC response. The legacy GET stream is no longer consumed after the endpoint event. Initialization fails or waits until timeout; no tools from compliant legacy servers are available.",
+      "evidence": "discoverLegacySse stops iterating frames after the endpoint event at line 616 and calls postRpc for initialize at line 641. postRpc passes the POST response to readEnvelope. No persistent GET-stream response dispatcher exists. Legacy specification requires server replies as SSE message events: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports",
+      "fix": "Keep the legacy GET stream active for the session and dispatch SSE message replies by JSON-RPC ID; treat POST responses as message acceptance.",
+      "verification": "Confirmed by source tracing against the primary legacy MCP specification; live server reproduction not executed.",
+      "owner": "T064 MCP HTTP client"
+    },
+    {
+      "id": "R014",
+      "severity": "P1",
+      "tasks": "T064;T070",
+      "title": "MCP SSE parser never recognizes CRLF message boundaries",
+      "file": "packages/tools/mcp-http/src/client.ts",
+      "line": 528,
+      "trigger": "Receive an MCP SSE response framed with CRLF lines and CRLF blank lines, such as data: {...} followed by two CRLF sequences.",
+      "impact": "The parser searches the unnormalized buffer for LF-LF. CRLF-CRLF does not contain that sequence, so no frame is yielded. Initialization or tool calls hang until their timeout; without a timeout the retained buffer can grow indefinitely.",
+      "evidence": "readEventStreamFrames searches buffer.indexOf(\"\\n\\n\") before normalizing CRLF in the extracted frame. Thus valid CRLF streams never reach the normalization or JSON-RPC parser.",
+      "fix": "Normalize line endings incrementally, including split CRLF across chunks, before detecting blank lines; bound retained frame bytes and cancel the owned reader on exit.",
+      "verification": "Confirmed by literal delimiter/control-flow inspection; live stream execution not performed.",
+      "owner": "T064 MCP stream framing"
+    },
+    {
+      "id": "R015",
+      "severity": "P1",
+      "tasks": "T064;T066;T049;T070",
+      "title": "MCP discovery escapes the chat setup deadline and can lock sending indefinitely",
+      "file": "packages/tools/mcp-http/src/tools.ts",
+      "line": 55,
+      "trigger": "Enable an MCP server that successfully initializes, then leaves its tools/list response open without replying.",
+      "impact": "collectMcpTools passes the 15-second chat deadline only to initialize. createMcpTools replaces it with a fresh never-aborted signal, and the client has no configured timeout. Chat remains awaiting discovery with sendPending=true and working=true, preventing subsequent sends or mode changes until restart.",
+      "evidence": "createMcpTools creates new AbortController().signal and awaits discoverTools with it. collectMcpTools creates a client without timeoutMs and awaits createMcpTools after initialize. screen.tsx:1678 creates a 15-second controller but awaits collectMcpTools before starting the run; its finally releases send admission only after that await settles.",
+      "fix": "Accept and propagate the caller AbortSignal through createMcpTools/discoverTools and apply one bounded setup deadline to every discovery request; ensure deadline cleanup runs in finally.",
+      "verification": "Confirmed by source cancellation/data-flow tracing; stalled-server reproduction not executed.",
+      "owner": "MCP client and mobile tool collection"
+    },
+    {
+      "id": "R016",
+      "severity": "P1",
+      "tasks": "T099;T098",
+      "title": "Initial Persona photo sync rejects the batch before its Persona arrives",
+      "file": "packages/sync/core/composition/src/index.ts",
+      "line": 198,
+      "trigger": "Perform initial merge/copy sync from a source with a selected Persona and its selected photo to a receiver that has neither row.",
+      "impact": "Source snapshots sort attachment records before persona records. The receiver photo gate requires an existing local Persona reference, so it rejects the first attachment before applying the Persona later in the same batch. No acknowledgement is sent; retrying the unchanged batch cannot converge and also blocks following chat records.",
+      "evidence": "MergeStore.snapshot sorts entityType/entityId keys; liveSourceRecords preserves that order. onFrame admits and applies one record at a time, throwing before acknowledgement. personaTierGate attachment admission only uses ctx.attachmentOwner, which is a local lookup. No pending-batch ownership preflight or dependency ordering exists.",
+      "fix": "Validate selected incoming Persona ownership for the full batch before applying photo records, or order/admit dependencies explicitly while preserving privacy checks and transactional acknowledgement semantics.",
+      "verification": "Confirmed by source ordering and admission tracing; two-device execution not performed.",
+      "owner": "T099 Persona sync admission and T098 composition"
+    },
+    {
+      "id": "R017",
+      "severity": "P1",
+      "tasks": "T072;T077;T001",
+      "title": "Autolinked iOS speech module contains Swift compilation errors",
+      "file": "packages/speech-system/ios/SpeechSystemModule.swift",
+      "line": 343,
+      "trigger": "Build the iOS mobile app with its declared @locallab/speech-system dependency autolinked.",
+      "impact": "The PCM capture branch calls throwing AVAudioEngine.start without try. The AVAudioConverter input block also writes .pointee on its first argument (packet count) instead of the second argument (input-status pointer). The speech native target cannot compile, blocking the iOS app build.",
+      "evidence": "startCapture line 343 calls engine.start() while the same file correctly uses try self.engine!.start() in dictation. Conversion block lines 329-335 names arguments status,outCondition but assigns status.pointee. apps/mobile/package.json declares speech-system and its Expo module config registers the Swift class.",
+      "fix": "Call try engine.start() and update outCondition.pointee in the conversion input block; compile the autolinked target on macOS before claiming native completion.",
+      "verification": "Confirmed source type/call contradictions; Swift/iOS compilation not executed on this Windows host.",
+      "owner": "T072/T077 native speech module"
+    },
+    {
+      "id": "R018",
+      "severity": "P1",
+      "tasks": "T086;T087;T092",
+      "title": "ComfyUI rejects successful prompt submissions with empty node_errors",
+      "file": "packages/media/comfyui/src/index.ts",
+      "line": 368,
+      "trigger": "Submit a valid graph to a normal ComfyUI /prompt endpoint returning {prompt_id,number,node_errors:{}}.",
+      "impact": "The empty object is truthy, so the adapter throws malformed before recording prompt_id or following outputs. Every successful submission is reported failed while the server may still generate the image; retries can submit additional unwanted work.",
+      "evidence": "run checks if (promptRecord.node_errors) and throws. The official server successful branch queues the prompt and returns node_errors: valid[3], an object: https://github.com/Comfy-Org/ComfyUI/blob/master/server.py . Fixtures omitting this field do not model this response.",
+      "fix": "Distinguish actual prompt rejection/error from an empty diagnostics map and retain prompt_id for every accepted submission.",
+      "verification": "Source tracing against official ComfyUI server; real backend execution not performed.",
+      "owner": "T086 ComfyUI adapter"
+    },
+    {
+      "id": "R019",
+      "severity": "P1",
+      "tasks": "T086",
+      "title": "Applying LoRA rewires the default graph VAE to a CLIP output",
+      "file": "packages/media/comfyui/src/index.ts",
+      "line": 126,
+      "trigger": "Build the default ComfyUI graph with at least one selected LoRA.",
+      "impact": "VAEDecode.vae originally points to CheckpointLoaderSimple output 2. applyLoras replaces every nonzero checkpoint output with the final LoRA CLIP output 1. The resulting graph supplies CLIP where VAE is required and the server rejects it; default LoRA generation is unusable.",
+      "evidence": "defaultGraph node 6 uses vae:[\"1\",2]. applyLoras rewrites all checkpoint references with value[1]===0 ? modelSource : clipSource, so output 2 is corrupted. LoRA loaders only replace MODEL and CLIP, not the unchanged VAE.",
+      "fix": "Rewrite only output slots 0 and 1; preserve VAE and any other checkpoint outputs. Allocate collision-free LoRA node IDs for imported graphs.",
+      "verification": "Confirmed by source graph transformation; server execution not performed.",
+      "owner": "T086 LoRA graph transformation"
+    },
+    {
+      "id": "R020",
+      "severity": "P1",
+      "tasks": "T094",
+      "title": "Relay Docker deployment cannot install the pnpm workspace",
+      "file": "services/relay/Dockerfile",
+      "line": 14,
+      "trigger": "Run the documented repository-root Docker build or docker-compose.relay.yml build.",
+      "impact": "The image runs npm ci although no package-lock exists. Installation fails before the relay can start. The root also has no npm workspace configuration, so merely supplying a lock would not link the copied workspace:* relay dependencies.",
+      "evidence": "Dockerfile copies package.json/package-lock.json* and runs npm ci --omit=dev. The current root has pnpm-lock.yaml and packageManager pnpm@8.15.9, no package-lock.json, and workspace membership is declared in pnpm-workspace.yaml rather than root npm workspaces.",
+      "fix": "Build/install with the pinned pnpm workspace and lockfile, or produce an explicit deployable package bundle with resolved workspace dependencies.",
+      "verification": "Confirmed build inputs and install-command mismatch; Docker build not executed.",
+      "owner": "T094 relay deployment"
+    },
+    {
+      "id": "R021",
+      "severity": "P1",
+      "tasks": "T093;T096",
+      "title": "Out-of-order encrypted frames remain replayable after acceptance",
+      "file": "packages/remote/crypto/src/index.ts",
+      "line": 227,
+      "trigger": "Deliver authentic frame sequence 1 before sequence 0, then resend sequence 0 repeatedly while it remains inside the replay window.",
+      "impact": "Every repeat of sequence 0 is accepted and decrypted because the older-sequence branch never marks that position seen. The identical Rust receiver has the same defect. A relay that reorders/replays captured valid requests can repeatedly deliver authenticated payloads despite the promised replay protection.",
+      "evidence": "OpeningChannel.acceptSequence checks the bit for back but returns without setting it. Rust accept_sequence likewise returns Ok without updating seen_mask. Only new high-water sequences set a bit. Authentication also occurs after replay-state mutation.",
+      "fix": "Commit the corresponding seen bit for every accepted sequence after successful authentication; keep failed authentication from consuming replay state. Apply the same algorithm in both languages.",
+      "verification": "Confirmed source replay-state transition; live paired execution not performed.",
+      "owner": "T093 cross-language replay protection"
+    },
+    {
+      "id": "R022",
+      "severity": "P1",
+      "tasks": "T100",
+      "title": "iCloud upload completion can discard newer pending edits",
+      "file": "packages/sync/icloud/src/index.ts",
+      "line": 150,
+      "trigger": "Start publishing revision A; while saveRecords is awaiting the cloud, call noteLocalChange with newer revision B of the same entity; then let A finish.",
+      "impact": "Completion deletes the pending entry by entity key, removing B even though only A reached the cloud. B is also already in seen, so re-notifying the same change will not enqueue it again. Fetch similarly deletes pending changes for superseded incoming records. Newer local edits can be permanently omitted from sync.",
+      "evidence": "publish snapshots chunk, awaits saveRecords, then unconditionally pending.delete(entityType:entityId). noteLocalChange can overwrite that key during the await. seen is set at enqueue. fetch treats superseded as crossed and deletes by recordName without comparing the pending revision.",
+      "fix": "Remove a pending upload only if it still has the exact uploaded revision; retain newer local changes when applying stale cloud records. Serialize passes and persist pending identities for restart recovery.",
+      "verification": "Confirmed async state transition by source inspection. T100 is in-progress shared code; no native CloudKit bridge/runtime was executed.",
+      "owner": "T100 iCloud pending upload bookkeeping"
+    },
+    {
+      "id": "R023",
+      "severity": "P1",
+      "tasks": "T098C;T098;T099",
+      "title": "Acknowledgements of old sync records suppress later updates with the same identity",
+      "file": "packages/sync/core/transport/src/index.ts",
+      "line": 214,
+      "trigger": "Send and acknowledge record ID X, then enqueue a changed or deleted entity using record ID X with a newer revision.",
+      "impact": "ackedIds retains X forever. The next batch is immediately considered fully acknowledged and removed without sending. Stable record IDs are deliberately reused by initial snapshot replay, and tombstones commonly use the entity ID. Reusing an acknowledged identity silently drops subsequent changes.",
+      "evidence": "handleAck adds IDs to an unbounded set and never removes them. isFullyAcked checks record.id only, independent of revision/batch. sendPending shifts a fully acknowledged head before calling send. Sync composition envelopes reuse row.recordId and replacement tombstones use entityId.",
+      "fix": "Scope acknowledgements to a unique change/batch identity or revision, clear completed-window state safely, and reject stale acknowledgements from earlier batches.",
+      "verification": "Confirmed queue/ack state-machine defect by source inspection; live transport not executed.",
+      "owner": "T098C acknowledgement identity"
+    }
+  ]
+}

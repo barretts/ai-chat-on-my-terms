@@ -1,5 +1,6 @@
 export const chatPageLabels = {
   providers: "Connections",
+  voice: "Voice settings",
   voices: "Voices",
   library: "Library",
   files: "Files",
@@ -7,6 +8,8 @@ export const chatPageLabels = {
   search: "Search chats",
   archives: "Import & export",
   personas: "Personas",
+  groups: "Group chats",
+  media: "Image generation",
   memory: "Memory",
   history: "Recent chats",
   research: "Web research",
