@@ -3,6 +3,8 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -54,14 +56,23 @@ export function SupportProvider(options: {
   diagnosticsSource?: () => RedactedDiagnosticsInput | null;
   children: ReactNode;
 }) {
-  const client =
-    options.client ??
-    (options.baseUrl === undefined
-      ? null
-      : createSupportClient({
-          baseUrl: options.baseUrl,
-          tokens: secureStoreTokenPort(),
-        }));
+  const client = useMemo(
+    () =>
+      options.client ??
+      (options.baseUrl === undefined
+        ? null
+        : createSupportClient({
+            baseUrl: options.baseUrl,
+            tokens: secureStoreTokenPort(),
+          })),
+    [options.client, options.baseUrl],
+  );
+  // Rebuilt in the render body, this factory produced a fresh client (and a
+  // fresh token adapter) on every render: each refresh state update changed
+  // the client identity, reran the refresh effect, and looped requests until
+  // restart. The client is now owned here and rebuilt only for a real
+  // configuration change (injected client or baseUrl).
+  const activeClient = useRef(client);
   const [requests, setRequests] = useState<SupportRequestInfo[]>([]);
   const [changelog, setChangelog] = useState<ChangelogInfo[]>([]);
   const [update, setUpdate] = useState<SupportValue["update"]>(null);
@@ -69,12 +80,15 @@ export function SupportProvider(options: {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (client === null) return;
+    // A closure captured before a client switch must not fetch through the
+    // abandoned client nor overwrite state from its responses.
+    if (client === null || client !== activeClient.current) return;
     try {
       const [items, log] = await Promise.all([
         client.listRequests(),
         client.changelog(),
       ]);
+      if (client !== activeClient.current) return;
       setRequests(items);
       setChangelog(log);
       setError(null);
@@ -84,14 +98,18 @@ export function SupportProvider(options: {
   }, [client]);
 
   useEffect(() => {
+    // Commit the new client as active before refreshing it; refreshes still
+    // in flight on the previous client are dropped by the identity check.
+    activeClient.current = client;
     void refresh();
-  }, [refresh]);
+  }, [client, refresh]);
 
   const checkForUpdate = useCallback(
     async (installedVersion: string) => {
       if (client === null) return;
       try {
-        setUpdate(await client.versionCheck(installedVersion));
+        const result = await client.versionCheck(installedVersion);
+        if (client === activeClient.current) setUpdate(result);
       } catch {
         setUpdate(null);
       }

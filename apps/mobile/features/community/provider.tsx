@@ -3,6 +3,8 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -33,26 +35,38 @@ export function CommunityProvider(options: {
   client?: CommunityClient;
   children: ReactNode;
 }) {
-  const client =
-    options.client ??
-    (options.baseUrl === undefined
-      ? null
-      : createCommunityClient({
-          baseUrl: options.baseUrl,
-          tokens: secureStoreTokenPort(),
-        }));
+  const client = useMemo(
+    () =>
+      options.client ??
+      (options.baseUrl === undefined
+        ? null
+        : createCommunityClient({
+            baseUrl: options.baseUrl,
+            tokens: secureStoreTokenPort(),
+          })),
+    [options.client, options.baseUrl],
+  );
+  // Rebuilt in the render body, this factory produced a fresh client (and a
+  // fresh token adapter) on every render: each refresh state update changed
+  // the client identity, reran the refresh effect, and looped requests until
+  // restart. The client is now owned here and rebuilt only for a real
+  // configuration change (injected client or baseUrl).
+  const activeClient = useRef(client);
   const [themes, setThemes] = useState<ThemeListing[]>([]);
   const [voices, setVoices] = useState<VoicePackInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (client === null) return;
+    // A closure captured before a client switch must not fetch through the
+    // abandoned client nor overwrite state from its responses.
+    if (client === null || client !== activeClient.current) return;
     try {
       const [themeList, voiceList] = await Promise.all([
         client.listThemes(),
         client.listVoices(),
       ]);
+      if (client !== activeClient.current) return;
       setThemes(themeList);
       setVoices(voiceList);
       setError(null);
@@ -62,8 +76,11 @@ export function CommunityProvider(options: {
   }, [client]);
 
   useEffect(() => {
+    // Commit the new client as active before refreshing it; refreshes still
+    // in flight on the previous client are dropped by the identity check.
+    activeClient.current = client;
     void refresh();
-  }, [refresh]);
+  }, [client, refresh]);
 
   const download = useCallback(
     async (slugOrId: string) => {
