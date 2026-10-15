@@ -292,3 +292,87 @@ test("photo rows ride iCloud as sha256-addressed assets, bytes included", async 
   assert.notEqual(storeB.rowFor("attachment", photoId), null, "photo row crossed iCloud");
   assert.deepEqual(sinkSeen, [{ entityId: photoId, sha256: sha, size: 5 }], "asset bytes drained");
 });
+
+// R022 — upload completion must not discard a newer pending edit.
+
+class GateCloud extends FakeCloud {
+  private gateOpen = false;
+  private releaseFn: () => void = () => {};
+
+  override async saveRecords(records: readonly ICloudRecord[]): Promise<void> {
+    if (!this.gateOpen) {
+      await new Promise<void>((resolve) => {
+        this.releaseFn = resolve;
+      });
+    }
+    await super.saveRecords(records);
+  }
+
+  open(): void {
+    this.gateOpen = true;
+    this.releaseFn();
+  }
+}
+
+test("R022: an edit arriving while upload A is in flight survives A's completion", async () => {
+  const cloud = new GateCloud();
+  const { adapter } = makeSim(cloud, DEV_A);
+  adapter.noteLocalChange([rec("conversation", CONV, convPayload("A", DEV_A, 10), DEV_A, 10)]);
+  const publishing = adapter.publish();
+  await new Promise((resolve) => setTimeout(resolve, 0)); // publish sits in saveRecords
+  const newer = rec("conversation", CONV, convPayload("B NEWER", DEV_A, 20), DEV_A, 20);
+  adapter.noteLocalChange([newer]); // user edits WHILE A uploads
+  cloud.open();
+  assert.equal(await publishing, 1, "A counted");
+  const status = await adapter.status();
+  assert.ok(status.state === "ready" && status.pendingUploads === 1, "B stays queued — A settled only A");
+
+  assert.equal(await adapter.publish(), 1, "B uploads on the next pass");
+  const watcher = makeSim(cloud, DEV_B);
+  await watcher.adapter.fetch();
+  assert.equal(
+    (watcher.store.rowFor("conversation", CONV)!.payload as { title: string }).title,
+    "B NEWER",
+    "the newest edit actually reached the cloud",
+  );
+});
+
+test("R022: fetching stale cloud A keeps newer pending B; a subsumed pending settles", async () => {
+  const cloud = new FakeCloud();
+  const stale = rec("conversation", CONV, convPayload("cloud A", DEV_B, 10), DEV_B, 10);
+  await cloud.saveRecords([
+    {
+      recordName: `conversation:${CONV}`,
+      entityType: "conversation",
+      entityId: CONV,
+      revision: { wallMs: 10, counter: 0, deviceId: DEV_B },
+      payload: stale.payload,
+      assetSha256: null,
+      updatedAt: stamp(10),
+    },
+  ]);
+
+  const { adapter } = makeSim(cloud, DEV_A);
+  adapter.noteLocalChange([rec("conversation", CONV, convPayload("local B NEWER", DEV_A, 20), DEV_A, 20)]);
+  await adapter.fetch(); // stale A crosses (superseded): pending B must SURVIVE
+  const status = await adapter.status();
+  assert.ok(status.state === "ready" && status.pendingUploads === 1, "newer local edit not discarded");
+  await adapter.publish();
+
+  // Same entity, pending NOT newer than cloud (wallMs 5 < A@10): after fetch
+  // the pending entry must settle (old behavior preserved), so no endless
+  // re-upload of a subsumed row.
+  const { adapter: sim2 } = makeSim(cloud, id(900_003));
+  sim2.noteLocalChange([rec("conversation", CONV, convPayload("ancient", DEV_A, 5), DEV_A, 5)]);
+  await sim2.fetch();
+  const settled = await sim2.status();
+  assert.ok(settled.state === "ready" && settled.pendingUploads === 0, "subsumed pending settles");
+
+  // And the newer B is now on the cloud for the other device:
+  const watcher = makeSim(cloud, DEV_B);
+  await watcher.adapter.fetch();
+  assert.equal(
+    (watcher.store.rowFor("conversation", CONV)!.payload as { title: string }).title,
+    "local B NEWER",
+  );
+});

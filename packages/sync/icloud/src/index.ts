@@ -147,7 +147,18 @@ export class IcloudSyncAdapter {
         records.push(toIcloudRecord(row, sha256, this.cfg.now()));
       }
       await this.cfg.bridge.saveRecords(records);
-      for (const row of chunk) this.pending.delete(`${row.entityType}:${row.entityId}`);
+      for (const row of chunk) {
+        // R022: `saveRecords` awaited the cloud while a newer local edit
+        // may have replaced this queue entry. Only settle an entry that
+        // still IS the uploaded revision; never drop newer pending work.
+        // (This same revision check makes an overlapping second publish
+        // pass inert, and after a restart the host's stageAllLocalRows
+        // re-stages every live row, so nothing is lost either way.)
+        const key = `${row.entityType}:${row.entityId}`;
+        const current = this.pending.get(key);
+        if (current !== undefined && revisionKey(current.revision) === revisionKey(row.revision))
+          this.pending.delete(key);
+      }
       saved += chunk.length;
       if (chunk.length < batch) break;
     }
@@ -167,7 +178,13 @@ export class IcloudSyncAdapter {
       page.records.forEach((record, i) => {
         const effect = effects[i];
         const crossed = effect === "applied" || effect === "conflict" || effect === "superseded";
-        if (crossed) this.pending.delete(record.recordName);
+        const current = this.pending.get(record.recordName);
+        // R022: a crossed cloud record settles a pending entry ONLY when
+        // it subsumes it (same or newer revision). A newer unsent local
+        // edit that merely superseded this stale cloud copy must stay
+        // queued, or the newest edit would never reach the cloud.
+        if (crossed && current !== undefined && compareRevision(current.revision, record.revision) <= 0)
+          this.pending.delete(record.recordName);
         this.seen.add(revisionKey(record.revision));
         applied += crossed ? 1 : 0;
       });
