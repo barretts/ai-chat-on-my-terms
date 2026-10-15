@@ -144,6 +144,11 @@ function wire(a: Device, b: Device): void {
 const liveRows = (store: MergeStore): MergeStateRow[] =>
   store.snapshot().filter((entry) => entry.row.payload !== null).map((entry) => entry.row);
 
+// R006: after a snapshot replacement the cover re-bases member revisions,
+// so copy convergence compares identity + content, not the stamps.
+const rowsOf = (store: MergeStore) =>
+  liveRows(store).map((row) => ({ entityType: row.entityType, entityId: row.entityId, payload: row.payload }));
+
 function bulkMessages(deviceId: string, n: number): unknown[] {
   const out: unknown[] = [
     rec("conversation", id(9), convPayload(id(9), deviceId, "Bulk", 9_000), deviceId, 9_000),
@@ -211,40 +216,68 @@ test("merge choice: both sets converge; identical titles stay separate; edits an
   }
 });
 
-test("copy-phone: Mac's set is replaced, source untouched; delete still propagates", async () => {
+test("copy-phone: snapshot replacement keeps source set; delete still propagates", async () => {
   const phone = makeDevice("phone", DEV_P, phoneSeed(), 100);
   const mac = makeDevice("mac", DEV_M, macSeed(), 200);
   wire(phone, mac);
   await optIn(phone, "copy-phone");
   await optIn(mac, "copy-phone");
-  await mac.engine.runInitialSync(); // target replaces local set
-  assert.equal(mac.store.liveCount(), 0);
-  await phone.engine.runInitialSync(); // source ships everything
 
-  assert.deepEqual(liveRows(phone.store), liveRows(mac.store));
+  // R006 source-first order: the snapshot lands before the target calls
+  // runInitialSync; rows apply as ordinary rows and the target's OWN rows
+  // still survive — the replacement only happens at the boundary.
+  await phone.engine.runInitialSync(); // source ships its set as one membership snapshot
+  const pending = mac.rows().find((r) => r.routeId === ROUTE)!;
+  assert.equal(pending.initialSyncDone, false, "completion is not premature before the boundary");
+  assert.equal(mac.store.liveCount(), 4, "source rows landed; target rows survive until the boundary");
+
+  await mac.engine.runInitialSync(); // target replaces atomically with the delivered members
+  assert.deepEqual(rowsOf(phone.store), rowsOf(mac.store));
   assert.deepEqual(
     new Set(liveRows(mac.store).map((r) => r.entityId)),
     new Set([id(1), id(101)]),
+    "target-only rows are gone; source members remain",
   );
-
-  const del = tomb("conversation", id(1), DEV_M, 500);
+  // R006: the boundary re-based member revisions to the cover revision
+  // (wall-clock time of the choice), so a post-copy delete must carry a
+  // real clock timestamp, exactly like a live edit on a device would —
+  // the small integer `rev(n)` stamps cannot beat it.
+  const delRev = { wallMs: T0_MS + 10_000_000, counter: 0, deviceId: DEV_M };
+  const del = {
+    id: id(7_500),
+    createdAt: new Date(delRev.wallMs).toISOString(),
+    updatedAt: new Date(delRev.wallMs).toISOString(),
+    revision: delRev,
+    entityType: "conversation",
+    entityId: id(1),
+  };
   mac.store.apply(del);
   mac.engine.noteLocalChange([del]);
   await mac.engine.flush();
-  assert.deepEqual(liveRows(phone.store), liveRows(mac.store));
+  assert.deepEqual(rowsOf(phone.store), rowsOf(mac.store));
   assert.equal(phone.store.liveCount(), 1);
 });
 
-test("copy-mac mirrors: iPhone's set is replaced by the Mac set", async () => {
+test("copy-mac mirrors: interrupted copy is retryable and converges after delivery", async () => {
   const phone = makeDevice("phone", DEV_P, phoneSeed(), 100);
   const mac = makeDevice("mac", DEV_M, macSeed(), 200);
   wire(phone, mac);
   await optIn(phone, "copy-mac");
   await optIn(mac, "copy-mac");
-  await phone.engine.runInitialSync(); // target
-  await mac.engine.runInitialSync(); // source
 
-  assert.deepEqual(liveRows(phone.store), liveRows(mac.store));
+  // R006 target-first order: with no snapshot delivered yet the target
+  // must NOT tombstone its set — an interrupted copy stays retryable.
+  await assert.rejects(
+    phone.engine.runInitialSync(),
+    (error: unknown) =>
+      error instanceof SyncCompositionError && error.kind === "state" && /not been delivered/.test(error.message),
+  );
+  assert.equal(phone.store.liveCount(), 2, "nothing is deleted before the snapshot lands");
+  assert.equal(phone.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, false, "completion is not premature");
+
+  await mac.engine.runInitialSync(); // source ships its set as one membership snapshot
+  await phone.engine.runInitialSync(); // retry: the boundary applies the delivered members
+  assert.deepEqual(rowsOf(phone.store), rowsOf(mac.store));
   assert.deepEqual(
     new Set(liveRows(phone.store).map((r) => r.entityId)),
     new Set([id(2), id(102)]),
@@ -579,4 +612,109 @@ test("R008: a lost ack retries within bounds and a failed delivery never records
   assert.equal(outcome.done, false);
   assert.ok(outcome.error instanceof SyncCompositionError, "the caller learns delivery failed");
   assert.equal(phone.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, false, "failed copy may be retried after wake");
+});
+
+test("R006: copy preserves SHARED entity ids and the source wins outright", async () => {
+  const sharedConv = (deviceId: string, title: string, n: number) =>
+    rec("conversation", id(9), convPayload(id(9), deviceId, title, n), deviceId, n);
+  const phone = makeDevice("phone", DEV_P, [...phoneSeed(), sharedConv(DEV_P, "Shared on phone", 30)], 100);
+  const mac = makeDevice("mac", DEV_M, [...macSeed(), sharedConv(DEV_M, "Shared on Mac NEWER", 700)], 200);
+  wire(phone, mac);
+  await optIn(phone, "copy-phone");
+  await optIn(mac, "copy-phone");
+
+  await phone.engine.runInitialSync(); // source ships its membership snapshot
+  await mac.engine.runInitialSync(); // boundary
+
+  const shared = mac.store.rowFor("conversation", id(9))!;
+  assert.notEqual(shared.payload, null, "the shared conversation SURVIVED the replacement");
+  assert.equal((shared.payload as { title: string }).title, "Shared on phone", "source member wins outright");
+  assert.equal(mac.store.rowFor("conversation", id(2))!.payload, null, "target-only row is tombstoned once");
+  assert.deepEqual(rowsOf(phone.store), rowsOf(mac.store));
+
+  // Live sync after the boundary: the target's tombstone of its own row
+  // must never delete the source's member copy of the shared id.
+  const macRowsBefore = mac.store.liveCount();
+  await mac.engine.flush();
+  assert.equal(mac.store.liveCount(), macRowsBefore, "the boundary itself syncs nothing new");
+  assert.equal(phone.store.rowFor("conversation", id(9))!.payload !== null, true, "source keeps the shared id");
+});
+
+test("R006: partial chunks never apply the boundary; replay converges once complete", async () => {
+  const mac = makeDevice("mac", DEV_M, macSeed(), 200);
+  await optIn(mac, "copy-phone"); // copy-phone's Mac side is the target
+  const chunk1 = {
+    tag: "sync-batch",
+    batchId: id(6001),
+    records: [rec("conversation", id(9), convPayload(id(9), DEV_P, "From snapshot", 30), DEV_P, 30)],
+    snapshot: { snapshotId: id(6000), seq: 1, chunks: 2 },
+  };
+  await mac.engine.onFrame(chunk1);
+  await assert.rejects(
+    () => mac.engine.runInitialSync(),
+    (error: unknown) => error instanceof SyncCompositionError && error.kind === "state" && /not been delivered/.test(error.message),
+  );
+  assert.equal(mac.store.liveCount(), 3, "the applied chunk landed, but NO target row was deleted");
+
+  const chunk2 = {
+    tag: "sync-batch",
+    batchId: id(6002),
+    records: [rec("message", id(5001), msgPayload(id(5001), id(9), DEV_P, "only msg", 31), DEV_P, 31)],
+    snapshot: { snapshotId: id(6000), seq: 2, chunks: 2 },
+  };
+  await mac.engine.onFrame(chunk2);
+  await mac.engine.runInitialSync(); // complete now
+  assert.deepEqual(
+    new Set(liveRows(mac.store).map((r) => r.entityId)),
+    new Set([id(9), id(5001)]),
+    "only members live; target-only rows are gone",
+  );
+  assert.equal(mac.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, true);
+
+  await mac.engine.onFrame(chunk1); // replay of a drained chunk stays inert
+  await mac.engine.runInitialSync(); // done: must not re-open the boundary
+  assert.deepEqual(
+    new Set(liveRows(mac.store).map((r) => r.entityId)),
+    new Set([id(9), id(5001)]),
+  );
+});
+
+test("R006: a multi-chunk copy interrupted mid-delivery converges on retry", async () => {
+  const bulk = bulkMessages(DEV_P, 600); // 600 rows → snapshot chunks 500 + 100
+  const phone = makeDevice("phone", DEV_P, bulk, 100);
+  const mac = makeDevice("mac", DEV_M, macSeed(), 200);
+  wire(phone, mac);
+  await optIn(phone, "copy-phone");
+  await optIn(mac, "copy-phone");
+
+  phone.link.up = false; // the wire dies before any chunk leaves the queue
+  await phone.engine.runInitialSync().then(
+    () => assert.fail("an undelivered copy must not complete"),
+    () => {},
+  );
+  assert.equal(mac.engine.status().pendingRecords ?? 0, 0);
+
+  phone.link.up = true;
+  await phone.engine.retryAfterWake(); // bounded retry replays the SAME snapshot
+  await mac.engine.runInitialSync(); // boundary after both chunks land
+  assert.equal(mac.store.liveCount(), 600, "only the source set survives the replacement");
+  assert.deepEqual(
+    new Set(rowsOf(mac.store).map((r) => JSON.stringify(r.payload))),
+    new Set(bulk.map((r) => JSON.stringify((r as { payload: unknown }).payload))),
+    "every member's content survived the boundary",
+  );
+  assert.equal(mac.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, true);
+});
+
+test("R006: copying an EMPTY source set still completes the target", async () => {
+  const phone = makeDevice("phone", DEV_P, [], 100);
+  const mac = makeDevice("mac", DEV_M, macSeed(), 200);
+  wire(phone, mac);
+  await optIn(phone, "copy-phone");
+  await optIn(mac, "copy-phone");
+
+  await phone.engine.runInitialSync(); // zero members ride a single empty marker chunk
+  await mac.engine.runInitialSync();
+  assert.equal(mac.store.liveCount(), 0, "an empty source set still replaces the target set");
+  assert.equal(mac.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, true);
 });

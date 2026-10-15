@@ -23,7 +23,8 @@
  */
 import type { Revision } from "@locallab/contracts/identity";
 import { EncryptedPayloadSchema, type EncryptedPayload } from "@locallab/service-contracts/relay";
-import { MergeStore, assertChangeAllowed, isChatTierType, SyncMergeError, type MergeStateRow } from "@locallab/sync-merge";
+import { createUuidV7 } from "@locallab/remote-crypto";
+import { MergeStore, assertChangeAllowed, isChatTierType, SyncMergeError, type MergeStateRow, type SyncRecord } from "@locallab/sync-merge";
 import {
   SyncPreferenceError,
   completeInitialSync,
@@ -92,6 +93,15 @@ export class SyncEngine {
     resolve: () => void;
     reject: (err: SyncCompositionError) => void;
   } | null = null;
+  // R006: chunks of the source's copy snapshot, recorded as they land
+  // (target side). A newer snapshot id replaces the in-flight one: the
+  // source re-ran its copy after an interrupt and its membership is the
+  // authoritative one.
+  private copy: {
+    snapshotId: string;
+    chunks: number;
+    applied: Map<number, Map<string, SyncRecord>>;
+  } | null = null;
 
   constructor(options: SyncEngineOptions) {
     this.opts = options;
@@ -130,8 +140,10 @@ export class SyncEngine {
 
   /**
    * Initial copy/merge for this pair (both devices call it after the
-   * pairing prompt records the SAME choice). Source = chosen side; the
-   * target tombstones its own set first. No-op once recorded complete.
+   * pairing prompt records the SAME choice). Source = chosen side, and
+   * ships its live set as a coordinated membership SNAPSHOT (R006); the
+   * target replaces its own set atomically with the delivered members.
+   * No-op once recorded complete.
    */
   async runInitialSync(): Promise<void> {
     await this.refresh();
@@ -146,13 +158,20 @@ export class SyncEngine {
       (pref.choice === "copy-phone" && this.opts.side === "phone") ||
       (pref.choice === "copy-mac" && this.opts.side === "mac");
     if (isSource) {
-      this.transport.enqueue(this.liveSourceRecords());
+      // R006: for copy-*, the initial queue is a MEMBERSHIP SNAPSHOT, not
+      // just rows: every chunk carries the descriptor, so the target can
+      // apply its replacement with the full set in hand — either delivery
+      // order. The merge choice sends an ordinary queue: nothing replaces.
+      const snapshot = pref.choice === "merge" ? undefined : { snapshotId: createUuidV7() };
+      this.transport.enqueue(this.liveSourceRecords(), snapshot);
       // R008: completion means DELIVERED, not "queued": a partial send
       // followed by an app kill must never leave `initialSyncDone`
       // recorded while the remaining batches are still undelivered.
       await this.deliverQueued();
     } else {
-      this.replaceLocalSet();
+      // R006: the target tombstones NOTHING before the snapshot is in
+      // hand; finalizeCopy throws a retryable state error until then.
+      await this.finalizeCopy();
     }
     await this.mutate((rows) => completeInitialSync(rows, this.opts.routeId, this.opts.now()));
   }
@@ -256,6 +275,10 @@ export class SyncEngine {
       this.opts.store.apply(record); // throws unsupported/malformed fail-closed
       accepted.push(record.id);
     }
+    // R006: a copy-snapshot chunk also joins the target's pending
+    // membership (idempotent under replay/reorder); the replacement waits
+    // for every chunk so shared entity ids are never tombstoned blind.
+    if (batch.snapshot !== undefined) this.recordCopyChunk(batch.snapshot, batch.records);
     await this.opts.sendAck(syncAckPayload(batch.batchId, accepted));
   }
 
@@ -301,20 +324,48 @@ export class SyncEngine {
       .map((entry) => this.envelope(entry.row, stamp));
   }
 
-  /** Target side of copy-*: tombstone every live local row. */
-  private replaceLocalSet(): void {
+  /**
+   * R006: record one chunk of the source's copy snapshot (idempotent under
+   * ack-driven replay/reorder). A different snapshot id resets the pending
+   * set: the source re-ran its copy after an interrupt, so its newer
+   * membership is authoritative and newer partial older chunks must not merge in.
+   */
+  private recordCopyChunk(
+    snapshot: NonNullable<SyncBatchPayload["snapshot"]>,
+    records: SyncBatchPayload["records"],
+  ): void {
+    if (this.copy === null || this.copy.snapshotId !== snapshot.snapshotId)
+      this.copy = { snapshotId: snapshot.snapshotId, chunks: snapshot.chunks, applied: new Map() };
+    if (this.copy.chunks !== snapshot.chunks)
+      throw new SyncCompositionError("malformed", "copy snapshot chunks disagree on their total");
+    const members = new Map<string, SyncRecord>();
+    for (const record of records)
+      if ("payload" in record) members.set(`${record.entityType}/${record.entityId}`, record);
+    this.copy.applied.set(snapshot.seq, members);
+  }
+
+  /**
+   * Target side of copy-* (R006): replace the local set ONLY with the
+   * source's delivered membership, and only once every chunk has landed —
+   * the old blind replacement tombstoned target rows the source also had
+   * (shared entity ids) and source rows that had already arrived, in
+   * either delivery order, propagating the loss back to the source. Until
+   * the snapshot is complete this throws a retryable state error: an
+   * interrupted copy converges on retry and never records completion
+   * prematurely (the caller records `initialSyncDone` only after this).
+   */
+  private finalizeCopy(): void {
+    const copy = this.copy;
+    if (copy === null || copy.applied.size !== copy.chunks)
+      throw new SyncCompositionError(
+        "state",
+        "initial copy has not been delivered yet; retry once the source has delivered its snapshot",
+      );
+    const members: SyncRecord[] = [];
+    for (const chunk of copy.applied.values()) for (const member of chunk.values()) members.push(member);
     const stamp = this.opts.now();
-    for (const entry of this.opts.store.snapshot()) {
-      if (entry.row.payload === null) continue;
-      this.opts.store.apply({
-        id: entry.row.entityId,
-        createdAt: stamp,
-        updatedAt: stamp,
-        revision: this.replacementRevision(stamp),
-        entityType: entry.row.entityType,
-        entityId: entry.row.entityId,
-      });
-    }
+    this.opts.store.applyCover(members, this.replacementRevision(stamp), stamp);
+    this.copy = null;
   }
 
   private envelope(row: MergeStateRow, stamp: string) {

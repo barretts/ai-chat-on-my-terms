@@ -61,6 +61,20 @@ export const EncryptedPayloadSchema = z.discriminatedUnion("tag", [
       records: z
         .array(z.union([SyncRecordSchema, TombstoneSchema]))
         .max(MAX_SYNC_RECORDS_PER_BATCH),
+      // R006 (T098): chunk descriptor of a coordinated copy snapshot. When
+      // present, this batch is chunk `seq` of `chunks` of the source's
+      // initial-copy MEMBERSHIP snapshot `snapshotId`: the target replaces
+      // its set only with these members once every chunk has landed, so a
+      // shared entity id is never tombstoned away by the replacement. An
+      // empty chunk with a member set marks an EMPTY source set.
+      snapshot: z
+        .object({
+          snapshotId: EntityIdSchema,
+          seq: z.number().int().min(1).max(MAX_SYNC_RECORDS_PER_BATCH),
+          chunks: z.number().int().min(1).max(MAX_SYNC_RECORDS_PER_BATCH),
+        })
+        .strict()
+        .optional(),
     })
     .strict(),
   z

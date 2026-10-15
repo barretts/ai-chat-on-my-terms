@@ -124,8 +124,16 @@ export class SyncTransport {
     };
   }
 
-  /** Queue validated records as ≤500-record encrypted-batch payloads. */
-  enqueue(records: readonly unknown[]): number {
+  /**
+   * Queue validated records as ≤500-record encrypted-batch payloads. With
+   * `snapshot.snapshotId` (R006 initial copy) every batch produced by THIS
+   * call is stamped as chunk `seq` of `chunks` of that membership snapshot,
+   * letting the target apply its replacement atomically once all chunks
+   * have landed. An empty source set enqueues a single marker batch (zero
+   * members) instead of nothing — copying nothing must still complete the
+   * copy, not stall the target waiting for chunks that never come.
+   */
+  enqueue(records: readonly unknown[], snapshot?: { snapshotId: string }): number {
     if (!this.opts.allowed()) {
       this.mark("disabled", "Sync is off for this pair.");
       return 0;
@@ -137,13 +145,32 @@ export class SyncTransport {
         throw new SyncTransportError("malformed", "record does not match the sync batch contract");
       changes.push(parsed.data);
     }
+    const chunks = Math.max(1, Math.ceil(changes.length / MAX_SYNC_RECORDS_PER_BATCH));
+    if (snapshot !== undefined && chunks > MAX_SYNC_RECORDS_PER_BATCH)
+      throw new SyncTransportError("malformed", "copy snapshot has too many chunks to fit the wire contract");
     for (let i = 0; i < changes.length; i += MAX_SYNC_RECORDS_PER_BATCH) {
       this.queue.push({
         tag: "sync-batch",
         batchId: createUuidV7(),
         records: changes.slice(i, i + MAX_SYNC_RECORDS_PER_BATCH),
+        ...(snapshot !== undefined
+          ? {
+              snapshot: {
+                snapshotId: snapshot.snapshotId,
+                seq: Math.floor(i / MAX_SYNC_RECORDS_PER_BATCH) + 1,
+                chunks,
+              },
+            }
+          : {}),
       });
     }
+    if (changes.length === 0 && snapshot !== undefined)
+      this.queue.push({
+        tag: "sync-batch",
+        batchId: createUuidV7(),
+        records: [],
+        snapshot: { snapshotId: snapshot.snapshotId, seq: 1, chunks: 1 },
+      });
     this.publish();
     return changes.length;
   }

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@locallab/contracts": "workspace:*",
+    "@locallab/remote-crypto": "workspace:*",
     "@locallab/service-contracts": "workspace:*",
     "@locallab/sync-merge": "workspace:*",
     "@locallab/sync-preferences": "workspace:*",

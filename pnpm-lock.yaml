@@ -1989,6 +1989,9 @@ importers:
       '@locallab/contracts':
         specifier: workspace:*
         version: link:../../../contracts
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../../../remote/crypto
       '@locallab/service-contracts':
         specifier: workspace:*
         version: link:../../../service-contracts

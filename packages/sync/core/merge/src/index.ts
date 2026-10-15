@@ -43,7 +43,7 @@ export class SyncMergeError extends Error {
   }
 }
 
-type SyncRecord = z.infer<typeof SyncRecordSchema>;
+export type SyncRecord = z.infer<typeof SyncRecordSchema>;
 type Tombstone = z.infer<typeof TombstoneSchema>;
 export type SyncChange = SyncRecord | Tombstone;
 
@@ -177,6 +177,38 @@ export class MergeStore {
 
   applyBatch(changes: readonly unknown[]): MergeEffect[] {
     return changes.map((change) => this.apply(change));
+  }
+
+  /**
+   * R006 (T098B/T098): initial-copy replacement boundary. `members` is the
+   * source's delivered membership: members win OUTRIGHT — they are written
+   * at cover revision `at`, superseding target rows with newer revisions
+   * for the same keys (copy semantics: the target's data was replaced by
+   * the user's choice). Live rows absent from membership are tombstoned
+   * at `at` — only rows the source does not have are deleted, so a shared
+   * entity id can never be lost, and replays of pre-cover updates (always
+   * revision-older than `at`) can never resurrect deleted entities.
+   * Out-of-tier rows are left untouched (SY-03): they never entered the
+   * store through sync and the copy does not own them. Validation is
+   * fail-closed BEFORE any mutation; re-applying the same cover is
+   * idempotent (rows are re-set, no tombstone touches a member).
+   */
+  applyCover(members: readonly SyncRecord[], at: Revision, stamp: string): string[] {
+    for (const member of members) this.validatePayload(member.entityType, member.payload);
+    const covered = new Set<string>();
+    for (const member of members) {
+      const key = mergeKey(member);
+      this.rows.set(key, rowOf({ ...member, revision: at }, member.payload));
+      covered.add(key);
+    }
+    const removed: string[] = [];
+    for (const { key, row } of this.snapshot()) {
+      if (row.payload === null || covered.has(key) || !this.allowedType(row.entityType)) continue;
+      const [entityType, entityId] = key.split("/") as [string, EntityId];
+      this.rows.set(key, rowOf({ id: entityId, entityType, entityId, revision: at }, null));
+      removed.push(key);
+    }
+    return removed;
   }
 
   private applyRecord(record: SyncRecord): MergeEffect {

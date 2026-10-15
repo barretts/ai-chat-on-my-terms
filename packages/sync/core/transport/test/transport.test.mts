@@ -392,3 +392,40 @@ test("R008: concurrent sendPending invocations collapse into one active pump", a
   await Promise.all([transport.sendPending(), transport.sendPending(), transport.sendPending()]);
   assert.equal(sends, 1, "one active send pump, no double sends or overlapping loops");
 });
+
+test("R006: snapshot enqueue stamps chunk descriptors; plain stays bare; empty marker ships", async () => {
+  const sent: { batchId: string; snapshot: unknown; count: number }[] = [];
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    delay: noDelay,
+    send: async (payload) => {
+      EncryptedPayloadSchema.parse(payload);
+      sent.push({ batchId: payload.batchId, snapshot: payload.snapshot, count: payload.records.length });
+      transport.handleAck({
+        tag: "sync-ack",
+        batchId: payload.batchId,
+        recordIds: payload.records.map((r) => r.id),
+      });
+    },
+  });
+  assert.equal(transport.enqueue(records(0, 2)), 2);
+  await transport.sendPending();
+  assert.equal(sent[0]!.snapshot, undefined, "plain batches stay snapshot-free");
+
+  sent.length = 0;
+  assert.equal(transport.enqueue(records(100, 600), { snapshotId: id(4_242) }), 600);
+  await transport.sendPending();
+  assert.equal(sent.length, 2, "500 + 100 chunk split");
+  assert.deepEqual(sent[0]!.snapshot, { snapshotId: id(4_242), seq: 1, chunks: 2 });
+  assert.deepEqual(sent[1]!.snapshot, { snapshotId: id(4_242), seq: 2, chunks: 2 });
+  assert.notEqual(sent[0]!.batchId, sent[1]!.batchId, "each chunk keeps its own ack-able batch identity");
+
+  sent.length = 0;
+  assert.equal(transport.enqueue([], { snapshotId: id(4_243) }), 0, "an empty set carries no records");
+  await transport.sendPending();
+  assert.equal(sent.length, 1, "the empty marker chunk still ships so the copy can complete");
+  assert.equal(sent[0]!.count, 0);
+  assert.deepEqual(sent[0]!.snapshot, { snapshotId: id(4_243), seq: 1, chunks: 1 });
+  assert.equal(transport.status().pendingRecords, 0, "the marker drains on its ack");
+});

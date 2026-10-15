@@ -201,3 +201,42 @@ test("digest and helpers behave canonically", () => {
   assert.ok(!isTombstone(rec("folder", FOLDER_1, folderPayload(FOLDER_1, "n", rev(1, 0, DEV_A)))));
   assert.equal(mergeKey({ entityType: "message", entityId: MSG_1 }), `message/${MSG_1}`);
 });
+
+test("R006 applyCover: members beat newer local rows; non-members tombstone", () => {
+  const store = new MergeStore();
+  // Target state before the boundary: a SHARED conversation whose LOCAL
+  // version is NEWER (the target diverged after the source took its
+  // snapshot), a shared message whose local version is older, and a
+  // target-only conversation the source never had.
+  store.applyBatch([
+    rec("conversation", CONV_1, convPayload(CONV_1, "Target NEWER divergence", rev(9_000, 0, DEV_B))),
+    rec("message", MSG_1, msgPayload(MSG_1, "older local copy", rev(10, 0, DEV_B))),
+    rec("conversation", CONV_2, convPayload(CONV_2, "Target-only chat", rev(50, 0, DEV_B))),
+  ]);
+
+  const members = [
+    rec("conversation", CONV_1, convPayload(CONV_1, "Source wins", rev(100, 0, DEV_A))),
+    rec("message", MSG_1, msgPayload(MSG_1, "source text", rev(20, 0, DEV_A))),
+  ];
+  const cover = rev(1_000_000, 0, DEV_B);
+  const removed = store.applyCover(members, cover, "2026-10-12T00:00:00.000Z");
+
+  assert.deepEqual(removed, [`conversation/${CONV_2}`], "only source-absent rows are deleted");
+  assert.equal(
+    (store.rowFor("conversation", CONV_1)!.payload as { title: string }).title,
+    "Source wins",
+    "a member wins OUTRIGHT over a target row with a newer revision",
+  );
+  assert.equal(store.rowFor("conversation", CONV_1)!.revision.wallMs, cover.wallMs, "members ride the cover revision");
+  assert.deepEqual(store.rowFor("message", MSG_1)!.revision, cover);
+  assert.equal(store.rowFor("conversation", CONV_2)?.payload, null, "target-only row stays tombstoned");
+  assert.equal(store.liveCount(), 2);
+
+  // Replay safety: an older update can neither resurrect the deleted row
+  // nor displace a member's content; re-applying the cover is idempotent.
+  assert.equal(store.apply(rec("conversation", CONV_2, convPayload(CONV_2, "zombie", rev(51, 0, DEV_B)))), "superseded");
+  assert.equal(store.apply(rec("message", MSG_1, msgPayload(MSG_1, "older local copy", rev(10, 0, DEV_B)))), "superseded");
+  assert.deepEqual(store.applyCover(members, cover, "2026-10-12T00:00:00.000Z"), [], "cover re-apply tombstones nothing");
+  assert.equal(store.liveCount(), 2);
+  assert.equal((store.rowFor("conversation", CONV_1)!.payload as { title: string }).title, "Source wins");
+});
