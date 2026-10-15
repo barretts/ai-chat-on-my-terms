@@ -1,0 +1,13 @@
+# Keep the docker build context lean; images install from the lockfile and
+# copy explicit paths (see services/relay/Dockerfile).
+**/node_modules
+.git
+coverage
+**/coverage
+*.log
+.DS_Store
+apps/mobile/ios/Pods
+apps/mobile/ios/build
+apps/mobile/android/app/build
+apps/mobile/.expo
+**/.expo
