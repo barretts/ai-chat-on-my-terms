@@ -171,6 +171,8 @@ export function createLockSession(host: LockHost): LockSession {
   let locked = false;
   let reason: string | null = null;
   let backgroundAt: number | null = null;
+  // True while a valid PIN record exists; only enabled sessions challenge.
+  let enabled = false;
   let grace: GracePeriod = DEFAULT_LOCK_PREFERENCES.grace;
   let biometric: BiometricPort | null = null;
   const isPro = async () =>
@@ -180,7 +182,8 @@ export function createLockSession(host: LockHost): LockSession {
       return { locked, reason };
     },
     async coldStart() {
-      if ((await host.records.load()) === null) return;
+      enabled = (await host.records.load()) !== null;
+      if (!enabled) return;
       locked = true;
       reason = "cold-start";
     },
@@ -189,7 +192,7 @@ export function createLockSession(host: LockHost): LockSession {
     },
     foregrounded(now) {
       if (backgroundAt === null) return;
-      if (shouldChallengeOnForeground(grace, backgroundAt, now)) {
+      if (enabled && shouldChallengeOnForeground(grace, backgroundAt, now)) {
         locked = true;
         reason = "grace-expiry";
       }
@@ -197,7 +200,14 @@ export function createLockSession(host: LockHost): LockSession {
     },
     async unlockWithPin(pin) {
       const record = await host.records.load();
-      if (record === null) return { ok: true };
+      if (record === null) {
+        // No record to challenge against: restore the unlocked state so no
+        // stale gate can hold the session (e.g. record removed externally).
+        enabled = false;
+        locked = false;
+        reason = null;
+        return { ok: true };
+      }
       if (!(await verifyPin(pin, record, host.hash)))
         return { ok: false, reason: "incorrect PIN" };
       locked = false;
@@ -206,7 +216,12 @@ export function createLockSession(host: LockHost): LockSession {
     },
     async unlockWithBiometric() {
       const record = await host.records.load();
-      if (record === null) return { ok: true };
+      if (record === null) {
+        enabled = false;
+        locked = false;
+        reason = null;
+        return { ok: true };
+      }
       if (biometric === null)
         return { ok: false, reason: "biometric unlock is not available" };
       if (!(await biometric.isAvailable()))
@@ -240,6 +255,7 @@ export function createLockSession(host: LockHost): LockSession {
       const made = await createLockRecord(pin, host.hash);
       if (!made.ok) return made;
       await host.records.save(made.record);
+      enabled = true;
       locked = false;
       reason = null;
       return { ok: true };
@@ -252,6 +268,7 @@ export function createLockSession(host: LockHost): LockSession {
       const made = await createLockRecord(next, host.hash);
       if (!made.ok) return made;
       await host.records.save(made.record);
+      enabled = true;
       return { ok: true };
     },
     async disableWithPin(current) {
@@ -260,6 +277,7 @@ export function createLockSession(host: LockHost): LockSession {
       if (!(await verifyPin(current, record, host.hash)))
         return { ok: false, reason: "current PIN proof required to disable App Lock" };
       await host.records.clear();
+      enabled = false;
       locked = false;
       reason = null;
       return { ok: true };
@@ -270,6 +288,7 @@ export function createLockSession(host: LockHost): LockSession {
       if (!(await host.recovery.verifyToken(token)))
         return { ok: false, reason: "recovery token is not valid" };
       await host.records.clear();
+      enabled = false;
       locked = false;
       reason = null;
       return { ok: true };

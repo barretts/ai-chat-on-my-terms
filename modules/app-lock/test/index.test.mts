@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   GRACE_MILLISECONDS,
   GRACE_PERIODS,
+  DEFAULT_LOCK_PREFERENCES,
   createLockSession,
   shouldChallengeOnForeground,
   validatePin,
@@ -187,4 +188,57 @@ test("changing the PIN requires proof of the current one", async () => {
   assert.equal((await s.changePin("1234", "567890")).ok, true);
   assert.equal((await s.unlockWithPin("567890")).ok, true);
   assert.equal((await s.unlockWithPin("1234")).ok, false);
+});
+
+const GRACE = GRACE_MILLISECONDS[DEFAULT_LOCK_PREFERENCES.grace];
+
+test("sessions without a PIN stay usable after backgrounding past the grace", async () => {
+  const { s } = session();
+  await s.coldStart();
+  assert.equal(s.status().locked, false);
+  s.backgrounded(0);
+  s.foregrounded(GRACE + 1);
+  // No PIN record exists: backgrounding beyond the grace must not gate.
+  assert.deepEqual(s.status(), { locked: false, reason: null });
+  assert.equal((await s.unlockWithPin("0000")).ok, true);
+  assert.equal(s.status().locked, false);
+});
+
+test("unlocking without a record clears a stale locked state", async () => {
+  const { s, records } = session();
+  await s.setPin("1234");
+  s.backgrounded(0);
+  s.foregrounded(GRACE + 1);
+  assert.equal(s.status().locked, true);
+  // The record disappears out from under the session (e.g. SecureStore wipe).
+  await records.clear();
+  assert.equal((await s.unlockWithPin("1234")).ok, true);
+  assert.deepEqual(s.status(), { locked: false, reason: null });
+  // And it stays unlocked: the grace-expiry challenge no longer applies.
+  s.backgrounded(1000);
+  s.foregrounded(1000 + GRACE + 1);
+  assert.equal(s.status().locked, false);
+});
+
+test("an enabled PIN still challenges after grace and unlocks correctly", async () => {
+  const { s } = session();
+  await s.setPin("123456");
+  await s.coldStart();
+  assert.deepEqual(s.status(), { locked: true, reason: "cold-start" });
+  assert.equal((await s.unlockWithPin("000000")).ok, false);
+  assert.equal(s.status().locked, true);
+  assert.equal((await s.unlockWithPin("123456")).ok, true);
+  assert.equal(s.status().locked, false);
+  s.backgrounded(0);
+  s.foregrounded(GRACE - 10);
+  assert.equal(s.status().locked, false); // within grace
+  s.backgrounded(0);
+  s.foregrounded(GRACE + 1);
+  assert.deepEqual(s.status(), { locked: true, reason: "grace-expiry" });
+  // Disabling removes the challenge entirely, grace changes cannot bypass it.
+  assert.equal((await s.disableWithPin("123456")).ok, true);
+  s.setGrace("immediate");
+  s.backgrounded(0);
+  s.foregrounded(1000);
+  assert.equal(s.status().locked, false);
 });
