@@ -73,6 +73,16 @@ export interface SyncTransportOptions {
   onStatus?: (status: SyncTransportStatus) => void;
   /** Injectable delay so callers own timers (RN-safe; no node imports). */
   delay?: (ms: number) => Promise<void>;
+  /**
+   * R008: how long a sent-but-unacknowledged batch may sit in the window
+   * before it counts as a lost attempt and is re-pumped (the shared
+   * SY-08 maxAttempts budget applies). Undefined (default) disables the
+   * watchdog; hosts that rely on at-least-once delivery without an
+   * external pump re-invocation MUST set it.
+   */
+  ackTimeoutMs?: number;
+  /** Injectable ack-watchdog timer (defaults to a real timeout). */
+  watchdogDelay?: (ms: number) => Promise<void>;
 }
 
 const CHANGE_SCHEMA = z.union([SyncRecordSchema, TombstoneSchema]);
@@ -84,8 +94,12 @@ function defaultDelay(ms: number) {
 }
 
 export class SyncTransport {
-  private readonly opts: Required<Omit<SyncTransportOptions, "onStatus">> & {
+  private readonly opts: Required<
+    Omit<SyncTransportOptions, "onStatus" | "ackTimeoutMs" | "watchdogDelay">
+  > & {
     onStatus?: (status: SyncTransportStatus) => void;
+    ackTimeoutMs?: number;
+    watchdogDelay?: (ms: number) => Promise<void>;
   };
   private queue: SyncBatchPayload[] = [];
   private ackedWindow: { batchId: string; ids: Set<string> } | null = null;
@@ -94,6 +108,7 @@ export class SyncTransport {
   private suspended = false;
   private noteText = "";
   private state: SyncTransportState = "idle";
+  private pumping = false;
 
   constructor(options: SyncTransportOptions) {
     this.opts = {
@@ -104,6 +119,8 @@ export class SyncTransport {
       retryDelayMs: options.retryDelayMs ?? 50,
       delay: options.delay ?? defaultDelay,
       ...(options.onStatus !== undefined ? { onStatus: options.onStatus } : {}),
+      ...(options.ackTimeoutMs !== undefined ? { ackTimeoutMs: options.ackTimeoutMs } : {}),
+      ...(options.watchdogDelay !== undefined ? { watchdogDelay: options.watchdogDelay } : {}),
     };
   }
 
@@ -156,6 +173,12 @@ export class SyncTransport {
       this.mark("disabled", "Sync is off for this pair.");
       return;
     }
+    // R008: one active send pump — concurrent re-invocations (ack
+    // arrivals, host flush, the ack watchdog) collapse into the running
+    // pump instead of double-sending or spinning overlapping loops.
+    if (this.pumping) return;
+    this.pumping = true;
+    try {
     if (this.suspended) return;
     while (this.queue.length > 0) {
       if (!this.opts.allowed() || this.suspended) return;
@@ -173,7 +196,10 @@ export class SyncTransport {
         // The head also counts as settled when its ack arrived DURING its
         // own send: handleAck already retired it, so it is no longer the
         // head and there is nothing left to wait for.
-        if (this.queue[0] === head && !this.isFullyAcked(head)) return;
+        if (this.queue[0] === head && !this.isFullyAcked(head)) {
+          this.armAckWatchdog(head);
+          return;
+        }
         this.attempts = 0;
       } catch {
         this.attempts += 1;
@@ -187,6 +213,43 @@ export class SyncTransport {
       }
     }
     this.publish();
+    } finally {
+      this.pumping = false;
+    }
+  }
+
+  /**
+   * R008 (SY-08): a batch whose acknowledgement is lost would otherwise
+   * hold the window forever. The watchdog consumes the shared bounded
+   * attempt budget: within bounds it re-pumps the same batch; beyond it
+   * the transport suspends with a user-visible failure, exactly like a
+   * dropped send. Arming stops at wake/disable/ack transitions because
+   * the handler re-checks the window identity before acting.
+   */
+  private armAckWatchdog(head: SyncBatchPayload): void {
+    const timeoutMs = this.opts.ackTimeoutMs;
+    if (timeoutMs === undefined) return;
+    const wait = this.opts.watchdogDelay ?? defaultDelay;
+    void wait(timeoutMs)
+      .then(() => {
+        if (this.suspended || !this.opts.allowed()) return;
+        if (this.queue[0] !== head || this.isFullyAcked(head)) return;
+        this.attempts += 1;
+        if (this.attempts >= this.opts.maxAttempts) {
+          this.suspended = true;
+          this.mark(
+            "failed",
+            `Sync failed: no acknowledgement from the paired device (pair ${this.opts.routeId}).`,
+          );
+          return;
+        }
+        this.mark("retrying", `Sync retrying (no acknowledgement yet, attempt ${this.attempts + 1}).`);
+        void this.sendPending();
+      })
+      .catch(() => {
+        // A failing injected timer must never crash the transport; the
+        // batch simply stays in the window for the next external pump.
+      });
   }
 
   /** Host wake / off-on toggle: clear the suspension and resume pumping. */

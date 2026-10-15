@@ -68,6 +68,9 @@ export interface SyncEngineOptions {
   sendAck: (ack: Extract<EncryptedPayload, { tag: "sync-ack" }>) => Promise<void>;
   maxAttempts?: number;
   retryDelayMs?: number;
+  /** R008: passed through to the transport ack watchdog (SY-08). */
+  ackTimeoutMs?: number;
+  watchdogDelay?: (ms: number) => Promise<void>;
   delay?: (ms: number) => Promise<void>;
   onStatus?: (status: SyncTransportStatus) => void;
   /**
@@ -85,6 +88,10 @@ export class SyncEngine {
   private readonly transport: SyncTransport;
   private rows: PairSyncPreference[] = [];
   private allowedGate = false;
+  private deliveryWait: {
+    resolve: () => void;
+    reject: (err: SyncCompositionError) => void;
+  } | null = null;
 
   constructor(options: SyncEngineOptions) {
     this.opts = options;
@@ -95,7 +102,9 @@ export class SyncEngine {
       maxAttempts: options.maxAttempts,
       retryDelayMs: options.retryDelayMs,
       delay: options.delay,
-      onStatus: options.onStatus,
+      onStatus: (status) => this.observeDelivery(status),
+      ...(options.ackTimeoutMs !== undefined ? { ackTimeoutMs: options.ackTimeoutMs } : {}),
+      ...(options.watchdogDelay !== undefined ? { watchdogDelay: options.watchdogDelay } : {}),
     });
   }
 
@@ -138,7 +147,10 @@ export class SyncEngine {
       (pref.choice === "copy-mac" && this.opts.side === "mac");
     if (isSource) {
       this.transport.enqueue(this.liveSourceRecords());
-      await this.transport.sendPending();
+      // R008: completion means DELIVERED, not "queued": a partial send
+      // followed by an app kill must never leave `initialSyncDone`
+      // recorded while the remaining batches are still undelivered.
+      await this.deliverQueued();
     } else {
       this.replaceLocalSet();
     }
@@ -178,6 +190,46 @@ export class SyncEngine {
   }
 
   /**
+   * R008: the initial copy counts as complete only when EVERY queued
+   * batch has been acknowledged. Acks arrive asynchronously and pump the
+   * chain via `onFrame`; this waits for the drain (resolved through the
+   * status observer) and rejects on suspension, so `completeInitialSync`
+   * can never record done-with-undelivered-rows — a retry after wake
+   * re-runs the copy instead (merge/apply is idempotent).
+   */
+  private async deliverQueued(): Promise<void> {
+    const { promise, resolve, reject } = Promise.withResolvers<void>();
+    this.deliveryWait = { resolve, reject };
+    try {
+      await this.transport.sendPending();
+      if (this.transport.status().pendingRecords === 0) return;
+      await promise;
+    } finally {
+      this.deliveryWait = null;
+    }
+  }
+
+  /** Status observer: settles `deliverQueued` waiters, then notifies. */
+  private observeDelivery(status: SyncTransportStatus): void {
+    const wait = this.deliveryWait;
+    if (wait !== null) {
+      if (status.pendingRecords === 0) {
+        this.deliveryWait = null;
+        wait.resolve();
+      } else if (status.state === "failed" || status.state === "disabled") {
+        this.deliveryWait = null;
+        wait.reject(
+          new SyncCompositionError(
+            "state",
+            `initial copy delivery stopped: ${status.note === "" ? status.state : status.note}`,
+          ),
+        );
+      }
+    }
+    this.opts.onStatus?.(status);
+  }
+
+  /**
    * Incoming sealed-and-opened frame. `sync-ack` drains our cursor;
    * `sync-batch` merges (allowlist enforced fail-closed) then acks the
    * applied ids. Disabled pairs ignore inbound frames entirely.
@@ -188,6 +240,11 @@ export class SyncEngine {
       throw new SyncCompositionError("malformed", "frame does not match the relay contract");
     if (parsed.data.tag === "sync-ack") {
       this.transport.handleAck(parsed.data);
+      // R008: the acknowledgement frees the one-batch window; pump the
+      // rest of the queue NOW (the transport collapses concurrent pump
+      // invocations into one) so later batches ride the wire without
+      // waiting for a host flush, wake, or reconnect.
+      await this.transport.sendPending();
       return;
     }
     if (parsed.data.tag !== "sync-batch") return;

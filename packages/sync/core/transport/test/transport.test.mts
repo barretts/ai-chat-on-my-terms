@@ -305,3 +305,90 @@ test("malformed records never enter the queue", () => {
   );
   assert.equal(transport.status().pendingRecords, 0);
 });
+
+test("R008: a lost acknowledgement is retried by the watchdog within the shared bound, then fails", async () => {
+  let sends = 0;
+  const timers: Array<() => void> = [];
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    maxAttempts: 2,
+    delay: noDelay,
+    ackTimeoutMs: 1_000,
+    watchdogDelay: () =>
+      new Promise<void>((resolve) => {
+        timers.push(resolve);
+      }),
+    send: async () => {
+      sends += 1; // the acknowledgement NEVER arrives
+    },
+  });
+  transport.enqueue(records(0, 1));
+  await transport.sendPending();
+  assert.equal(sends, 1);
+  assert.equal(transport.status().pendingRecords, 1);
+  assert.equal(timers.length, 1, "the unacked batch arms exactly one watchdog");
+  timers.shift()!();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(sends, 2, "within bounds the watchdog re-pumps the batch");
+  assert.equal(transport.status().state, "retrying");
+  assert.match(transport.status().note, /no acknowledgement/i);
+  timers.shift()!();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(sends, 2, "the bounded budget suspends instead of retrying forever");
+  const status = transport.status();
+  assert.equal(status.state, "failed");
+  assert.match(status.note, /no acknowledgement/i);
+  assert.equal(status.pendingRecords, 1, "the cursor is preserved for a later wake");
+});
+
+test("R008: a watchdog firing after its batch drained cannot disturb the newer window", async () => {
+  const sent: { batchId: string; ids: string[] }[] = [];
+  const timers: Array<() => void> = [];
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    delay: noDelay,
+    ackTimeoutMs: 1_000,
+    watchdogDelay: () =>
+      new Promise<void>((resolve) => {
+        timers.push(resolve);
+      }),
+    send: async (payload) => {
+      const ids = payload.records.map((r) => r.id);
+      sent.push({ batchId: payload.batchId, ids });
+      if (sent.length > 1)
+        transport.handleAck({ tag: "sync-ack", batchId: payload.batchId, recordIds: ids });
+      // batch 1's ack is held for the test to deliver by hand.
+    },
+  });
+  transport.enqueue(records(0, 600));
+  await transport.sendPending(); // batch 1 in flight, watchdog armed
+  assert.equal(sent.length, 1);
+  transport.handleAck({ tag: "sync-ack", batchId: sent[0]!.batchId, recordIds: sent[0]!.ids });
+  await transport.sendPending(); // batch 2 goes out and self-acks
+  assert.equal(sent.length, 2);
+  assert.equal(transport.status().pendingRecords, 0);
+  timers.shift()!(); // batch 1's stale watchdog fires now
+  await new Promise((r) => setTimeout(r, 0));
+  const status = transport.status();
+  assert.equal(sent.length, 2, "the stale watchdog sent nothing");
+  assert.equal(status.state, "idle");
+  assert.equal(status.attempts, 0);
+  assert.equal(status.pendingRecords, 0);
+});
+
+test("R008: concurrent sendPending invocations collapse into one active pump", async () => {
+  let sends = 0;
+  const transport = new SyncTransport({
+    routeId: ROUTE,
+    allowed: () => true,
+    delay: noDelay,
+    send: async () => {
+      sends += 1; // never acked: the pump stops after the window-filling send
+    },
+  });
+  transport.enqueue(records(0, 2));
+  await Promise.all([transport.sendPending(), transport.sendPending(), transport.sendPending()]);
+  assert.equal(sends, 1, "one active send pump, no double sends or overlapping loops");
+});

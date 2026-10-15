@@ -78,6 +78,8 @@ interface Device {
   store: MergeStore;
   link: DeviceLink;
   rows: () => PairSyncPreference[];
+  pendingAcks: Array<() => Promise<void>>;
+  drainAcks: () => Promise<void>;
 }
 
 function makeDevice(
@@ -86,6 +88,11 @@ function makeDevice(
   seed: readonly unknown[],
   clockFrom: number,
   persona?: { store: MergeStore; gate(entityType: string, entityId: string, payload?: unknown): boolean },
+  engineOpts?: {
+    deferAcks?: boolean;
+    ackTimeoutMs?: number;
+    watchdogDelay?: (ms: number) => Promise<void>;
+  },
 ): Device {
   const store = persona?.store ?? new MergeStore();
   store.applyBatch(seed);
@@ -95,6 +102,10 @@ function makeDevice(
     save: async (next) => {
       rows = [...next];
     },
+  };
+  const deferredAcks: Array<() => Promise<void>> = [];
+  const drainAcks = async (): Promise<void> => {
+    while (deferredAcks.length > 0) await deferredAcks.shift()!();
   };
   const link: DeviceLink = { up: true, frames: 0, peer: null };
   let tick = clockFrom;
@@ -112,11 +123,17 @@ function makeDevice(
       await link.peer.onFrame(payload);
     },
     sendAck: async (ack) => {
-      await link.peer?.onFrame(ack);
+      const send = async (): Promise<void> => {
+        await link.peer?.onFrame(ack);
+      };
+      if (engineOpts?.deferAcks === true) deferredAcks.push(send);
+      else await send();
     },
     personaGate: persona?.gate,
+    ...(engineOpts?.ackTimeoutMs !== undefined ? { ackTimeoutMs: engineOpts.ackTimeoutMs } : {}),
+    ...(engineOpts?.watchdogDelay !== undefined ? { watchdogDelay: engineOpts.watchdogDelay } : {}),
   });
-  return { engine, store, link, rows: () => rows };
+  return { engine, store, link, rows: () => rows, pendingAcks: deferredAcks, drainAcks };
 }
 
 function wire(a: Device, b: Device): void {
@@ -126,6 +143,17 @@ function wire(a: Device, b: Device): void {
 
 const liveRows = (store: MergeStore): MergeStateRow[] =>
   store.snapshot().filter((entry) => entry.row.payload !== null).map((entry) => entry.row);
+
+function bulkMessages(deviceId: string, n: number): unknown[] {
+  const out: unknown[] = [
+    rec("conversation", id(9), convPayload(id(9), deviceId, "Bulk", 9_000), deviceId, 9_000),
+  ];
+  for (let i = 1; i < n; i += 1)
+    out.push(
+      rec("message", id(5_000 + i), msgPayload(id(5_000 + i), id(9), deviceId, `m${i}`, 9_000 + i), deviceId, 9_000 + i),
+    );
+  return out;
+}
 
 async function optIn(dev: Device, choice: SyncChoice | null): Promise<void> {
   await dev.engine.enableSync();
@@ -473,4 +501,82 @@ test("persona tier crosses ONLY under selection; unselected private memory canno
   phone.engine.noteLocalChange([memDel]);
   await phone.engine.flush();
   assert.equal(mStore.rowFor("memory", MEM_A)!.payload, null);
+});
+
+test("R008: a delayed ack pumps the next batch; initial sync completes only when delivered", async () => {
+  const phone = makeDevice("phone", DEV_P, bulkMessages(DEV_P, 600), 100);
+  const mac = makeDevice("mac", DEV_M, [], 200, undefined, { deferAcks: true });
+  wire(phone, mac);
+  await optIn(phone, "merge");
+  await optIn(mac, "merge");
+  const outcome: { done: boolean; error: unknown } = { done: false, error: null };
+  const run = phone.engine.runInitialSync().then(
+    () => {
+      outcome.done = true;
+    },
+    (error: unknown) => {
+      outcome.error = error;
+    },
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(phone.link.frames, 1, "only the first 500-record batch is on the wire");
+  assert.equal(phone.engine.status().pendingRecords, 600, "nothing is delivered until its ack");
+  assert.equal(mac.store.liveCount(), 500);
+  assert.equal(outcome.done, false, "delivery, not queueing, gates completion");
+  assert.equal(phone.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, false);
+  // The peer's held acknowledgement arrives asynchronously; the ack path
+  // ALONE must carry batch 2 onto the wire — no host flush, wake, or
+  // reconnect in between (the exact R008 failure).
+  await mac.pendingAcks.shift()!();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(phone.link.frames, 2, "the acknowledgement itself pumped the remaining 100 records");
+  assert.equal(outcome.done, false, "batch 2 still awaits its own acknowledgement");
+  assert.equal(phone.engine.status().pendingRecords, 100);
+  await mac.drainAcks();
+  await run;
+  assert.equal(outcome.error, null);
+  assert.equal(phone.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, true);
+  assert.equal(mac.store.liveCount(), 600, "both devices converge after the chain");
+  assert.equal(phone.engine.status().pendingRecords, 0);
+});
+
+test("R008: a lost ack retries within bounds and a failed delivery never records initialSyncDone", async () => {
+  const timers: Array<() => void> = [];
+  const phone = makeDevice("phone", DEV_P, phoneSeed(), 100, undefined, {
+    ackTimeoutMs: 1_000,
+    watchdogDelay: (ms) =>
+      new Promise<void>((resolve) => {
+        void ms;
+        timers.push(resolve);
+      }),
+  });
+  const mac = makeDevice("mac", DEV_M, [], 200, undefined, { deferAcks: true });
+  wire(phone, mac);
+  await optIn(phone, "merge");
+  await optIn(mac, "merge");
+  const outcome: { done: boolean; error: unknown } = { done: false, error: null };
+  const run = phone.engine.runInitialSync().then(
+    () => {
+      outcome.done = true;
+    },
+    (error: unknown) => {
+      outcome.error = error;
+    },
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(phone.link.frames, 1);
+  for (let i = 0; i < 12 && phone.engine.status().state !== "failed"; i += 1) {
+    const fire = timers.shift();
+    if (fire === undefined) break;
+    fire();
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  const status = phone.engine.status();
+  assert.equal(status.state, "failed", "lost acks are bounded, not eternal");
+  assert.match(status.note, /no acknowledgement/i);
+  assert.equal(phone.link.frames, 5, "exactly maxAttempts sends (1 + 4 bounded retries)");
+  await run;
+  assert.equal(outcome.done, false);
+  assert.ok(outcome.error instanceof SyncCompositionError, "the caller learns delivery failed");
+  assert.equal(phone.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, false, "failed copy may be retried after wake");
 });
