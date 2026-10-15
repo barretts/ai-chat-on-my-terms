@@ -79,7 +79,12 @@ export interface SyncEngineOptions {
    * (persona/memory/attachment) on BOTH the enqueue and receive seams.
    * Absent = nothing persona-tier may cross.
    */
-  personaGate?: (entityType: string, entityId: string, payload?: unknown) => boolean;
+  personaGate?: (
+    entityType: string,
+    entityId: string,
+    payload?: unknown,
+    batchPersonas?: readonly { entityId: string; payload: unknown }[],
+  ) => boolean;
 }
 
 type SyncBatchPayload = Extract<EncryptedPayload, { tag: "sync-batch" }>;
@@ -190,13 +195,13 @@ export class SyncEngine {
    * allowlist; anything else is persona-tier and needs BOTH an injected
    * gate and its per-pair selection to pass — outbound and inbound.
    */
-  private admit(change: unknown): void {
+  private admit(change: unknown, batchPersonas?: readonly { entityId: string; payload: unknown }[]): void {
     const fields = change as Record<string, unknown>;
     const entityType = typeof fields?.entityType === "string" ? fields.entityType : "";
     if (entityType !== "" && !isChatTierType(entityType)) {
       const gate = this.opts.personaGate;
       const entityId = typeof fields?.entityId === "string" ? fields.entityId : "";
-      if (gate === undefined || entityId === "" || !gate(entityType, entityId, fields.payload))
+      if (gate === undefined || entityId === "" || !gate(entityType, entityId, fields.payload, batchPersonas))
         throw new SyncMergeError("unsupported", `entity type ${entityType} never syncs`);
       return;
     }
@@ -269,9 +274,19 @@ export class SyncEngine {
     if (parsed.data.tag !== "sync-batch") return;
     if (!this.allowedGate) return; // SY-07: sync off means nothing crosses this seam
     const batch = parsed.data as SyncBatchPayload;
+    // R016: personas riding in THIS batch authorize their photos even
+    // before their own rows apply — snapshot order sorts attachment
+    // before persona, and admitting the photo needs the ownership answer
+    // up front. Only selection + schema validation inside the gate grant
+    // it; this seam bypasses nothing.
+    const batchPersonas = batch.records.flatMap((record) =>
+      record.entityType === "persona" && "payload" in record
+        ? [{ entityId: record.entityId, payload: record.payload }]
+        : [],
+    );
     const accepted: string[] = [];
     for (const record of batch.records) {
-      this.admit(record); // SY-10: no persona-tier rows we never selected enter the store
+      this.admit(record, batchPersonas); // SY-10: no persona-tier rows we never selected enter the store
       this.opts.store.apply(record); // throws unsupported/malformed fail-closed
       accepted.push(record.id);
     }
@@ -313,6 +328,13 @@ export class SyncEngine {
   private liveSourceRecords(): unknown[] {
     const stamp = this.opts.now();
     const gate = this.opts.personaGate;
+    // R016: dependency order — a selected persona must cross BEFORE the
+    // photo it references. Snapshot keys sort `attachment/…` before
+    // `persona/…`, so an initial copy delivered photo-first (or with the
+    // photo in an earlier chunk) and the receiver's gate — which reads
+    // local owner state for already-applied rows — failed the whole batch
+    // closed, never acked, and stranded every chat behind it.
+    const rank = (entityType: string) => (entityType === "persona" ? 0 : entityType === "attachment" ? 1 : 2);
     return this.opts.store
       .snapshot()
       .filter(
@@ -321,6 +343,7 @@ export class SyncEngine {
           (isChatTierType(entry.row.entityType) ||
             (gate !== undefined && gate(entry.row.entityType, entry.row.entityId, entry.row.payload))),
       )
+      .sort((a, b) => rank(a.row.entityType) - rank(b.row.entityType))
       .map((entry) => this.envelope(entry.row, stamp));
   }
 

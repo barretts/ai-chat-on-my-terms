@@ -15,8 +15,11 @@
  *    what keeps non-selected private memory and credentials out of the
  *    pair;
  *  - attachment records/tombstones (photos): only attachments referenced
- *    as `photoAttachmentId` by a SELECTED persona (local lookup), and
- *    only when `photos` is on.
+ *    as `photoAttachmentId` by a SELECTED persona (local lookup, or a
+ *    selected Persona ARRIVING in the same batch — R016: an initial copy
+ *    ships a persona and its photo together, the photo sorting first,
+ *    and a chunk boundary can split the pair across batches), and only
+ *    when `photos` is on.
  *
  * Device-local model/preset/voice/provider/key references are NEVER
  * rewritten: they arrive as opaque ids the target resolves explicitly,
@@ -97,10 +100,15 @@ export interface PersonaGateContext {
 export function personaTierGate(
   selection: PersonaSyncSelection | null,
   ctx: PersonaGateContext,
-): (entityType: string, entityId: string, payload?: unknown) => boolean {
+): (
+  entityType: string,
+  entityId: string,
+  payload?: unknown,
+  batchPersonas?: readonly { entityId: string; payload: unknown }[],
+) => boolean {
   if (selection === null) return () => false;
   const selected = new Set(selection.personaIds);
-  return (entityType, entityId, payload) => {
+  return (entityType, entityId, payload, batchPersonas) => {
     const tombstone = payload === undefined || payload === null;
     if (entityType === "persona") return selected.has(entityId);
     if (entityType === "memory") {
@@ -124,6 +132,22 @@ export function personaTierGate(
       if (!selection.photos) return false;
       const owner = ctx.attachmentOwner(entityId);
       if (owner !== null) return selected.has(owner);
+      // R016: the owning persona may ride in the SAME batch (snapshot
+      // order sorts attachments first) or in a not-yet-arrived chunk.
+      // A photo is admitted only under a persona this pair EXPLICITLY
+      // selected; trust the incoming bytes only through validation —
+      // unselected or malformed persona records authorize nothing.
+      if (!tombstone)
+        for (const persona of batchPersonas ?? []) {
+          const incoming = PersonaSchema.safeParse(persona.payload);
+          if (
+            incoming.success &&
+            incoming.data.photoAttachmentId === entityId &&
+            selected.has(persona.entityId) &&
+            selected.has(incoming.data.id)
+          )
+            return true;
+        }
       return tombstone && ctx.localRowExists("attachment", entityId);
     }
     return false;

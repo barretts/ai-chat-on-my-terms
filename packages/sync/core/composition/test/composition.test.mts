@@ -87,7 +87,10 @@ function makeDevice(
   deviceId: string,
   seed: readonly unknown[],
   clockFrom: number,
-  persona?: { store: MergeStore; gate(entityType: string, entityId: string, payload?: unknown): boolean },
+  persona?: {
+    store: MergeStore;
+    gate(entityType: string, entityId: string, payload?: unknown, batchPersonas?: readonly unknown[]): boolean;
+  },
   engineOpts?: {
     deferAcks?: boolean;
     ackTimeoutMs?: number;
@@ -460,8 +463,8 @@ function gateOver(store: MergeStore) {
   );
 }
 
-const personaPayload = (n: number) => ({
-  ...base(id(6_000 + n), rev(n, DEV_P)),
+const personaPayload = (n: number, entity = PERS) => ({
+  ...base(entity, rev(n, DEV_P)),
   name: "Ada",
   profile: { prompt: "ship fast" },
   photoAttachmentId: PHOTO,
@@ -717,4 +720,87 @@ test("R006: copying an EMPTY source set still completes the target", async () =>
   await mac.engine.runInitialSync();
   assert.equal(mac.store.liveCount(), 0, "an empty source set still replaces the target set");
   assert.equal(mac.rows().find((r) => r.routeId === ROUTE)!.initialSyncDone, true);
+});
+
+// R016 — the photo sorts before its persona (snapshot key order) and may
+// even ride an earlier chunk; the receiver must still converge.
+
+test("R016: a photo arriving BEFORE its persona in the same batch is accepted", async () => {
+  const mStore = new MergeStore(PERSONA_TIER_TYPES);
+  const mac = makeDevice("mac", DEV_M, [], 200, { store: mStore, gate: gateOver(mStore) });
+  await optIn(mac, "merge");
+  await mac.engine.onFrame({
+    tag: "sync-batch",
+    batchId: id(6_100),
+    records: [
+      rec("attachment", PHOTO, attachmentPayload(1_010), DEV_P, 1_010), // photo FIRST
+      rec("conversation", id(4), convPayload(id(4), DEV_P, "behind it", 1_020), DEV_P, 1_020),
+      rec("persona", PERS, personaPayload(1_000), DEV_P, 1_000),
+    ],
+  });
+  assert.notEqual(mStore.rowFor("persona", PERS)?.payload, null, "selected persona applied");
+  assert.notEqual(mStore.rowFor("attachment", PHOTO)?.payload, null, "its photo applied — owner rode the batch");
+  assert.notEqual(mStore.rowFor("conversation", id(4))?.payload, null, "later chat records were NOT stranded");
+});
+
+test("R016: an UNSELECTED persona's photo is still refused fail-closed", async () => {
+  const mStore = new MergeStore(PERSONA_TIER_TYPES);
+  const mac = makeDevice("mac", DEV_M, [], 200, { store: mStore, gate: gateOver(mStore) });
+  await optIn(mac, "merge");
+  const other = personaPayload(1_000, OTHER);
+  await assert.rejects(
+    () =>
+      mac.engine.onFrame({
+        tag: "sync-batch",
+        batchId: id(6_101),
+        records: [
+          rec("attachment", PHOTO, attachmentPayload(1_010), DEV_P, 1_010),
+          rec("persona", OTHER, other, DEV_P, 1_000),
+        ],
+      }),
+    (error: unknown) => (error as { kind?: string }).kind === "unsupported",
+    "a persona outside the selection authorizes NOTHING",
+  );
+  assert.equal(mStore.rowFor("attachment", PHOTO), null, "photo refused: owner never selected");
+  assert.equal(mStore.rowFor("persona", OTHER), null);
+
+  // An unreferenced photo arriving with NO persona in the batch and no
+  // local owner stays refused too (the selection wall remains intact).
+  await assert.rejects(
+    () =>
+      mac.engine.onFrame({
+        tag: "sync-batch",
+        batchId: id(6_102),
+        records: [rec("attachment", id(7_102), attachmentPayload(1_030), DEV_P, 1_030)],
+      }),
+    (error: unknown) => (error as { kind?: string }).kind === "unsupported",
+  );
+  assert.equal(mStore.rowFor("attachment", id(7_102)), null);
+});
+
+test("R016: initial copy sends the persona chunk before the photo chunk; receiver converges", async () => {
+  const pStore = new MergeStore(PERSONA_TIER_TYPES);
+  const mStore = new MergeStore(PERSONA_TIER_TYPES);
+  const seed = [...bulkMessages(DEV_P, 598), rec("persona", PERS, personaPayload(1_000), DEV_P, 1_000)];
+  const photo = rec("attachment", PHOTO, attachmentPayload(1_010), DEV_P, 1_010);
+  const phone = makeDevice("phone", DEV_P, [...seed, photo], 100, { store: pStore, gate: gateOver(pStore) });
+  const mac = makeDevice("mac", DEV_M, [], 200, { store: mStore, gate: gateOver(mStore) });
+  wire(phone, mac);
+  await optIn(phone, "copy-phone");
+  await optIn(mac, "copy-phone");
+
+  // 600 rows → chunk 1 holds persona + chat, the photo (snapshot sort put
+  // it FIRST before the fix) lands in chunk 2 — after its persona was
+  // applied from chunk 1. Pre-fix this call rejected every retry forever.
+  await phone.engine.runInitialSync();
+  await mac.engine.runInitialSync();
+
+  assert.equal(mStore.liveCount(), 600, "the full membership replaced the target set");
+  assert.notEqual(mStore.rowFor("persona", PERS)?.payload, null, "persona crossed");
+  assert.notEqual(mStore.rowFor("attachment", PHOTO)?.payload, null, "its photo crossed, chunk order aside");
+  assert.deepEqual(
+    new Set(liveRows(mStore).map((r) => r.entityId)),
+    new Set(liveRows(pStore).map((r) => r.entityId)),
+    "no chat stranded behind the photo",
+  );
 });
