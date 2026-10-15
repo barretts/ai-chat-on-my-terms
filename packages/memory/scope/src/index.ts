@@ -280,12 +280,13 @@ export class SQLitePersonaMemoryScope {
    */
   async resetPersona(personaId: string): Promise<void> {
     EntityIdSchema.parse(personaId);
-    await this.db.withTransactionAsync(async () => {
-      await this.db.runAsync(
+    await this.db.withTransactionAsync(async (transaction) => {
+      const scopedDb = transaction ?? this.db;
+      await scopedDb.runAsync(
         "DELETE FROM memory_persona_associations WHERE persona_id=?",
         personaId,
       );
-      await this.db.runAsync(
+      await scopedDb.runAsync(
         "DELETE FROM persona_memory_policy WHERE persona_id=?",
         personaId,
       );
