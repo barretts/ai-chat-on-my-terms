@@ -76,7 +76,7 @@ public final class BackgroundTransferSession: NSObject, URLSessionDownloadDelega
         task.cancel()
     }
 
-    public func pause(taskID: Int) async throws -> Data? {
+    public func pause(taskID: Int) async throws -> String? {
         guard let download = await task(taskID) as? URLSessionDownloadTask else { throw missingTask() }
         return await withCheckedContinuation { continuation in
             lock.lock(); pausedTaskIDs.insert(taskID); lock.unlock()
