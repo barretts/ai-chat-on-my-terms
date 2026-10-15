@@ -77,6 +77,12 @@ importers:
       '@expo/vector-icons':
         specifier: 15.0.2
         version: 15.0.2(expo-font@57.0.4)(react-native@0.86.3)(react@19.2.3)
+      '@locallab/app-lock':
+        specifier: workspace:*
+        version: link:../../modules/app-lock
+      '@locallab/appearance-behavior':
+        specifier: workspace:*
+        version: link:../../packages/appearance/behavior
       '@locallab/archives':
         specifier: workspace:*
         version: link:../../packages/archives
@@ -86,6 +92,9 @@ importers:
       '@locallab/audio-session':
         specifier: workspace:*
         version: link:../../packages/audio/session
+      '@locallab/backup':
+        specifier: workspace:*
+        version: link:../../packages/backup
       '@locallab/capabilities':
         specifier: workspace:*
         version: link:../../packages/capabilities
@@ -101,6 +110,9 @@ importers:
       '@locallab/chat-integration':
         specifier: workspace:*
         version: link:../../packages/chat/integration
+      '@locallab/chat-media-hooks':
+        specifier: workspace:*
+        version: link:../../packages/chat/media-hooks
       '@locallab/compat-apple-ml':
         specifier: workspace:*
         version: link:../../packages/compat-probes/apple-ml
@@ -119,6 +131,9 @@ importers:
       '@locallab/conversation-library':
         specifier: workspace:*
         version: link:../../packages/conversations/library
+      '@locallab/diagnostics':
+        specifier: workspace:*
+        version: link:../../packages/diagnostics
       '@locallab/embeddings':
         specifier: workspace:*
         version: link:../../modules/embeddings
@@ -128,15 +143,33 @@ importers:
       '@locallab/gguf-ios':
         specifier: workspace:*
         version: link:../../modules/gguf/ios
+      '@locallab/groups-config':
+        specifier: workspace:*
+        version: link:../../packages/groups/config
       '@locallab/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
       '@locallab/localization':
         specifier: workspace:*
         version: link:../../packages/localization
+      '@locallab/media-comfyui':
+        specifier: workspace:*
+        version: link:../../packages/media/comfyui
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../../packages/media/engine
+      '@locallab/media-integration':
+        specifier: workspace:*
+        version: link:../../packages/media/integration
+      '@locallab/media-video':
+        specifier: workspace:*
+        version: link:../../packages/media/video
       '@locallab/memory-extraction':
         specifier: workspace:*
         version: link:../../packages/memory/extraction
+      '@locallab/memory-scope':
+        specifier: workspace:*
+        version: link:../../packages/memory/scope
       '@locallab/models-catalog':
         specifier: workspace:*
         version: link:../../packages/models/catalog
@@ -152,6 +185,12 @@ importers:
       '@locallab/parameters':
         specifier: workspace:*
         version: link:../../packages/parameters
+      '@locallab/personas-bindings':
+        specifier: workspace:*
+        version: link:../../packages/personas/bindings
+      '@locallab/personas-generator':
+        specifier: workspace:*
+        version: link:../../packages/personas/generator
       '@locallab/personas-library':
         specifier: workspace:*
         version: link:../../packages/personas/library
@@ -191,6 +230,9 @@ importers:
       '@locallab/remote-client':
         specifier: workspace:*
         version: link:../../packages/remote/client
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../../packages/remote/crypto
       '@locallab/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -200,6 +242,12 @@ importers:
       '@locallab/security-secrets':
         specifier: workspace:*
         version: link:../../packages/security/secrets
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../packages/service-contracts
+      '@locallab/speech-cloud':
+        specifier: workspace:*
+        version: link:../../packages/speech/cloud
       '@locallab/speech-system':
         specifier: workspace:*
         version: link:../../packages/speech-system
@@ -209,6 +257,12 @@ importers:
       '@locallab/storage-sqlite-core':
         specifier: workspace:*
         version: link:../../packages/storage/sqlite/core
+      '@locallab/sync-personas':
+        specifier: workspace:*
+        version: link:../../packages/sync/personas
+      '@locallab/sync-preferences':
+        specifier: workspace:*
+        version: link:../../packages/sync/preferences
       '@locallab/sync-transport':
         specifier: workspace:*
         version: link:../../packages/sync/core/transport
@@ -233,6 +287,9 @@ importers:
       '@locallab/ui-native-primitives':
         specifier: workspace:*
         version: link:../../packages/ui-native/primitives
+      '@locallab/widgets-ios':
+        specifier: workspace:*
+        version: link:../../modules/widgets/ios
       '@locallab/workflows-integration':
         specifier: workspace:*
         version: link:../../packages/workflows/integration
