@@ -5,6 +5,7 @@ packages:
   - packages/*
   - packages/*/*
   - packages/chat/engine/*
+  - packages/sync/core/*
   - packages/providers/*/*
   - packages/compat-probes/*
   - packages/storage/*/*

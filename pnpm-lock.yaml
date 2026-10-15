@@ -131,6 +131,9 @@ importers:
       '@locallab/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
+      '@locallab/localization':
+        specifier: workspace:*
+        version: link:../../packages/localization
       '@locallab/memory-extraction':
         specifier: workspace:*
         version: link:../../packages/memory/extraction
@@ -182,6 +185,12 @@ importers:
       '@locallab/provider-openai-first-run':
         specifier: workspace:*
         version: link:../../packages/providers/openai-first-run
+      '@locallab/remote-binary':
+        specifier: workspace:*
+        version: link:../../packages/remote/binary
+      '@locallab/remote-client':
+        specifier: workspace:*
+        version: link:../../packages/remote/client
       '@locallab/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -200,6 +209,12 @@ importers:
       '@locallab/storage-sqlite-core':
         specifier: workspace:*
         version: link:../../packages/storage/sqlite/core
+      '@locallab/sync-transport':
+        specifier: workspace:*
+        version: link:../../packages/sync/core/transport
+      '@locallab/themes-schema':
+        specifier: workspace:*
+        version: link:../../packages/themes/schema
       '@locallab/tools-builtins':
         specifier: workspace:*
         version: link:../../packages/tools/builtins
@@ -218,6 +233,9 @@ importers:
       '@locallab/ui-native-primitives':
         specifier: workspace:*
         version: link:../../packages/ui-native/primitives
+      '@locallab/workflows-integration':
+        specifier: workspace:*
+        version: link:../../packages/workflows/integration
       '@noble/hashes':
         specifier: 1.8.0
         version: 1.8.0
@@ -328,6 +346,49 @@ importers:
         specifier: 19.2.4
         version: 19.2.4
 
+  modules/app-icons/ios:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  modules/app-intents/ios:
+    dependencies:
+      '@locallab/automation':
+        specifier: workspace:*
+        version: link:../../../packages/automation
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  modules/app-lock:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   modules/attachments:
     dependencies:
       '@locallab/attachments':
@@ -340,6 +401,18 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
+
+  modules/billing:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   modules/downloads/ios:
     dependencies:
@@ -419,6 +492,25 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  modules/icloud:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   modules/lan-discovery:
     devDependencies:
       '@types/node':
@@ -436,6 +528,73 @@ importers:
       '@locallab/contracts':
         specifier: workspace:*
         version: link:../../../packages/contracts
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  modules/ocr/ios:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  modules/usb/ios:
+    dependencies:
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../../../packages/remote/crypto
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  modules/widgets/ios:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/appearance/behavior:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
     devDependencies:
       '@types/node':
         specifier: 24.0.10
@@ -500,6 +659,19 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
 
+  packages/audio/conversation:
+    dependencies:
+      '@locallab/audio-session':
+        specifier: workspace:*
+        version: link:../session
+    devDependencies:
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/audio/session:
     devDependencies:
       '@types/node':
@@ -511,6 +683,34 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
+
+  packages/automation:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/backup:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/capabilities:
     dependencies:
@@ -647,6 +847,25 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/chat/media-hooks:
+    dependencies:
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../../media/engine
+      '@locallab/personas-media':
+        specifier: workspace:*
+        version: link:../../personas/media
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/compat-probes/apple-ml:
     dependencies:
       '@locallab/contracts':
@@ -769,6 +988,75 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/diagnostics:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/entitlements:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/groups/config:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/storage-sqlite-core':
+        specifier: workspace:*
+        version: link:../../storage/sqlite/core
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/groups/parallel:
+    dependencies:
+      '@locallab/groups-turns':
+        specifier: workspace:*
+        version: link:../turns
+    devDependencies:
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/groups/turns:
+    dependencies:
+      '@locallab/groups-config':
+        specifier: workspace:*
+        version: link:../config
+    devDependencies:
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/jobs:
     dependencies:
       '@locallab/contracts':
@@ -780,6 +1068,135 @@ importers:
       zod:
         specifier: 4.1.12
         version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/localization:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/a1111:
+    dependencies:
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/comfyui:
+    dependencies:
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/engine:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/jobs':
+        specifier: workspace:*
+        version: link:../../jobs
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/integration:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/media-a1111':
+        specifier: workspace:*
+        version: link:../a1111
+      '@locallab/media-comfyui':
+        specifier: workspace:*
+        version: link:../comfyui
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@locallab/media-queue':
+        specifier: workspace:*
+        version: link:../queue
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/queue:
+    dependencies:
+      '@locallab/jobs':
+        specifier: workspace:*
+        version: link:../../jobs
+      '@locallab/media-engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/media/video:
     devDependencies:
       '@types/node':
         specifier: 24.0.10
@@ -812,6 +1229,31 @@ importers:
       '@locallab/schema':
         specifier: workspace:*
         version: link:../../schema
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/memory/scope:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/memory-extraction':
+        specifier: workspace:*
+        version: link:../extraction
+      '@locallab/personas-library':
+        specifier: workspace:*
+        version: link:../../personas/library
+      '@locallab/storage-sqlite-core':
+        specifier: workspace:*
+        version: link:../../storage/sqlite/core
+    devDependencies:
       '@types/node':
         specifier: 24.0.10
         version: 24.0.10
@@ -914,6 +1356,41 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/personas/bindings:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/personas/generator:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
   packages/personas/library:
     dependencies:
       '@locallab/contracts':
@@ -926,6 +1403,25 @@ importers:
       '@locallab/schema':
         specifier: workspace:*
         version: link:../../schema
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/personas/media:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/personas-bindings':
+        specifier: workspace:*
+        version: link:../bindings
+    devDependencies:
       '@types/node':
         specifier: 24.0.10
         version: 24.0.10
@@ -1160,6 +1656,118 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
 
+  packages/remote/binary:
+    dependencies:
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../service-contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@locallab/relay':
+        specifier: workspace:*
+        version: link:../../../services/relay
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../crypto
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/remote/client:
+    dependencies:
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../crypto
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../service-contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@locallab/relay':
+        specifier: workspace:*
+        version: link:../../../services/relay
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/remote/crypto:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../service-contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/remote/integration:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/remote-binary':
+        specifier: workspace:*
+        version: link:../binary
+      '@locallab/remote-client':
+        specifier: workspace:*
+        version: link:../client
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../crypto
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../service-contracts
+      '@locallab/sync-merge':
+        specifier: workspace:*
+        version: link:../../sync/core/merge
+      '@locallab/sync-transport':
+        specifier: workspace:*
+        version: link:../../sync/core/transport
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@locallab/relay':
+        specifier: workspace:*
+        version: link:../../../services/relay
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/schema:
     devDependencies:
       '@types/node':
@@ -1180,6 +1788,18 @@ importers:
       '@locallab/storage-sqlite-core':
         specifier: workspace:*
         version: link:../../storage/sqlite/core
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/security/recovery:
     devDependencies:
       '@types/node':
         specifier: 24.0.10
@@ -1241,6 +1861,25 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
 
+  packages/speech/cloud:
+    dependencies:
+      '@locallab/network-http':
+        specifier: workspace:*
+        version: link:../../network/http
+      '@locallab/security-secrets':
+        specifier: workspace:*
+        version: link:../../security/secrets
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@24.0.10)
+
   packages/storage/blobs:
     dependencies:
       '@locallab/storage-sqlite-core':
@@ -1288,6 +1927,144 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/sync/core/composition:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../../service-contracts
+      '@locallab/sync-merge':
+        specifier: workspace:*
+        version: link:../merge
+      '@locallab/sync-preferences':
+        specifier: workspace:*
+        version: link:../../preferences
+      '@locallab/sync-transport':
+        specifier: workspace:*
+        version: link:../transport
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/sync/core/merge:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/sync/core/transport:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../../../remote/crypto
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../../service-contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/sync/icloud:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/icloud':
+        specifier: workspace:*
+        version: link:../../../modules/icloud
+      '@locallab/sync-merge':
+        specifier: workspace:*
+        version: link:../core/merge
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/sync/personas:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/sync/preferences:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/testkit:
     dependencies:
       '@locallab/contracts':
@@ -1303,6 +2080,22 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
+
+  packages/themes/schema:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/tools/builtins:
     dependencies:
@@ -1351,6 +2144,18 @@ importers:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
 
+  packages/tools/hosted-search:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/tools/mcp-http:
     dependencies:
       '@locallab/contracts':
@@ -1384,6 +2189,18 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@24.0.10)
+
+  packages/tools/sandbox:
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/tools/searxng:
     dependencies:
@@ -1427,11 +2244,238 @@ importers:
 
   packages/ui-tokens: {}
 
+  packages/workflows/briefings:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/camera:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/context:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/creative:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/integration:
+    dependencies:
+      '@locallab/automation':
+        specifier: workspace:*
+        version: link:../../automation
+      '@locallab/ocr-ios':
+        specifier: workspace:*
+        version: link:../../../modules/ocr/ios
+      '@locallab/workflows-briefings':
+        specifier: workspace:*
+        version: link:../briefings
+      '@locallab/workflows-camera':
+        specifier: workspace:*
+        version: link:../camera
+      '@locallab/workflows-context':
+        specifier: workspace:*
+        version: link:../context
+      '@locallab/workflows-creative':
+        specifier: workspace:*
+        version: link:../creative
+      '@locallab/workflows-planning':
+        specifier: workspace:*
+        version: link:../planning
+      '@locallab/workflows-summaries':
+        specifier: workspace:*
+        version: link:../summaries
+      '@locallab/workflows-translation':
+        specifier: workspace:*
+        version: link:../translation
+      '@locallab/workflows-voice-actions':
+        specifier: workspace:*
+        version: link:../voice-actions
+      '@locallab/workflows-writing':
+        specifier: workspace:*
+        version: link:../writing
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/planning:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/summaries:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/translation:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/voice-actions:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/workflows/writing:
+    dependencies:
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   services/api:
     dependencies:
+      '@locallab/tools-hosted-search':
+        specifier: workspace:*
+        version: link:../../packages/tools/hosted-search
+      '@locallab/tools-sandbox':
+        specifier: workspace:*
+        version: link:../../packages/tools/sandbox
       fastify:
         specifier: 4.28.1
         version: 4.28.1
+    devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  services/relay:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@locallab/remote-crypto':
+        specifier: workspace:*
+        version: link:../../packages/remote/crypto
+      '@locallab/service-contracts':
+        specifier: workspace:*
+        version: link:../../packages/service-contracts
+      ws:
+        specifier: 7.5.13
+        version: 7.5.13
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
     devDependencies:
       '@types/node':
         specifier: 24.0.10
