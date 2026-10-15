@@ -328,11 +328,11 @@ public final class SpeechSystemModule: Module {
           var conversionError: NSError?
           converter.convert(to: out, error: &conversionError) { status, outCondition in
             if fed {
-              status.pointee = .noDataNow
+              outCondition.pointee = .noDataNow
               return nil
             }
             fed = true
-            status.pointee = .haveData
+            outCondition.pointee = .haveData
             return buffer
           }
           guard conversionError == nil, out.frameLength > 0,
@@ -340,7 +340,7 @@ public final class SpeechSystemModule: Module {
           self.captureBuffer.append(contentsOf: channel[0..<Int(out.frameLength)])
         }
         engine.prepare()
-        engine.start()
+        try engine.start()
         self.captureEngine = engine
         promise.resolve(["ok": true, "value": NSNull()])
       } catch {
