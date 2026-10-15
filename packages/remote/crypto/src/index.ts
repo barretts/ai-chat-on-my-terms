@@ -265,7 +265,11 @@ export class OpeningChannel {
     requireBytes(nonceKey, 32, "nonceKey");
   }
 
-  private acceptSequence(sequence: number): void {
+  // R021: validation and commitment are separate so authentication can
+  // happen in between — a frame only consumes replay state once it has
+  // authenticated, and an accepted older sequence is marked seen just
+  // like a new high-water sequence.
+  private checkSequence(sequence: number): void {
     if (sequence > this.highSequence + REPLAY_WINDOW)
       throw new PairingCryptoError("unauthorized", "frame sequence is beyond the replay window");
     if (sequence <= this.highSequence) {
@@ -274,11 +278,18 @@ export class OpeningChannel {
         throw new PairingCryptoError("unauthorized", "frame sequence is below the replay window");
       if ((this.seenMask >> BigInt(back)) & 1n)
         throw new PairingCryptoError("unauthorized", "frame sequence was already used");
+    }
+  }
+
+  private commitSequence(sequence: number): void {
+    if (sequence > this.highSequence) {
+      const forward = sequence - this.highSequence;
+      this.seenMask = ((this.seenMask << BigInt(forward)) | 1n) & (1n << BigInt(REPLAY_TRACK)) - 1n;
+      this.highSequence = sequence;
       return;
     }
-    const forward = sequence - this.highSequence;
-    this.seenMask = ((this.seenMask << BigInt(forward)) | 1n) & (1n << BigInt(REPLAY_TRACK)) - 1n;
-    this.highSequence = sequence;
+    const back = this.highSequence - sequence;
+    if (back < REPLAY_TRACK) this.seenMask |= 1n << BigInt(back);
   }
 
   open(frame: EncryptedRelayFrameV1): EncryptedPayload {
@@ -295,16 +306,19 @@ export class OpeningChannel {
     const ciphertext = fromBase64Url(checked.ciphertextBase64Url);
     if (ciphertext.length < 16)
       throw new PairingCryptoError("unauthorized", "frame ciphertext is too short");
-    this.acceptSequence(checked.sequence);
+    this.checkSequence(checked.sequence);
     const decipher = createDecipheriv("aes-256-gcm", this.directionKey, advertised);
     decipher.setAAD(frameAad(checked), { plaintextLength: ciphertext.length - 16 });
+    let plaintext: Buffer;
     try {
       decipher.setAuthTag(ciphertext.subarray(ciphertext.length - 16));
-      const plaintext = Buffer.concat([decipher.update(ciphertext.subarray(0, ciphertext.length - 16)), decipher.final()]);
-      return EncryptedPayloadSchema.parse(JSON.parse(plaintext.toString("utf8")));
+      plaintext = Buffer.concat([decipher.update(ciphertext.subarray(0, ciphertext.length - 16)), decipher.final()]);
     } catch {
       throw new PairingCryptoError("unauthorized", "frame authentication failed");
     }
+    // Authenticated = spent, even if the payload envelope is malformed.
+    this.commitSequence(checked.sequence);
+    return EncryptedPayloadSchema.parse(JSON.parse(plaintext.toString("utf8")));
   }
 }
 

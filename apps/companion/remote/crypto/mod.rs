@@ -324,7 +324,11 @@ impl OpeningChannel {
         }
     }
 
-    fn accept_sequence(&mut self, sequence: u64) -> Result<()> {
+    // R021: validation and commitment are separate so authentication can
+    // happen in between — a frame only consumes replay state once it has
+    // authenticated, and an accepted older sequence is marked seen just
+    // like a new high-water sequence.
+    fn check_sequence(&self, sequence: u64) -> Result<()> {
         if (sequence as i128) > self.high_sequence + REPLAY_WINDOW as i128 {
             return Err(PairingCryptoError::unauthorized("frame sequence is beyond the replay window"));
         }
@@ -336,16 +340,25 @@ impl OpeningChannel {
             if (self.seen_mask >> back) & 1 == 1 {
                 return Err(PairingCryptoError::unauthorized("frame sequence was already used"));
             }
-            return Ok(());
         }
-        let forward = (sequence as i128 - self.high_sequence) as u64;
-        self.seen_mask = if forward >= REPLAY_TRACK {
-            1
-        } else {
-            ((self.seen_mask << forward) | 1) & ((1u128 << REPLAY_TRACK) - 1)
-        };
-        self.high_sequence = sequence as i128;
         Ok(())
+    }
+
+    fn commit_sequence(&mut self, sequence: u64) {
+        if (sequence as i128) > self.high_sequence {
+            let forward = (sequence as i128 - self.high_sequence) as u64;
+            self.seen_mask = if forward >= REPLAY_TRACK {
+                1
+            } else {
+                ((self.seen_mask << forward) | 1) & ((1u128 << REPLAY_TRACK) - 1)
+            };
+            self.high_sequence = sequence as i128;
+            return;
+        }
+        let back = (self.high_sequence - sequence as i128) as u64;
+        if back < REPLAY_TRACK {
+            self.seen_mask |= 1u128 << back;
+        }
     }
 
     pub fn open(&mut self, frame: &Frame) -> Result<Vec<u8>> {
@@ -364,12 +377,15 @@ impl OpeningChannel {
         if ciphertext.len() > MAX_FRAME_BYTES || ciphertext.len() != frame.declared_size {
             return Err(PairingCryptoError::unauthorized("frame size does not match declaration"));
         }
-        self.accept_sequence(frame.sequence)?;
+        self.check_sequence(frame.sequence)?;
         let aad = frame_aad(frame);
         let cipher = Aes256Gcm::new_from_slice(&self.direction_key).map_err(|_| PairingCryptoError::malformed("invalid direction key"))?;
-        cipher
+        let plaintext = cipher
             .decrypt(Nonce::from_slice(&advertised), Payload { msg: &mut ciphertext, aad: &aad })
-            .map_err(|_| PairingCryptoError::unauthorized("frame authentication failed"))
+            .map_err(|_| PairingCryptoError::unauthorized("frame authentication failed"))?;
+        // Authenticated = spent, even if the payload turns out unusable.
+        self.commit_sequence(frame.sequence);
+        Ok(plaintext)
     }
 }
 
@@ -514,6 +530,40 @@ mod tests {
         let far = seal_bytes(&direction_key, &nonce_key, b"{\"tag\":\"health\",\"nonce\":\"far-rust-000001\"}", &route, "0198f2a3-0000-7000-8000-0000000000fa", 100 + REPLAY_WINDOW + 1, "health").expect("seal far");
         let err = receiver.open(&far).expect_err("far must be rejected");
         assert_eq!(err.message, "frame sequence is beyond the replay window");
+    }
+
+    #[test]
+    fn accepted_out_of_order_frame_is_spent_and_tampering_spends_nothing() {
+        let f = fixture();
+        let secret = decode(&f, "pairingSecretBase64Url");
+        let mobile_salt = salt_of(&f, "mobileSaltBase64Url");
+        let companion_salt = salt_of(&f, "companionSaltBase64Url");
+        let entropy = entropy_of(&f);
+        let route = f["routeId"].as_str().expect("routeId").to_string();
+        let direction_key = derive_session_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("key");
+        let nonce_key = derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, &route, Role::Mobile, Role::Companion).expect("nonce key");
+        let zero = seal_bytes(&direction_key, &nonce_key, b"{\"tag\":\"health\",\"nonce\":\"reorder-rust-0000001\"}", &route, "0198f2a3-0000-7000-8000-0000000000f1", 0, "health").expect("seal zero");
+        let one = seal_bytes(&direction_key, &nonce_key, b"{\"tag\":\"health\",\"nonce\":\"reorder-rust-0000002\"}", &route, "0198f2a3-0000-7000-8000-0000000000f2", 1, "health").expect("seal one");
+        let mut receiver = OpeningChannel::new(&direction_key, &nonce_key, &route);
+        // A legitimate reordering (1 before 0) is accepted in both orders.
+        assert!(receiver.open(&one).is_ok());
+        assert!(receiver.open(&zero).is_ok());
+        // The defect: every REPEAT of the in-window older sequence 0 must
+        // now be rejected — the seen bit for an accepted old sequence used
+        // to never get set, so captured valid frames replayed indefinitely.
+        let err = receiver.open(&zero).expect_err("repeat of accepted old sequence must be rejected");
+        assert_eq!(err.message, "frame sequence was already used");
+        assert!(receiver.open(&zero).unwrap_err().message.contains("already used"));
+        // A frame that fails authentication must NOT consume its sequence:
+        // the genuine frame still opens after the tampered copy is refused.
+        let mut receiver2 = OpeningChannel::new(&direction_key, &nonce_key, &route);
+        let mut tampered = zero.clone();
+        let mut ct = b64url_decode(&tampered.ciphertext_base64url).expect("ct");
+        ct[0] ^= 0xff;
+        tampered.ciphertext_base64url = b64url_encode(&ct);
+        let err = receiver2.open(&tampered).expect_err("tamper must fail");
+        assert_eq!(err.message, "frame authentication failed");
+        assert!(receiver2.open(&zero).is_ok());
     }
 
     #[test]

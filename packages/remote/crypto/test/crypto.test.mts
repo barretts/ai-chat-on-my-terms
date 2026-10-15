@@ -198,6 +198,33 @@ test("tampered ciphertext and foreign frames fail authentication", () => {
   );
 });
 
+test("R021: accepted out-of-order frames are spent; failed auth consumes nothing", () => {
+  const { mobile, companion } = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
+  const payload: EncryptedPayload = { tag: "health", nonce: "reorder-0123456789ab" };
+  const zero = mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-000000000001");
+  const one = mobile.toCompanion.seal(payload, "0198f2a3-0000-7000-8000-000000000002");
+  // A legitimate reordering (1 before 0) is accepted in both orders.
+  companion.fromMobile.open(one);
+  companion.fromMobile.open(zero);
+  // The defect: every REPEAT of the in-window older sequence 0 must now
+  // be rejected — the seen bit for an accepted old sequence used to never
+  // get set, so captured valid frames replayed indefinitely.
+  assert.throws(() => companion.fromMobile.open(zero), (error: unknown) => error instanceof PairingCryptoError && error.code === "unauthorized");
+  assert.throws(() => companion.fromMobile.open(zero), (error: unknown) => error instanceof PairingCryptoError && error.code === "unauthorized");
+  // A frame that fails authentication must NOT consume its sequence: the
+  // genuine frame still opens on a fresh receiver after the tampered one.
+  const fresh = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
+  const ciphertext = Buffer.from(zero.ciphertextBase64Url, "base64url");
+  ciphertext[0] = ciphertext[0]! ^ 0xff;
+  const tampered = { ...zero, ciphertextBase64Url: ciphertext.toString("base64url") };
+  assert.throws(() => fresh.companion.fromMobile.open(tampered), (error: unknown) => error instanceof PairingCryptoError && error.code === "unauthorized");
+  assert.equal(fresh.companion.fromMobile.open(zero).tag, payload.tag);
+  // And on the SAME receiver, a failed attempt leaves the slot open.
+  const shared = createSessionPairing(secret, mobileSalt, companionSalt, entropy, fixture.routeId);
+  assert.throws(() => shared.companion.fromMobile.open(tampered));
+  assert.equal(shared.companion.fromMobile.open(zero).tag, payload.tag);
+});
+
 test("nonces are unique per sequence and never reused across sessions", () => {
   const nonceKey = deriveNonceKey(secret, mobileSalt, companionSalt, entropy, fixture.routeId, "mobile", "companion");
   const nonces = Array.from({ length: 200 }, (_, i) =>
