@@ -193,7 +193,12 @@ export class MergeStore {
    * fail-closed BEFORE any mutation; re-applying the same cover is
    * idempotent (rows are re-set, no tombstone touches a member).
    */
-  applyCover(members: readonly SyncRecord[], at: Revision, stamp: string): string[] {
+  applyCover(
+    members: readonly SyncRecord[],
+    at: Revision,
+    stamp: string,
+    ownsRow: (row: MergeStateRow) => boolean = (row) => isChatTierType(row.entityType),
+  ): string[] {
     for (const member of members) this.validatePayload(member.entityType, member.payload);
     const covered = new Set<string>();
     for (const member of members) {
@@ -203,7 +208,7 @@ export class MergeStore {
     }
     const removed: string[] = [];
     for (const { key, row } of this.snapshot()) {
-      if (row.payload === null || covered.has(key) || !this.allowedType(row.entityType)) continue;
+      if (row.payload === null || covered.has(key) || !ownsRow(row)) continue;
       const [entityType, entityId] = key.split("/") as [string, EntityId];
       this.rows.set(key, rowOf({ id: entityId, entityType, entityId, revision: at }, null));
       removed.push(key);

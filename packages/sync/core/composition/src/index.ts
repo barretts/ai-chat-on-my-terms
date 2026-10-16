@@ -94,14 +94,12 @@ export class SyncEngine {
   private readonly transport: SyncTransport;
   private rows: PairSyncPreference[] = [];
   private allowedGate = false;
+  private initialSyncTask: Promise<void> | null = null;
   private deliveryWait: {
     resolve: () => void;
     reject: (err: SyncCompositionError) => void;
   } | null = null;
-  // R006: chunks of the source's copy snapshot, recorded as they land
-  // (target side). A newer snapshot id replaces the in-flight one: the
-  // source re-ran its copy after an interrupt and its membership is the
-  // authoritative one.
+  // Copy membership is persisted in the preference vault before its ack.
   private copy: {
     snapshotId: string;
     chunks: number;
@@ -127,6 +125,14 @@ export class SyncEngine {
   async refresh(): Promise<void> {
     this.rows = parseSyncPreferenceRecords(await this.opts.vault.load());
     this.allowedGate = syncDataAllowed(this.rows, this.opts.routeId);
+    const saved = findPairSyncPreference(this.rows, this.opts.routeId)?.initialCopy;
+    this.copy = saved === undefined ? null : {
+      snapshotId: saved.snapshotId,
+      chunks: saved.chunks,
+      applied: new Map(saved.parts.map((part) => [part.seq,
+        new Map(part.records.map((record) => [`${record.entityType}/${record.entityId}`, record])),
+      ])),
+    };
   }
 
   async enableSync(): Promise<void> {
@@ -150,7 +156,15 @@ export class SyncEngine {
    * target replaces its own set atomically with the delivered members.
    * No-op once recorded complete.
    */
-  async runInitialSync(): Promise<void> {
+  runInitialSync(): Promise<void> {
+    if (this.initialSyncTask === null)
+      this.initialSyncTask = this.performInitialSync().finally(() => {
+        this.initialSyncTask = null;
+      });
+    return this.initialSyncTask;
+  }
+
+  private async performInitialSync(): Promise<void> {
     await this.refresh();
     const pref = findPairSyncPreference(this.rows, this.opts.routeId);
     if (pref === null || !pref.enabled)
@@ -223,10 +237,11 @@ export class SyncEngine {
    */
   private async deliverQueued(): Promise<void> {
     const { promise, resolve, reject } = Promise.withResolvers<void>();
+    void promise.catch(() => undefined);
     this.deliveryWait = { resolve, reject };
     try {
       await this.transport.sendPending();
-      if (this.transport.status().pendingRecords === 0) return;
+      if (this.transport.status().pendingBatches === 0) return;
       await promise;
     } finally {
       this.deliveryWait = null;
@@ -237,7 +252,7 @@ export class SyncEngine {
   private observeDelivery(status: SyncTransportStatus): void {
     const wait = this.deliveryWait;
     if (wait !== null) {
-      if (status.pendingRecords === 0) {
+      if (status.pendingBatches === 0) {
         this.deliveryWait = null;
         wait.resolve();
       } else if (status.state === "failed" || status.state === "disabled") {
@@ -272,8 +287,12 @@ export class SyncEngine {
       return;
     }
     if (parsed.data.tag !== "sync-batch") return;
+    await this.refresh();
     if (!this.allowedGate) return; // SY-07: sync off means nothing crosses this seam
     const batch = parsed.data as SyncBatchPayload;
+    if (batch.snapshot !== undefined &&
+      (batch.snapshot.seq > batch.snapshot.chunks || batch.records.some((record) => !("payload" in record))))
+      throw new SyncCompositionError("malformed", "invalid copy snapshot chunk");
     // R016: personas riding in THIS batch authorize their photos even
     // before their own rows apply — snapshot order sorts attachment
     // before persona, and admitting the photo needs the ownership answer
@@ -293,7 +312,9 @@ export class SyncEngine {
     // R006: a copy-snapshot chunk also joins the target's pending
     // membership (idempotent under replay/reorder); the replacement waits
     // for every chunk so shared entity ids are never tombstoned blind.
-    if (batch.snapshot !== undefined) this.recordCopyChunk(batch.snapshot, batch.records);
+    if (batch.snapshot !== undefined &&
+      !findPairSyncPreference(this.rows, this.opts.routeId)?.initialSyncDone)
+      await this.recordCopyChunk(batch.snapshot, batch.records);
     await this.opts.sendAck(syncAckPayload(batch.batchId, accepted));
   }
 
@@ -353,10 +374,11 @@ export class SyncEngine {
    * set: the source re-ran its copy after an interrupt, so its newer
    * membership is authoritative and newer partial older chunks must not merge in.
    */
-  private recordCopyChunk(
+  private async recordCopyChunk(
     snapshot: NonNullable<SyncBatchPayload["snapshot"]>,
     records: SyncBatchPayload["records"],
-  ): void {
+  ): Promise<void> {
+    if (this.copy !== null && snapshot.snapshotId < this.copy.snapshotId) return;
     if (this.copy === null || this.copy.snapshotId !== snapshot.snapshotId)
       this.copy = { snapshotId: snapshot.snapshotId, chunks: snapshot.chunks, applied: new Map() };
     if (this.copy.chunks !== snapshot.chunks)
@@ -365,6 +387,14 @@ export class SyncEngine {
     for (const record of records)
       if ("payload" in record) members.set(`${record.entityType}/${record.entityId}`, record);
     this.copy.applied.set(snapshot.seq, members);
+    const initialCopy = {
+      snapshotId: this.copy.snapshotId,
+      chunks: this.copy.chunks,
+      parts: [...this.copy.applied].map(([seq, part]) => ({ seq, records: [...part.values()] })),
+    };
+    await this.mutate((rows) => rows.map((row) =>
+      row.routeId === this.opts.routeId ? { ...row, initialCopy } : row,
+    ));
   }
 
   /**
@@ -387,7 +417,12 @@ export class SyncEngine {
     const members: SyncRecord[] = [];
     for (const chunk of copy.applied.values()) for (const member of chunk.values()) members.push(member);
     const stamp = this.opts.now();
-    this.opts.store.applyCover(members, this.replacementRevision(stamp), stamp);
+    const owned = new Set(this.opts.store.snapshot().filter(({ row }) =>
+      isChatTierType(row.entityType) ||
+      this.opts.personaGate?.(row.entityType, row.entityId, row.payload) === true,
+    ).map(({ key }) => key));
+    this.opts.store.applyCover(members, this.replacementRevision(stamp), stamp,
+      (row) => owned.has(`${row.entityType}/${row.entityId}`));
     this.copy = null;
   }
 

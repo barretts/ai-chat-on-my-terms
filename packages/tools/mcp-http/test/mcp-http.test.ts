@@ -320,16 +320,18 @@ describe("legacy SSE fallback", () => {
   /** Spec-compliant legacy server: every POST is answered with an empty
    * 202 acceptance and JSON-RPC replies are written as `message` events on
    * the still-open GET stream, keyed by request id. */
-  async function startLegacyServer(): Promise<
-    Fixture & { closeStream(): void }
-  > {
+  async function startLegacyServer(
+    newline = "\n",
+  ): Promise<Fixture & { closeStream(): void }> {
     let stream: ServerResponse | undefined;
     let heldSlow: (() => void) | undefined;
     let heldFast: (() => void) | undefined;
     const fixture = await startFixture("/legacy", (req, res, body) => {
       if (req.method === "GET") {
         res.writeHead(200, { "content-type": "text/event-stream" });
-        res.write("event: endpoint\ndata: /legacy/messages?sid=77\n\n");
+        res.write(
+          `event: endpoint${newline}data: /legacy/messages?sid=77${newline}${newline}`,
+        );
         trackSse(res);
         stream = res;
         return;
@@ -346,11 +348,11 @@ describe("legacy SSE fallback", () => {
       };
       const reply = (result: unknown): void => {
         stream?.write(
-          `event: message\ndata: ${JSON.stringify({
+          `event: message${newline}data: ${JSON.stringify({
             jsonrpc: "2.0",
             id: message.id,
             result,
-          })}\n\n`,
+          })}${newline}${newline}`,
         );
       };
       switch (message.method) {
@@ -456,6 +458,23 @@ describe("legacy SSE fallback", () => {
     await expect(
       client.callTool("legacy_tool", { tag: "second" }, new AbortController().signal),
     ).rejects.toThrow(/closed before answering|answered HTTP/);
+  });
+
+  it("frames CRLF-delimited endpoint events and replies identically", async () => {
+    const fixture = await startLegacyServer("\r\n");
+    const client = new McpHttpClient(
+      config({ ...fixture, configUrl: () => `${fixture.origin}/legacy` }),
+    );
+    const info = await client.initialize(new AbortController().signal);
+    expect(info.serverName).toBe("legacy-fixture");
+    const discovery = await client.discoverTools(new AbortController().signal);
+    expect(discovery.tools[0]?.name).toBe("legacy_tool");
+    const call = await client.callTool(
+      "legacy_tool",
+      { tag: "crlf" },
+      new AbortController().signal,
+    );
+    expect(call.content[0]?.text).toBe("pong:crlf");
   });
 });
 
@@ -704,5 +723,77 @@ describe("redirect header policy", () => {
       expect(cause.message).toContain("Refused a cross-origin redirect");
     }
     expect(target.requests).toHaveLength(0);
+  });
+});
+
+describe("SSE framing", () => {
+  /** A fetch stub answering every request with one SSE body built from
+   * exactly these chunks, exercising parser chunk boundaries directly. */
+  function streamFetch(chunks: string[]): typeof globalThis.fetch {
+    const encoder = new TextEncoder();
+    return (async () => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          for (const chunk of chunks)
+            controller.enqueue(encoder.encode(chunk));
+          controller.close();
+        },
+      });
+      return new Response(body, {
+        status: 200,
+        headers: { "content-type": "text/event-stream" },
+      });
+    }) as typeof globalThis.fetch;
+  }
+
+  const framingConfig = {
+    id: "0193f2a0-1234-7abc-8def-000000000011",
+    label: "framing fixture",
+    url: "http://127.0.0.1:1/mcp",
+  };
+  const initResult = {
+    protocolVersion: "2025-03-26",
+    capabilities: {},
+    serverInfo: { name: "framing-fixture", version: "1.0" },
+  };
+  const initEnvelope = (id: number): string =>
+    JSON.stringify({ jsonrpc: "2.0", id, result: initResult });
+
+  it("frames CRLF boundaries even when split across chunks", async () => {
+    const client = new McpHttpClient(framingConfig, {
+      fetch: streamFetch([
+        `event: message\r`,
+        `\ndata: ${initEnvelope(1)}\r`,
+        `\n\r\n`,
+      ]),
+    });
+    const info = await client.initialize(new AbortController().signal);
+    expect(info.serverName).toBe("framing-fixture");
+  });
+
+  it("yields identical envelopes for LF and CRLF framing", async () => {
+    const lf = new McpHttpClient(framingConfig, {
+      fetch: streamFetch([`event: message\ndata: ${initEnvelope(1)}\n\n`]),
+    });
+    const crlf = new McpHttpClient(framingConfig, {
+      fetch: streamFetch([
+        `event: message\r\ndata: ${initEnvelope(1)}\r\n\r\n`,
+      ]),
+    });
+    const lfInfo = await lf.initialize(new AbortController().signal);
+    const crlfInfo = await crlf.initialize(new AbortController().signal);
+    expect(crlfInfo).toEqual(lfInfo);
+    expect(crlfInfo.serverName).toBe("framing-fixture");
+  });
+
+  it("refuses an unterminated oversized frame instead of growing forever", async () => {
+    const client = new McpHttpClient(framingConfig, {
+      fetch: streamFetch([
+        "data: " + "x".repeat(4 * 1024 * 1024 + 1024) + "\n",
+      ]),
+    });
+    await expect(
+      client.initialize(new AbortController().signal),
+    ).rejects.toThrow(/exceeding .* blank-line terminator/);
   });
 });

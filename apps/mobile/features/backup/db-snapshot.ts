@@ -63,17 +63,26 @@ export function restoreTransaction(db: SQLiteDatabasePort): RestoreTransaction {
       staged = entries.filter((entry) => entry.path.startsWith("db/"));
     },
     async commit() {
+      const tables = new Map<string, Record<string, unknown>[]>();
+      for (const entry of staged) {
+        const table = entry.path.slice("db/".length, -".json".length);
+        if (!entry.path.endsWith(".json") || !SAFE_TABLE.test(table) || tables.has(table))
+          throw new Error(`invalid or duplicate restore table "${table}"`);
+        const rows: unknown = JSON.parse(new TextDecoder().decode(entry.bytes), decodeBlob);
+        if (!Array.isArray(rows) || rows.some((row) => row === null || typeof row !== "object" || Array.isArray(row)))
+          throw new Error(`invalid restore rows for "${table}"`);
+        tables.set(table, rows as Record<string, unknown>[]);
+      }
       await db.withTransactionAsync(async (txRaw) => {
         const tx = (txRaw ?? db) as SQLiteDatabasePort;
-        for (const entry of staged) {
-          const table = entry.path.slice("db/".length, -".json".length);
-          if (!SAFE_TABLE.test(table))
-            throw new Error(`unsafe restore table name "${table}"`);
-          const rows = JSON.parse(
-            new TextDecoder().decode(entry.bytes),
-            decodeBlob,
-          ) as Record<string, unknown>[];
+        // Defer reference checks through the entire replacement, including
+        // cycles. Clear every table before inserting so cascades cannot
+        // delete rows that have just been restored. COMMIT/ROLLBACK resets
+        // this pragma; foreign-key enforcement stays enabled.
+        await tx.execAsync("PRAGMA defer_foreign_keys = ON");
+        for (const table of tables.keys())
           await tx.runAsync(`DELETE FROM "${table}"`);
+        for (const [table, rows] of tables) {
           if (rows.length === 0) continue;
           const columns = Object.keys(rows[0] ?? {});
           if (columns.length === 0) continue;
@@ -83,12 +92,15 @@ export function restoreTransaction(db: SQLiteDatabasePort): RestoreTransaction {
             );
             await tx.runAsync(
               `INSERT INTO "${table}" (${columns
-                .map((column) => `"${column}"`)
+                .map((column) => `"${column.replaceAll('"', '""')}"`)
                 .join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`,
               ...values,
             );
           }
         }
+        const violations = await tx.getAllAsync("PRAGMA foreign_key_check");
+        if (violations.length !== 0)
+          throw new Error("backup restore contains invalid foreign-key references");
       });
     },
     async rollback() {

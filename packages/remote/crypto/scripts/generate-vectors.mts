@@ -9,6 +9,7 @@ import {
   helloProof,
   mobileRouteTicketHash,
   sealPayload,
+  sealHandshakePayload,
   type EncryptedPayload,
 } from "../src/index.js";
 
@@ -66,8 +67,8 @@ for (const direction of ["mobile-to-companion", "companion-to-mobile"] as const)
       frame: sealPayload(entry.payload, key, nonceKey, routeId, requestId, entry.sequence),
     });
   }
-  // Handshake KAT: hello/ready ride the deterministic handshake channel so a
-  // restarting peer can open them before any ephemeral is known.
+  // Freeze nonce input only for these known-answer vectors. Production
+  // handshake encryption draws a fresh nonce on every call.
   const handshakeKey = deriveHandshakeKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to);
   const handshakeNonceKey = deriveHandshakeNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to);
   const handshakePayload: EncryptedPayload = direction === "mobile-to-companion"
@@ -84,12 +85,13 @@ for (const direction of ["mobile-to-companion", "companion-to-mobile"] as const)
     sequence: 0,
     contentTag: "request",
     payloadJson: JSON.stringify(EncryptedPayloadSchema.parse(handshakePayload)),
-    frame: sealPayload(handshakePayload, handshakeKey, handshakeNonceKey, routeId, handshakeRequestId, 0),
+    frame: sealHandshakePayload(handshakePayload, handshakeKey, handshakeNonceKey, routeId, handshakeRequestId, 0,
+      new Uint8Array(12).fill(direction === "mobile-to-companion" ? 0x61 : 0x62)),
   });
 }
 
 const fixture = {
-  protocol: "1.1",
+  protocol: "1.2",
   pairingSecretBase64Url: b64(pairingSecret),
   mobileSaltBase64Url: b64(mobileSalt),
   companionSaltBase64Url: b64(companionSalt),

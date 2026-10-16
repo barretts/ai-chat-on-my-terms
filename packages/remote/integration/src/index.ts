@@ -300,18 +300,27 @@ export function syncOneConversation(
   records: readonly unknown[],
 ): Promise<SyncTransport> {
   const settled = Promise.withResolvers<SyncTransport>();
+  let done = false;
+  const fail = (error: unknown) => {
+    if (done) return;
+    done = true;
+    settled.reject(error);
+  };
   const transport = new SyncTransport({
     routeId: "",
     allowed: () => true,
+    onStatus: (status) => {
+      if (status.state === "failed" || status.state === "disabled")
+        fail(new Error(status.note || "sync delivery stopped"));
+    },
     send: async (payload) => {
       mobileHandle.send(payload);
     },
   });
-  let done = false;
   const finishIfDrained = () => {
     if (done) return;
     const status = transport.status();
-    if (status.pendingRecords === 0 && status.resumeCursor > 0) {
+    if (status.pendingBatches === 0) {
       done = true;
       settled.resolve(transport);
     }
@@ -320,7 +329,7 @@ export function syncOneConversation(
     if (done) return;
     if (payload.tag === "sync-ack") {
       transport.handleAck(payload);
-      void transport.sendPending().then(finishIfDrained);
+      void transport.sendPending().then(finishIfDrained, fail);
     } else if (payload.tag === "request" && isBodyType(payload.body, "sync-refused")) {
       done = true;
       settled.reject(
@@ -328,10 +337,12 @@ export function syncOneConversation(
           `sync refused by the paired device: ${"reason" in payload.body ? String(payload.body.reason) : "no reason"}`,
         ),
       );
+    } else if (payload.tag === "close") {
+      fail(new Error(payload.reason ?? "sync session closed"));
     }
   });
   transport.enqueue(records);
-  void transport.sendPending().then(finishIfDrained);
+  void transport.sendPending().then(finishIfDrained, fail);
   return settled.promise;
 }
 

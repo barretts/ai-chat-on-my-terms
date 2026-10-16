@@ -157,7 +157,7 @@ async function pairedRelaySession(
             body: {
               type: "pairing-ready",
               proof: helloProof(secret, salts.mobileSalt, salts.companionSalt, qr.companionRouteId),
-              protocol: { major: 1, minor: 1 },
+              protocol: { major: 1, minor: 2 },
               routes: [{ routeId: qr.companionRouteId, backend: "lmstudio", label: "LM Studio" }],
               sessionSalt: Buffer.from(companionEphemeral).toString("base64url"),
             },

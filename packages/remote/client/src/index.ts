@@ -6,7 +6,7 @@
  * Handshake wire contract (sealed EncryptedPayload envelopes only — the
  * relay is opaque and never sees plaintext, keys or the pairing secret):
  * 1. Mobile connects `GET /mobile?routeId=<companionRouteId>&ticket=<mobileRouteTicket>`
- *    and seals its first payload on the DETERMINISTIC handshake channel
+ *    and seals its first payload on the random-nonce handshake channel
  *    (crypto createHandshakePairing; carries proofs only): { tag:"request",
  *    body:{ type:"pairing-hello", proof, protocol, client, sessionSalt } }
  *    where proof = helloProof(secret, mobileSalt, companionSalt, routeId)
@@ -157,8 +157,6 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
   const qr = parsePairingQrPayload(options.qrText);
   const pairingSecret = decodeBase64Url(qr.pairingSecret);
   const { mobileSalt, companionSalt } = deriveSessionSalts(pairingSecret, qr.companionRouteId);
-  const handshake = createHandshakePairing(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
-  const mobileEphemeral = generateSessionSalt();
   let dataToCompanion: SealingChannel | undefined;
   let dataFromCompanion: OpeningChannel | undefined;
   const proof = helloProof(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
@@ -167,6 +165,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
   let note = "";
   let routes: readonly RouteCapability[] = [];
   let socket: WebSocketLike | undefined;
+  let cancelConnect: ((reason: Error) => void) | undefined;
 
   const setNote = (value: string) => {
     note = value;
@@ -175,7 +174,13 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
   function connect() {
     if (state !== "idle" && state !== "closed")
       throw new PairingCryptoError("malformed", `pairing client is already ${state}`);
+    const handshake = createHandshakePairing(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId);
+    const mobileEphemeral = generateSessionSalt();
+    dataToCompanion = undefined;
+    dataFromCompanion = undefined;
+    routes = [];
     const settled = Promise.withResolvers<readonly RouteCapability[]>();
+    cancelConnect = settled.reject;
     state = "connecting";
     setNote("");
     const url =
@@ -185,6 +190,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
     const next = options.webSocket(url);
     socket = next;
     next.addEventListener("open", () => {
+      if (socket !== next) return;
       state = "awaiting-peer";
       next.send(
         JSON.stringify(
@@ -205,6 +211,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
       );
     });
     next.addEventListener("message", (event) => {
+      if (socket !== next) return;
       if (typeof event.data !== "string") return;
       let payload: EncryptedPayload;
       try {
@@ -233,7 +240,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
         settled.reject(new PairingCryptoError("unauthorized", note));
         return;
       }
-      if (payload.tag !== "request") return;
+      if (state === "ready" || payload.tag !== "request") return;
       const ready = ReadyBodySchema.safeParse(payload.body);
       if (!ready.success) {
         state = "re-pair-required";
@@ -286,9 +293,11 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
       dataFromCompanion = data.mobile.fromCompanion;
       routes = ready.data.routes;
       state = "ready";
+      cancelConnect = undefined;
       settled.resolve(routes);
     });
     next.addEventListener("close", (event) => {
+      if (socket !== next) return;
       if (state === "ready" || state === "closed" || state === "re-pair-required" || state === "version-mismatch") {
         if (state === "ready") state = "closed";
         return;
@@ -304,6 +313,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
       settled.reject(new PairingCryptoError("unauthorized", note));
     });
     next.addEventListener("error", () => {
+      if (socket !== next) return;
       if (state === "connecting" || state === "awaiting-peer") {
         state = "closed";
         setNote("The relay is unreachable. Check its URL and network.");
@@ -314,18 +324,24 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
   }
 
   function disconnect(reason = "client-disconnect") {
-    if (socket !== undefined && (state === "ready" || state === "awaiting-peer")) {
+    const current = socket;
+    socket = undefined;
+    if (current !== undefined) {
       if (dataToCompanion !== undefined) {
         try {
-          socket.send(
+          current.send(
             JSON.stringify(dataToCompanion.seal({ tag: "close", reason }, createUuidV7())),
           );
         } catch {
           // best-effort: close below regardless
         }
       }
-      socket.close(1000, reason);
+      current.close(1000, reason);
     }
+    cancelConnect?.(new PairingCryptoError("unauthorized", "Pairing connection was canceled."));
+    cancelConnect = undefined;
+    dataToCompanion = undefined;
+    dataFromCompanion = undefined;
     if (state === "ready" || state === "awaiting-peer" || state === "connecting") state = "closed";
   }
 

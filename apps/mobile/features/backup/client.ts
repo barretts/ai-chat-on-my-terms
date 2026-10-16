@@ -11,6 +11,7 @@ import {
 import type { BackupPreview, CryptoPorts, KdfParams } from "@locallab/backup";
 import type { ZipPort } from "@locallab/archives";
 import type { SQLiteDatabasePort } from "@locallab/storage-sqlite-core";
+import type { SecureTokenPort } from "../account/client";
 import { mobileArchiveZip } from "../../composition/chat/archives/zip";
 import {
   restoreTransaction,
@@ -85,13 +86,21 @@ export function createBackupClient(
 }
 
 /** API-backed object store (services/api/features/backup routes). */
-export function fetchBackupObjectStore(baseUrl: string): BackupObjectStorePort {
+export function fetchBackupObjectStore(
+  baseUrl: string,
+  tokens: Pick<SecureTokenPort, "get">,
+): BackupObjectStorePort {
   const trimmed = baseUrl.replace(/\/+$/, "");
+  const authorization = async () => {
+    const token = await tokens.get();
+    if (!token) throw new Error("sign in before accessing cloud backups");
+    return { authorization: `Bearer ${token}` };
+  };
   return {
     async put(id, bytes) {
-      const response = await fetch(`${trimmed}/backup/objects/${id}`, {
+      const response = await fetch(`${trimmed}/backup/objects/${encodeURIComponent(id)}`, {
         method: "PUT",
-        headers: { "content-type": "application/octet-stream" },
+        headers: { ...await authorization(), "content-type": "application/octet-stream" },
         body: new Blob([new Uint8Array(bytes).buffer]),
       });
       if (!response.ok)
@@ -100,7 +109,9 @@ export function fetchBackupObjectStore(baseUrl: string): BackupObjectStorePort {
         );
     },
     async get(id) {
-      const response = await fetch(`${trimmed}/backup/objects/${id}`);
+      const response = await fetch(`${trimmed}/backup/objects/${encodeURIComponent(id)}`, {
+        headers: await authorization(),
+      });
       if (response.status === 404) return null;
       if (!response.ok)
         throw new Error(

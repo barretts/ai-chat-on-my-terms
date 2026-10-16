@@ -3,7 +3,7 @@
 - **Priority:** P1
 - **Original tasks:** T098, T098B
 - **Suggested owner:** T098 sync composition
-- **Status:** Ready for implementation; fix not performed by this plan.
+- **Status:** Follow-up implemented in working tree; runtime verification not run. See [implementation handoff](../blocker-fixes-follow-up.md).
 - **Dependencies:** [R008](./R008-asynchronous-acknowledgements-leave-later-sync-batches-unsent.md), [R023](./R023-acknowledgements-of-old-sync-records-suppress-later-updates-with-the-same-identity.md)
 
 ## Outcome

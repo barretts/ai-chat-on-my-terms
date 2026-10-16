@@ -12,6 +12,8 @@ import { isRecord } from "./type-guards";
 const TOOL_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_-]{0,63}$/;
 const MCP_PROTOCOL_VERSION = "2025-03-26";
 const MAX_REDIRECT_HOPS = 5;
+/** Ceiling for one SSE frame, with or without its terminating blank line. */
+const MAX_SSE_FRAME_CHARS = 4 * 1024 * 1024;
 const TRANSPORT_SUMMARY =
   "supported transports are Streamable HTTP (POST answering application/json " +
   "or text/event-stream) and legacy SSE (GET answering an endpoint event)";
@@ -533,26 +535,47 @@ export class McpHttpClient {
   ): AsyncGenerator<string> {
     const body = response.body;
     if (!body) return;
-    const onAbort = () => void body.cancel().catch(() => undefined);
-    signal.addEventListener("abort", onAbort, { once: true });
     const reader = body.getReader();
+    const onAbort = () => void reader.cancel().catch(() => undefined);
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) onAbort();
     const decoder = new TextDecoder();
     let buffer = "";
+    let pendingCarriageReturn = false;
+    let streamCompleted = false;
     try {
       for (;;) {
         const chunk = await this.readStreamChunk(reader, signal);
-        if (chunk.done) break;
-        buffer += decoder.decode(chunk.value, { stream: true });
+        if (chunk.done) {
+          streamCompleted = true;
+          break;
+        }
+        let text = decoder.decode(chunk.value, { stream: true });
+        if (text) {
+          // CR itself ends a line; suppress its optional LF on the next
+          // decoded chunk without postponing a completed event.
+          if (pendingCarriageReturn) {
+            if (text.startsWith("\n")) text = text.slice(1);
+          }
+          pendingCarriageReturn = text.endsWith("\r");
+          buffer += text.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+        }
         for (;;) {
           const boundary = buffer.indexOf("\n\n");
+          if ((boundary === -1 ? buffer.length : boundary) > MAX_SSE_FRAME_CHARS)
+            throw new McpProtocolError(
+              `MCP server "${this.config.label}" sent an SSE frame exceeding ` +
+                `${MAX_SSE_FRAME_CHARS} characters before its blank-line terminator.`,
+            );
           if (boundary === -1) break;
           const frame = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
-          yield frame.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+          yield frame;
         }
       }
     } finally {
       signal.removeEventListener("abort", onAbort);
+      if (!streamCompleted) await reader.cancel().catch(() => undefined);
       reader.releaseLock();
     }
   }
@@ -562,7 +585,9 @@ export class McpHttpClient {
     signal: AbortSignal,
   ): Promise<StreamChunk> {
     try {
+      if (signal.aborted) throw new Error("The MCP request was canceled.");
       const read = await reader.read();
+      if (signal.aborted) throw new Error("The MCP request was canceled.");
       if (read.done) return { done: true };
       return { done: false, value: read.value };
     } catch (cause) {
@@ -577,19 +602,22 @@ export class McpHttpClient {
 
   /** Legacy SSE discovery: GET with Accept: text/event-stream, read the
    * first `event: endpoint` frame, resolve its data line against the server
-   * URL. The stream is then closed; later requests POST to the endpoint
-   * without opening any extra SSE stream. */
+   * URL. Keep this stream open to dispatch replies to later POSTs. */
   private async discoverLegacySse(signal: AbortSignal): Promise<{
     serverInfo: McpServerInfo;
     messageEndpoint: string;
   }> {
     const baseOrigin = new URL(this.config.url).origin;
     const pair = this.normalizeSignal(signal);
+    const streamController = new AbortController();
+    const abortDiscovery = () => streamController.abort();
+    pair.signal.addEventListener("abort", abortDiscovery, { once: true });
+    if (pair.signal.aborted) abortDiscovery();
+    let connected = false;
     try {
       let endpoint: string | undefined;
       let target = new URL(this.config.url);
       let frames: AsyncGenerator<string> | undefined;
-      const streamController = new AbortController();
       try {
         for (let hop = 0; ; hop += 1) {
           const response = await this.fetchImpl(target.href, {
@@ -692,8 +720,11 @@ export class McpHttpClient {
         envelope.result,
         `Legacy SSE MCP server "${this.config.label}"`,
       );
+      connected = true;
       return { serverInfo, messageEndpoint: messageEndpoint.href };
     } finally {
+      pair.signal.removeEventListener("abort", abortDiscovery);
+      if (!connected) streamController.abort();
       pair.cleanup();
     }
   }

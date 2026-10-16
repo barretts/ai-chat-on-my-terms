@@ -686,7 +686,7 @@ data: [DONE]\n\n"
             // demands the protocol version pair (R028: the old codec
             // emitted NONE — a real mobile handle rejected every reply).
             assert_eq!(frame["protocol"]["major"].as_u64(), Some(1), "frame {index} protocol major");
-            assert_eq!(frame["protocol"]["minor"].as_u64(), Some(1), "frame {index} protocol minor");
+            assert_eq!(frame["protocol"]["minor"].as_u64(), Some(FRAME_PROTOCOL_MINOR as u64), "frame {index} protocol minor");
             assert_eq!(frame["routeId"].as_str(), Some(route), "frame {index} route");
             assert_eq!(frame["requestId"].as_str(), Some(CHAT_REQUEST_ID), "frame {index} answers the request id");
             assert_eq!(frame["sequence"].as_u64(), Some(index as u64), "frame {index} sequence on the caller's counter");

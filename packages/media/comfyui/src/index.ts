@@ -93,12 +93,18 @@ export function applyLoras(graph: ComfyGraph, loras: ComfyLora[]): { graph: Comf
   );
   if (!checkpointId)
     throw err("malformed", "Graph has LoRA selections but no CheckpointLoaderSimple node to attach them to.");
-  const next = { ...graph };
+  const next = Object.fromEntries(
+    Object.entries(graph).map(([id, node]) => [id, { ...node, inputs: { ...node.inputs } }]),
+  );
   let modelSource: [string, number] = [checkpointId, 0];
   let clipSource: [string, number] = [checkpointId, 1];
   const loraNodeIds: string[] = [];
-  loras.forEach((lora, index) => {
-    const id = `2${index}`;
+  let nextLoraIndex = 0;
+  loras.forEach((lora) => {
+    let id: string;
+    do {
+      id = `2${nextLoraIndex++}`;
+    } while (Object.hasOwn(next, id));
     next[id] = {
       class_type: "LoraLoader",
       inputs: {
@@ -122,8 +128,10 @@ export function applyLoras(graph: ComfyGraph, loras: ComfyLora[]): { graph: Comf
     const patched = { ...node.inputs };
     for (const key of Object.keys(patched)) {
       const value = patched[key];
-      if (Array.isArray(value) && value[0] === checkpointId)
-        patched[key] = value[1] === 0 ? modelSource : clipSource;
+      if (Array.isArray(value) && value[0] === checkpointId) {
+        if (value[1] === 0) patched[key] = modelSource;
+        else if (value[1] === 1) patched[key] = clipSource;
+      }
     }
     node.inputs = patched;
   }
@@ -365,13 +373,11 @@ export class ComfyUiClient {
     if (!promptResponse || typeof promptResponse !== "object")
       throw err("malformed", "ComfyUI /prompt returned a non-object response.");
     const promptRecord = promptResponse as Record<string, unknown>;
-    if (promptRecord.node_errors)
+    if (typeof promptRecord.prompt_id !== "string" || promptRecord.prompt_id.trim() === "")
       throw err(
         "malformed",
-        `ComfyUI rejected the graph: ${JSON.stringify(promptRecord.node_errors)}`,
+        `ComfyUI /prompt returned no prompt_id: ${JSON.stringify(promptRecord.error ?? promptRecord.node_errors ?? {})}`,
       );
-    if (typeof promptRecord.prompt_id !== "string")
-      throw err("malformed", "ComfyUI /prompt returned no prompt_id.");
     const promptId = promptRecord.prompt_id;
     context.onPromptId?.(promptId);
     const outputs = await this.followPrompt(promptId, context);

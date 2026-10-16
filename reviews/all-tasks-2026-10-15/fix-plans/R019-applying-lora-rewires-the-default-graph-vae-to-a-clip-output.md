@@ -3,7 +3,7 @@
 - **Priority:** P1
 - **Original tasks:** T086
 - **Suggested owner:** T086 LoRA graph transformation
-- **Status:** Ready for implementation; fix not performed by this plan.
+- **Status:** Implemented in working tree; runtime verification not run. See [implementation handoff](../blocker-fixes-follow-up.md).
 - **Dependencies:** None required; review shared-file coordination in the index.
 
 ## Outcome

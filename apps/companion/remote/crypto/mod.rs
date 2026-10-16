@@ -10,18 +10,20 @@
 //!   fresh direction keys and replay windows — two sessions from one saved
 //!   pairing can never reuse an AES-GCM (key, nonce) pair.
 //! - HKDF-SHA256(ikm=32B pairing secret, salt as above,
-//!   info="locallab-pairing-{hello|key|nonce|handshake|handshake-nonce}-v1|1.1|<routeId>[|<flow>]").
+//!   info="locallab-pairing-{hello|key|nonce|handshake|handshake-nonce}-v1|1.2|<routeId>[|<flow>]").
 //!   The hello and handshake-* labels keep the deterministic
 //!   mobileSalt||companionSalt salt: they seal only the hello/ready
 //!   possession-proof frames, which a restarting peer must be able to open
-//!   before any ephemeral is known. Data frames ride the ephemeral-mixed key.
+//!   before any ephemeral is known. Handshake encryption uses random 96-bit
+//!   nonces and OpeningChannel::new_handshake; data frames use counter-derived
+//!   nonces and the ephemeral-mixed key.
 //! - Hello proof = HMAC-SHA256(helloKey, "v1|<routeId>|<mobileSalt b64url>|<companionSalt b64url>").
 //! - Frame nonce12 = HMAC-SHA256(nonceKey(flow), "c:" + u64be(sequence))[0..12];
 //!   receivers reject frames whose advertised nonce is not deriveNonce(sequence).
 //! - AAD = utf8("v1|<routeId>|<requestId>|<sequence>|<contentTag>|<declaredSize>|<nonce16>").
 //! - ciphertext = AES-256-GCM(directionKey, iv=nonce12, aad, payloadJson utf8) || tag(16).
 
-use aes_gcm::aead::{Aead, Payload};
+use aes_gcm::aead::{Aead, AeadCore, OsRng, Payload};
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -37,12 +39,12 @@ pub const MAX_FRAME_BYTES: usize = 1_048_576;
 /// (`composition::remote::COMPANION_PROTOCOL_MINOR`) is this minor; the
 /// two constants MUST stay equal — a test pins the cross-module invariant.
 pub const FRAME_PROTOCOL_MAJOR: u32 = 1;
-pub const FRAME_PROTOCOL_MINOR: u32 = 1;
-const HELLO_LABEL: &str = "locallab-pairing-hello-v1|1.1";
-const KEY_LABEL: &str = "locallab-pairing-key-v1|1.1";
-const NONCE_LABEL: &str = "locallab-pairing-nonce-v1|1.1";
-const HANDSHAKE_LABEL: &str = "locallab-pairing-handshake-v1|1.1";
-const HANDSHAKE_NONCE_LABEL: &str = "locallab-pairing-handshake-nonce-v1|1.1";
+pub const FRAME_PROTOCOL_MINOR: u32 = 2;
+const HELLO_LABEL: &str = "locallab-pairing-hello-v1|1.2";
+const KEY_LABEL: &str = "locallab-pairing-key-v1|1.2";
+const NONCE_LABEL: &str = "locallab-pairing-nonce-v1|1.2";
+const HANDSHAKE_LABEL: &str = "locallab-pairing-handshake-v1|1.2";
+const HANDSHAKE_NONCE_LABEL: &str = "locallab-pairing-handshake-nonce-v1|1.2";
 const ROUTE_TICKET_KEY: &[u8] = b"locallab-pairing-route-ticket-v1";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -300,6 +302,26 @@ pub fn seal_bytes(
     content_tag: &str,
 ) -> Result<Frame> {
     let nonce = derive_nonce(nonce_key, sequence);
+    seal_with_nonce(direction_key, plaintext, route_id, request_id, sequence, content_tag, &nonce)
+}
+
+/// Pairing-derived handshake keys require a fresh random nonce on every
+/// encryption; counters restart with each connection. Data uses seal_bytes.
+pub fn seal_handshake_bytes(
+    direction_key: &[u8; 32], plaintext: &[u8], route_id: &str,
+    request_id: &str, sequence: u64, content_tag: &str,
+) -> Result<Frame> {
+    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+    seal_with_nonce(direction_key, plaintext, route_id, request_id, sequence, content_tag, &nonce)
+}
+
+fn seal_with_nonce(
+    direction_key: &[u8; 32], plaintext: &[u8], route_id: &str,
+    request_id: &str, sequence: u64, content_tag: &str, nonce: &[u8],
+) -> Result<Frame> {
+    if nonce.len() != 12 {
+        return Err(PairingCryptoError::malformed("nonce must be 12 bytes"));
+    }
     let frame = Frame {
         protocol_major: FRAME_PROTOCOL_MAJOR,
         protocol_minor: FRAME_PROTOCOL_MINOR,
@@ -329,6 +351,7 @@ pub struct OpeningChannel {
     route_id: String,
     high_sequence: i128,
     seen_mask: u128,
+    random_nonce: bool,
 }
 
 impl OpeningChannel {
@@ -339,7 +362,14 @@ impl OpeningChannel {
             route_id: route_id.to_string(),
             high_sequence: -1,
             seen_mask: 0,
+            random_nonce: false,
         }
+    }
+
+    pub fn new_handshake(direction_key: &[u8; 32], nonce_key: &[u8; 32], route_id: &str) -> Self {
+        let mut channel = Self::new(direction_key, nonce_key, route_id);
+        channel.random_nonce = true;
+        channel
     }
 
     // R021: validation and commitment are separate so authentication can
@@ -388,7 +418,7 @@ impl OpeningChannel {
         }
         let advertised = b64url_decode(&frame.nonce_base64url)?;
         let expected = derive_nonce(&self.nonce_key, frame.sequence);
-        if advertised.len() != 12 || advertised.ct_eq(&expected).unwrap_u8() != 1 {
+        if advertised.len() != 12 || (!self.random_nonce && advertised.ct_eq(&expected).unwrap_u8() != 1) {
             return Err(PairingCryptoError::unauthorized("frame nonce does not match its sequence"));
         }
         let mut ciphertext = b64url_decode(&frame.ciphertext_base64url)?;
@@ -504,7 +534,18 @@ mod tests {
             } else {
                 derive_nonce_key(&secret, &mobile_salt, &companion_salt, &entropy, route, from, to).expect("nonce key")
             };
-            let frame = seal_bytes(
+            let expected = frame_of(&entry["frame"]);
+            let frame = if handshake {
+                seal_with_nonce(
+                    &direction_key,
+                    entry["payloadJson"].as_str().expect("payloadJson").as_bytes(),
+                    route,
+                    entry["requestId"].as_str().expect("requestId"),
+                    entry["sequence"].as_u64().expect("sequence"),
+                    entry["contentTag"].as_str().expect("contentTag"),
+                    &b64url_decode(&expected.nonce_base64url).expect("nonce"),
+                )
+            } else { seal_bytes(
                 &direction_key,
                 &nonce_key,
                 entry["payloadJson"].as_str().expect("payloadJson").as_bytes(),
@@ -512,9 +553,8 @@ mod tests {
                 entry["requestId"].as_str().expect("requestId"),
                 entry["sequence"].as_u64().expect("sequence"),
                 entry["contentTag"].as_str().expect("contentTag"),
-            )
+            ) }
             .expect("seal");
-            let expected = frame_of(&entry["frame"]);
             assert_eq!(frame.nonce_base64url, expected.nonce_base64url, "{}", entry["name"].as_str().unwrap_or("?"));
             assert_eq!(frame.declared_size, expected.declared_size);
             assert_eq!(frame.ciphertext_base64url, expected.ciphertext_base64url);

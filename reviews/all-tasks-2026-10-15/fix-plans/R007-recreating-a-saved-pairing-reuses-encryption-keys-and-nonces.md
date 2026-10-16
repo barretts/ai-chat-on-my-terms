@@ -3,7 +3,7 @@
 - **Priority:** P1
 - **Original tasks:** T093, T096
 - **Suggested owner:** T093/T096 pairing protocol implementation
-- **Status:** Ready for implementation; fix not performed by this plan.
+- **Status:** Follow-up implemented in working tree; runtime verification not run. See [implementation handoff](../blocker-fixes-follow-up.md).
 - **Dependencies:** None required; review shared-file coordination in the index.
 
 ## Outcome

@@ -31,15 +31,13 @@ import {
  *   frame, so every connection derives fresh session keys and replay
  *   windows — two sessions from one saved pairing can never reuse a
  *   (key, nonce) pair even though the QR-derived salts are deterministic.
- * - info strings are ASCII: "locallab-pairing-{hello|key|nonce|handshake|handshake-nonce}-v1|1.0|<routeId>[|<flow>]"
+ * - info strings include the protocol level and route/direction labels.
  *   with flow in {"mobile->companion","companion->mobile"} and hello has no flow.
  * - Hello proof = HMAC-SHA256(helloKey, "v1|<routeId>|<mobileSalt b64url>|<companionSalt b64url>").
  * - The handshake channel (labels handshake/handshake-nonce, deterministic
- *   salts only) seals exactly the hello and ready frames; every data frame
- *   rides the ephemeral-mixed key. The handshake keys therefore only ever
- *   encrypt fixed-layout possession proofs plus one random ephemeral, and
- *   the seq-0 handshake nonce repeats across restarts by design — leaking
- *   nothing (the ephemeral is random per session) and carrying no data.
+ *   salts only) seals hello/ready using a fresh random 96-bit nonce on
+ *   every encryption. Protocol 1.2 rotates the formerly reused keys.
+ *   Data frames retain counter-derived nonces under ephemeral-mixed keys.
  * - Frame nonce12 = HMAC-SHA256(nonceKey(flow), "c:" + u64be(sequence))[0..12],
  *   so the nonce field equals deriveNonce(frame.sequence) and the receiver
  *   rejects frames whose advertised nonce is not the derived one.
@@ -199,8 +197,8 @@ function frameAad(frame: Pick<EncryptedRelayFrameV1, "routeId" | "requestId" | "
   );
 }
 
-function sealBytes(directionKey: Uint8Array, nonceKey: Uint8Array, plaintext: Uint8Array, routeId: string, requestId: string, sequence: number, contentTag: EncryptedPayload["tag"]): EncryptedRelayFrameV1 {
-  const nonce = deriveNonce(nonceKey, sequence);
+function sealBytes(directionKey: Uint8Array, nonceKey: Uint8Array, plaintext: Uint8Array, routeId: string, requestId: string, sequence: number, contentTag: EncryptedPayload["tag"], nonce = deriveNonce(nonceKey, sequence)): EncryptedRelayFrameV1 {
+  requireBytes(nonce, 12, "nonce");
   const nonceBase64Url = toBase64Url(nonce);
   const cipher = createCipheriv("aes-256-gcm", directionKey, nonce);
   cipher.setAAD(
@@ -228,6 +226,15 @@ export function sealPayload(payload: EncryptedPayload, directionKey: Uint8Array,
   return sealBytes(directionKey, nonceKey, Buffer.from(JSON.stringify(checked), "utf8"), routeId, requestId, sequence, checked.tag);
 }
 
+export function sealHandshakePayload(
+  payload: EncryptedPayload, directionKey: Uint8Array, nonceKey: Uint8Array,
+  routeId: string, requestId: string, sequence: number,
+  nonce: Uint8Array = randomBytes(12),
+): EncryptedRelayFrameV1 {
+  const checked = EncryptedPayloadSchema.parse(payload);
+  return sealBytes(directionKey, nonceKey, Buffer.from(JSON.stringify(checked), "utf8"), routeId, requestId, sequence, checked.tag, nonce);
+}
+
 /** Sender side: hands out frames with strictly increasing per-direction sequences. */
 export class SealingChannel {
   private nextSequence = 0;
@@ -236,13 +243,15 @@ export class SealingChannel {
     private readonly directionKey: Uint8Array,
     private readonly nonceKey: Uint8Array,
     private readonly routeId: string,
+    private readonly randomNonce = false,
   ) {
     requireBytes(directionKey, 32, "directionKey");
     requireBytes(nonceKey, 32, "nonceKey");
   }
 
   seal(payload: EncryptedPayload, requestId: string): EncryptedRelayFrameV1 {
-    const frame = sealPayload(payload, this.directionKey, this.nonceKey, this.routeId, requestId, this.nextSequence);
+    const seal = this.randomNonce ? sealHandshakePayload : sealPayload;
+    const frame = seal(payload, this.directionKey, this.nonceKey, this.routeId, requestId, this.nextSequence);
     this.nextSequence += 1;
     return frame;
   }
@@ -260,6 +269,7 @@ export class OpeningChannel {
     private readonly directionKey: Uint8Array,
     private readonly nonceKey: Uint8Array,
     private readonly routeId: string,
+    private readonly randomNonce = false,
   ) {
     requireBytes(directionKey, 32, "directionKey");
     requireBytes(nonceKey, 32, "nonceKey");
@@ -301,7 +311,7 @@ export class OpeningChannel {
     validateRelayFrameSize(checked);
     const expectedNonce = deriveNonce(this.nonceKey, checked.sequence);
     const advertised = fromBase64Url(checked.nonceBase64Url);
-    if (advertised.length !== 12 || !timingSafeEqual(advertised, expectedNonce))
+    if (advertised.length !== 12 || (!this.randomNonce && !timingSafeEqual(advertised, expectedNonce)))
       throw new PairingCryptoError("unauthorized", "frame nonce does not match its sequence");
     const ciphertext = fromBase64Url(checked.ciphertextBase64Url);
     if (ciphertext.length < 16)
@@ -347,9 +357,8 @@ export function createSessionPairing(pairingSecret: Uint8Array, mobileSalt: Sess
 }
 
 /**
- * Deterministic handshake channels (no ephemeral entropy): they seal only
- * the hello/ready possession-proof frames, which is what lets a restarting
- * peer open a fresh hello before any ephemeral is known. Data traffic must
+ * Handshake keys are pairing-derived, but every encryption has a fresh
+ * random nonce, carried in the authenticated frame. Data traffic must
  * ride createSessionPairing built from the ephemerals these frames carry.
  */
 export function createHandshakePairing(pairingSecret: Uint8Array, mobileSalt: SessionSalt, companionSalt: SessionSalt, routeId: string): {
@@ -361,11 +370,13 @@ export function createHandshakePairing(pairingSecret: Uint8Array, mobileSalt: Se
       deriveHandshakeKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
       deriveHandshakeNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, from, to),
       routeId,
+      true,
     ),
     open: new OpeningChannel(
       deriveHandshakeKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
       deriveHandshakeNonceKey(pairingSecret, mobileSalt, companionSalt, routeId, to, from),
       routeId,
+      true,
     ),
   });
   const mobile = channel("mobile", "companion");

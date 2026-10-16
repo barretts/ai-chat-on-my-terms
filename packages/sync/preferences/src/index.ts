@@ -15,6 +15,7 @@
  *   (preferences persist through the vault port).
  */
 import { EntityIdSchema, IsoTimestampSchema } from "@locallab/contracts/identity";
+import { SyncRecordSchema } from "@locallab/contracts/entities";
 import { z } from "zod";
 
 export const SYNC_CHOICES = ["copy-phone", "copy-mac", "merge"] as const;
@@ -26,6 +27,17 @@ export const SyncPreferenceRecordSchema = z
     enabled: z.boolean(),
     choice: z.enum(SYNC_CHOICES).nullable(),
     initialSyncDone: z.boolean(),
+    initialCopy: z.object({
+      snapshotId: EntityIdSchema,
+      chunks: z.number().int().min(1).max(500),
+      parts: z.array(z.object({
+        seq: z.number().int().min(1).max(500),
+        records: z.array(SyncRecordSchema).max(500),
+      }).strict()).max(500),
+    }).strict().refine((copy) =>
+      copy.parts.every((part) => part.seq <= copy.chunks) &&
+      new Set(copy.parts.map((part) => part.seq)).size === copy.parts.length,
+    "invalid copy snapshot chunk sequence").optional(),
     updatedAt: IsoTimestampSchema,
   })
   .strict();
@@ -107,6 +119,7 @@ export function setInitialSyncChoice(
   if (existing.initialSyncDone)
     throw new SyncPreferenceError("state", "the initial sync choice is already recorded");
   const next: PairSyncPreference = { ...existing, choice, updatedAt: now };
+  if (existing.choice !== choice) delete next.initialCopy;
   return [...records.filter((record) => record.routeId !== routeId), next];
 }
 
@@ -118,7 +131,8 @@ export function completeInitialSync(
   const existing = findPairSyncPreference(records, routeId);
   if (existing === null || existing.choice === null)
     throw new SyncPreferenceError("state", "choose an initial sync mode before completing it");
-  const next: PairSyncPreference = { ...existing, initialSyncDone: true, updatedAt: now };
+  const { initialCopy: _initialCopy, ...retained } = existing;
+  const next: PairSyncPreference = { ...retained, initialSyncDone: true, updatedAt: now };
   return [...records.filter((record) => record.routeId !== routeId), next];
 }
 

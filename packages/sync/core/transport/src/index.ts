@@ -59,6 +59,7 @@ export interface SyncTransportStatus {
   /** User-facing note; empty when healthy. Feed into syncFailureNote (SY-08). */
   note: string;
   pendingRecords: number;
+  pendingBatches: number;
   resumeCursor: number;
   attempts: number;
 }
@@ -76,9 +77,7 @@ export interface SyncTransportOptions {
   /**
    * R008: how long a sent-but-unacknowledged batch may sit in the window
    * before it counts as a lost attempt and is re-pumped (the shared
-   * SY-08 maxAttempts budget applies). Undefined (default) disables the
-   * watchdog; hosts that rely on at-least-once delivery without an
-   * external pump re-invocation MUST set it.
+   * SY-08 maxAttempts budget applies). Defaults to 5 seconds.
    */
   ackTimeoutMs?: number;
   /** Injectable ack-watchdog timer (defaults to a real timeout). */
@@ -109,6 +108,7 @@ export class SyncTransport {
   private noteText = "";
   private state: SyncTransportState = "idle";
   private pumping = false;
+  private watchdogEpoch = 0;
 
   constructor(options: SyncTransportOptions) {
     this.opts = {
@@ -119,7 +119,7 @@ export class SyncTransport {
       retryDelayMs: options.retryDelayMs ?? 50,
       delay: options.delay ?? defaultDelay,
       ...(options.onStatus !== undefined ? { onStatus: options.onStatus } : {}),
-      ...(options.ackTimeoutMs !== undefined ? { ackTimeoutMs: options.ackTimeoutMs } : {}),
+      ackTimeoutMs: options.ackTimeoutMs ?? 5_000,
       ...(options.watchdogDelay !== undefined ? { watchdogDelay: options.watchdogDelay } : {}),
     };
   }
@@ -257,8 +257,10 @@ export class SyncTransport {
     const timeoutMs = this.opts.ackTimeoutMs;
     if (timeoutMs === undefined) return;
     const wait = this.opts.watchdogDelay ?? defaultDelay;
+    const epoch = ++this.watchdogEpoch;
     void wait(timeoutMs)
       .then(() => {
+        if (epoch !== this.watchdogEpoch) return;
         if (this.suspended || !this.opts.allowed()) return;
         if (this.queue[0] !== head || this.isFullyAcked(head)) return;
         this.attempts += 1;
@@ -281,6 +283,7 @@ export class SyncTransport {
 
   /** Host wake / off-on toggle: clear the suspension and resume pumping. */
   wake(): void {
+    this.watchdogEpoch += 1;
     this.suspended = false;
     this.noteText = "";
     this.attempts = 0;
@@ -293,6 +296,7 @@ export class SyncTransport {
       state: this.opts.allowed() ? this.state : "disabled",
       note: this.opts.allowed() ? this.noteText : "Sync is off for this pair.",
       pendingRecords: this.queue.reduce((sum, batch) => sum + batch.records.length, 0),
+      pendingBatches: this.queue.length,
       resumeCursor: this.cursor,
       attempts: this.attempts,
     };

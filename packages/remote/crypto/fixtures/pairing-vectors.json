@@ -1,5 +1,5 @@
 {
-  "protocol": "1.1",
+  "protocol": "1.2",
   "pairingSecretBase64Url": "oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8",
   "mobileSaltBase64Url": "EBESExQVFhcYGRobHB0eHw",
   "companionSaltBase64Url": "ICEiIyQlJicoKSorLC0uLw",
@@ -8,12 +8,12 @@
   "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
   "mobileRouteTicketBase64Url": "MDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk8",
   "mobileRouteTicketHash": "d8b46c6fe1aee8bdcd319edef3ae5de5cb7470e6a5522ca08d424c15fac3278c",
-  "helloKeyHex": "6e1e0e228529897a40d577ffdb8a8985afc8676c99e2e18e85ab4568a031ac2c",
-  "helloProofBase64Url": "THOZxGj3wSdDwozUjwZeGVW3fDvN2-COQmiPBy3TDG8",
-  "mobileToCompanionKeyHex": "a4d1e856b866e96327c315df8d74c181386adaa3284794dc3f618e49ebba8c2b",
-  "companionToMobileKeyHex": "e7bb4107dc401ff68accca73d204209829c892071135bde53102b64a05b8781f",
-  "mobileToCompanionHandshakeKeyHex": "e1e44be749e582ec4b3bbbc44e4deb6fbd206f0392860121a3401710f03584f8",
-  "companionToMobileHandshakeKeyHex": "4d7fde122f38e7a009227bd73435c965627a4054f48ccc13f3739ec881276b67",
+  "helloKeyHex": "5b5bed5a41b76c4471a85b3fbc09eb8d68dfa7756b66a7a1295e6ffeaef958a2",
+  "helloProofBase64Url": "bTJ2TVwCU2kgDjonopuWy3Udy21kPmLv1WHekIOhfH4",
+  "mobileToCompanionKeyHex": "eaf1a011d94fee1a75250cf6b6de6741fd9cefd2030830441f7e78c6432894a7",
+  "companionToMobileKeyHex": "0923ff29238b11925108c67c7a93748f1dd6593a772a6691107613546ef79dfd",
+  "mobileToCompanionHandshakeKeyHex": "95ee0c2bbf9613c7f366099cc42eaaaf527dd86f572a6e8b213f6f8db4badf54",
+  "companionToMobileHandshakeKeyHex": "3135c059fa4e4968f72441ea4f53f3615010d61a932da20a7de1d0c13d3e93aa",
   "sealed": [
     {
       "name": "mobile-to-companion-seq0",
@@ -26,15 +26,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
         "sequence": 0,
-        "nonceBase64Url": "UTg0CMhZulrINvA9",
+        "nonceBase64Url": "peHS3pXJoMVKV7HE",
         "contentTag": "request",
         "declaredSize": 56,
-        "ciphertextBase64Url": "SPFhdrp_VnIene_pdQSQX5T9Jx29wSkuXgO_ekqvYSdPTuyrUVyvc_wPruriHHFcjNp6bpNHd9w"
+        "ciphertextBase64Url": "6upiRmxcm27MWH8eKt17PcSpsLNe7r2RgysfCKMEzfdW_zm841LxfCqcuf6HUS_dhfUN7RA0xFU"
       }
     },
     {
@@ -48,15 +48,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
         "sequence": 1,
-        "nonceBase64Url": "-O_RFIxicY0oobHQ",
+        "nonceBase64Url": "QyBJP7zFl6JhWHbn",
         "contentTag": "event",
         "declaredSize": 160,
-        "ciphertextBase64Url": "o193gBps5hEOJg1hjTsQGInuj5xWJMuErhdssfvsI6JaGDOXRH3aSXnRYRHdAlCKqN8H2cbOa0m8RRIfDH1ywmnf40atr95k_EH0fx8nXRZlhpyo9Hf3Zak0jywdcC5D5eBA1REPCY86x7IbxI9h3RL7nHmWp_bet2bLQ44natgtXM5pr5vIyEvfZL5C7o6U2oGK0vKMf7nUQzr3egF8jw"
+        "ciphertextBase64Url": "vOSX5pYZMPtSt187w_ZFuX3pBXbw8CLjZGYutWWzElT5r36qMjll1f0VyTJs167Ma3b8U2sZ2Va8DW5lbjz3qks5mavrqfAv_REBbcYmraHPv8m8be_VZ1YeuJNHNseukTVDk8rOhXuvo9k-77aSdbxpgVNuaqoWcNbuxsNDepmPdQuAzneLbGGdoaQrJvS4Jm3ljyO1nXK-6Uk_PJQ1rg"
       }
     },
     {
@@ -70,15 +70,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
         "sequence": 5,
-        "nonceBase64Url": "xGmjGl91bWgehvBO",
+        "nonceBase64Url": "a4hV1dWLoRue1dl5",
         "contentTag": "health",
         "declaredSize": 68,
-        "ciphertextBase64Url": "JPUQwf34b9DB3KWMQGGrlJZu4SFVHdTnJHVDWqiiY9gULRq1z8W-VvrHJuWW7vlfLMMzn71Qh0xzJNWrU_RAlMClcrA"
+        "ciphertextBase64Url": "5LTpSuj0FdXHuZ146Yk5MwVnydHyEzsaOp8DNUb1ylUMpTdWyTELhGOkcEpuHzZp7lCK29J1bX5Z-W8R3YSn42B3bTY"
       }
     },
     {
@@ -88,19 +88,19 @@
       "requestId": "0198f2a3-0000-7000-8000-0000000000a0",
       "sequence": 0,
       "contentTag": "request",
-      "payloadJson": "{\"tag\":\"request\",\"body\":{\"type\":\"pairing-hello\",\"proof\":\"THOZxGj3wSdDwozUjwZeGVW3fDvN2-COQmiPBy3TDG8\",\"sessionSalt\":\"QEFCQ0RFRkdISUpLTE1OTw\"}}",
+      "payloadJson": "{\"tag\":\"request\",\"body\":{\"type\":\"pairing-hello\",\"proof\":\"bTJ2TVwCU2kgDjonopuWy3Udy21kPmLv1WHekIOhfH4\",\"sessionSalt\":\"QEFCQ0RFRkdISUpLTE1OTw\"}}",
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000a0",
         "sequence": 0,
-        "nonceBase64Url": "KNbsbdvvvIQr3V08",
+        "nonceBase64Url": "YWFhYWFhYWFhYWFh",
         "contentTag": "request",
         "declaredSize": 158,
-        "ciphertextBase64Url": "MmLANkvahnzyQ_61ZlQlwLwtijAgkigoeT0Mh1j1wGYEMDLeT3dmtDj99UQHd1e2BdzMG9VC_6XYYaDIK7WR6x84aluXb8TEkpWBQZXILPvNtK-fW-wao9gC-puzSvRUk7BlBX_YETVERZdqFlvCC9aauF37WxcAMZYdCvNGzXnk4y5qZiJqu1TZ5yutyqWbUb0jnnaPTFGbnbK3lak"
+        "ciphertextBase64Url": "-BEAyO33hEiWOcIpKGEPxnQknrS3RRbD86YGUltzbaElrfzQYqNuKINhS4ehZY0_wQqYauN4yLkW0pCamDshz86o75RePADGqMvjH8ORByGTNdk-0emhHuTYSC938TGexT7sjT9dTuE_kP-vLvgDk_5mo7eS72q3L10idytlqtq4GhfVRBaBJCZEeAcqUW-1NtfkmihVXvAwhUKzSYM"
       }
     },
     {
@@ -114,15 +114,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e0",
         "sequence": 0,
-        "nonceBase64Url": "NrHQRZ-C5wmw4nxD",
+        "nonceBase64Url": "XRdHPU2qTXWhI6uX",
         "contentTag": "request",
         "declaredSize": 56,
-        "ciphertextBase64Url": "NBo8jiU4IiSCQukBLyiwVWaxzGgiKPuCuv-2mTMeVteijh0W26Kt7uk15vbcUMyWDi350RjK1ik"
+        "ciphertextBase64Url": "bd1nTEbsd7j_unQ8Kk5x7Yq3jFkCx3IMd7HjLidqjri1bWwLKmkFzo8p_p-ZZhpMUiafYtMGO_I"
       }
     },
     {
@@ -136,15 +136,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e1",
         "sequence": 1,
-        "nonceBase64Url": "RN46BikL5ZKCeX-f",
+        "nonceBase64Url": "6T5-LDWCQ2AsIWJS",
         "contentTag": "event",
         "declaredSize": 160,
-        "ciphertextBase64Url": "cUdHARvfNgyDf5VAkMW86rdM89_uNsSgps5hsflz-FBHt_MbyPYUnoyovLhpG6ntnHMX5kbYnm28tOb71Om5pFpQZf2AwZGIDUzqqRzvwdSJ4JMIflNLP6vT6WcHS5fl1ssRTF3ub3i378_wRNmwTHRWggDOhMyvuLsHxtZZ9-qoypNQWXQCHmOXmOt3kFAO6ZmYjhWive4n2c3MEe8EGg"
+        "ciphertextBase64Url": "VqAMPWKAuSCsHe8pe1p5WZ_TljgfhCa-PUBMrW69T_dR1OUjDerEv9AUKY8cQ0i2kQMWoWR3tQ7xrVuoHWVea5mPPESLx1NBWVEFIhGqap9x6npqFlt3cNlyNrf5vWS2P7Ssdmp4NE1pvv6H97p6rtLgo5K-cYdO66yOfhQvlD_sRb22YDk-bi0nAPlOonXYlFvNi19f30ftGKIxNrp0qA"
       }
     },
     {
@@ -158,15 +158,15 @@
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000e5",
         "sequence": 5,
-        "nonceBase64Url": "GDHSjac0lEmyfCqs",
+        "nonceBase64Url": "DVSTIVnXxfN66LBG",
         "contentTag": "health",
         "declaredSize": 68,
-        "ciphertextBase64Url": "3MS4aJxPz9be2Y7Q6qlgY8GcqnrEw3jeVY_ugPjLKjiqBs6zuyiS-78MZceno38j8J3sMun94PHf4xCjZw6leyYWCmU"
+        "ciphertextBase64Url": "_xNDfB58coh5LqvoMjZXnPlmn8VenCox21_7FoudGgxOgv8oMEA7hmM3XWDf2cLpSRxOWPr0MzxNsZ2rCYL6OcSH7to"
       }
     },
     {
@@ -176,19 +176,19 @@
       "requestId": "0198f2a3-0000-7000-8000-0000000000a1",
       "sequence": 0,
       "contentTag": "request",
-      "payloadJson": "{\"tag\":\"request\",\"body\":{\"type\":\"pairing-ready\",\"proof\":\"THOZxGj3wSdDwozUjwZeGVW3fDvN2-COQmiPBy3TDG8\",\"sessionSalt\":\"UFFSU1RVVldYWVpbXF1eXw\"}}",
+      "payloadJson": "{\"tag\":\"request\",\"body\":{\"type\":\"pairing-ready\",\"proof\":\"bTJ2TVwCU2kgDjonopuWy3Udy21kPmLv1WHekIOhfH4\",\"sessionSalt\":\"UFFSU1RVVldYWVpbXF1eXw\"}}",
       "frame": {
         "protocol": {
           "major": 1,
-          "minor": 1
+          "minor": 2
         },
         "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
         "requestId": "0198f2a3-0000-7000-8000-0000000000a1",
         "sequence": 0,
-        "nonceBase64Url": "Wuu2yL5OQJ8hr7Sy",
+        "nonceBase64Url": "YmJiYmJiYmJiYmJi",
         "contentTag": "request",
         "declaredSize": 158,
-        "ciphertextBase64Url": "CF126Pc7iGXwANCYoGRMbHB8-OZg98rg2pkLT8x3strI8p-KktYvF3yO0NM_3qygXIfzUbTYbA3W-pFJN6u68fD4CtIQ_fiKWIjWgW0pZbXmsttyELssw8QGNzaLbpPiDO4qZZAhBFWfPv5Xzc9aNj5o43-3FM5NUuRJwK7vWVToQRcQTVca3YtgpqUZKqGnk9VlajQ_Hk0xXR9VcI8"
+        "ciphertextBase64Url": "uwERbMrBPMILJuy2T0j_HWArkduoquCo1AVljxyHRfVhZoTwSL3daO3K7gWUUvjgAOeS-Q9KEPSMfH91CnQYLR9ggcd2cQk7A5K6BpM-oS3NSnvsvvu_tdoEAvk2bpq_lzzKRKtDVzgz31NhKZDqkKOtlmYd2zvmhPg94KQETghp6k2Hu0v9Sl2s_NqZ-hCz5w8sextlIJemn78BGZU"
       }
     }
   ]

@@ -169,7 +169,7 @@ test("hello travels mobile -> relay -> companion sealed", async () => {
     const connecting = client.connect();
     const body = (await companion.hello()) as { client: string; protocol: { major: number; minor: number } };
     assert.equal(body.client, "locallab-mobile");
-    assert.deepEqual(body.protocol, { major: 1, minor: 1 });
+    assert.deepEqual(body.protocol, { major: 1, minor: 2 });
     companion.ready(body.protocol, [{ routeId: "route-local", backend: "local", label: "Local runtime" }]);
     const routes = await connecting;
     assert.equal(client.state(), "ready");

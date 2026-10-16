@@ -21,6 +21,7 @@ import {
   PairingCryptoError,
   regeneratePairing,
   sealPayload,
+  sealHandshakePayload,
   verifyHelloProof,
   REPLAY_WINDOW,
   type EncryptedPayload,
@@ -112,7 +113,8 @@ test("golden vectors reproduce derived keys, hello proof, ticket hash and every 
   );
   for (const entry of fixture.sealed) {
     const [from, to] = directionRoles(entry.direction);
-    const frame = sealPayload(
+    const seal = entry.channel === "handshake" ? sealHandshakePayload : sealPayload;
+    const frame = seal(
       JSON.parse(entry.payloadJson) as EncryptedPayload,
       entry.channel === "handshake"
         ? deriveHandshakeKey(secret, mobileSalt, companionSalt, fixture.routeId, from, to)
@@ -123,6 +125,7 @@ test("golden vectors reproduce derived keys, hello proof, ticket hash and every 
       fixture.routeId,
       entry.requestId,
       entry.sequence,
+      new Uint8Array(Buffer.from(entry.frame.nonceBase64Url, "base64url")),
     );
     assert.deepEqual(frame, entry.frame, entry.name);
   }

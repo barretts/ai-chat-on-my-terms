@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { BackupPreview, CryptoPorts } from "@locallab/backup";
 import { openMobileDatabase } from "../../platform/database-open";
+import { secureStoreTokenPort } from "../account/adapters";
 import {
   createBackupClient,
   fetchBackupObjectStore,
@@ -77,7 +78,7 @@ export function BackupProvider({
     const store: BackupObjectStorePort | undefined =
       storeBaseUrl === undefined
         ? undefined
-        : fetchBackupObjectStore(storeBaseUrl);
+        : fetchBackupObjectStore(storeBaseUrl, secureStoreTokenPort());
     void (async () => {
       const db = await openMobileDatabase();
       if (cancelled) return;

@@ -1,6 +1,6 @@
 # Review fix plans — 2026-10-15
 
-28 separate task plans covering all 28 P1 findings in the [review CSV](../code-review-findings.csv). One Markdown file is one fix assignment. These are plans, not completed fixes.
+28 separate task plans covering all 28 P1 findings in the [review CSV](../code-review-findings.csv). One Markdown file is one fix assignment. Original plan evidence is historical; see the [blocker fix follow-up](../blocker-fixes-follow-up.md) for current local implementation status and verification limits for R006–R008, R014, R018–R019 and R025–R026.
 
 ## Baseline and scope
 

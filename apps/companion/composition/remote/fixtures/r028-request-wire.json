@@ -6,14 +6,14 @@
   "frame": {
     "protocol": {
       "major": 1,
-      "minor": 1
+      "minor": 2
     },
     "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
     "requestId": "0198f2a3-0000-7000-8000-0000000000d0",
     "sequence": 0,
-    "nonceBase64Url": "UTg0CMhZulrINvA9",
+    "nonceBase64Url": "peHS3pXJoMVKV7HE",
     "contentTag": "request",
     "declaredSize": 227,
-    "ciphertextBase64Url": "SPFhdrp_VnIene_pdQSQX5T9Jx29wSkuXgOgalSuYSdPXe2kQlOga6oJntzB9AQyxXaSqVtpnDciT5YB_N1ALF5jvYvoC3y_5SSBH9uuqNK9WbUmIAEMyJEXQHFHVKD4K1RWtx43GVYaSEC8Ycqdg51YSGWjmmymsjRjXu6dfgPevDdXPqdWX_jzxrwSlL7UgdjcjGDkRXrf96b4yg1xuhAg5xsFpvKTqo_q1CyVduO8X5jM66B8tbLPwiR_gQy484E0vtv87ki4qCIiY88TQc9cc4ZGY-Qhz-BV3WrmSEv8AKU"
+    "ciphertextBase64Url": "6upiRmxcm27MWH8eKt17PcSpsLNe7r2RgysAGL0FzfdW7Diz8F3-ZPBLsThAd9rNaT-fWwpzbZP3b3g16_ax7x5y-SDTd0EI3yoTbqeKAdzdoFqdBnwUipI-oVzJf9fNZ5tp0HDdv4I7WgMDzFIxnApIaUhcx6EqaSFo9EdJEiJUHFe_0pEkkhRwDN4KbP75lImzLt2hbXRwpVEBwJc_mDFmo3eHWPEHtej8oPXb3_90Us9UqXHFItgnf1Cm2eLxZMCmFo-ijNZ1D6IkQMe0tH6WflrG1tUtpVlCh6cBK0pqE_I"
   }
 }
