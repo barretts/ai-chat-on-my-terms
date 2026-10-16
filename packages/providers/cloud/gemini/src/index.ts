@@ -301,6 +301,37 @@ function toGeminiBody(
   const system: string[] = [],
     contents: Obj[] = [];
   for (const item of r.context) {
+    if (item.kind === "tool") {
+      // R011: Gemini keys function results by name; canonical items carry both.
+      if (
+        !isObj(item.value) ||
+        typeof item.value.tool_call_id !== "string" ||
+        !item.value.tool_call_id
+      )
+        throw new ProtocolError(
+          "Gemini function responses require a matching tool_call_id.",
+        );
+      if (typeof item.value.name !== "string" || !item.value.name)
+        throw new ProtocolError(
+          "Gemini function responses require the function name.",
+        );
+      contents.push({
+        role: "user",
+        parts: [
+          {
+            functionResponse: {
+              name: item.value.name,
+              response: geminiFunctionOutput(
+                typeof item.value.content === "string"
+                  ? item.value.content
+                  : JSON.stringify(item.value.content ?? null),
+              ),
+            },
+          },
+        ],
+      });
+      continue;
+    }
     if (!["system", "developer", "user", "assistant"].includes(item.kind))
       continue;
     const text =
@@ -311,13 +342,21 @@ function toGeminiBody(
           : isObj(item.value) && typeof item.value.content === "string"
             ? item.value.content
             : undefined;
-    if (text === undefined) continue;
-    if (item.kind === "system" || item.kind === "developer") system.push(text);
-    else
-      contents.push({
-        role: item.kind === "assistant" ? "model" : "user",
-        parts: [{ text }],
-      });
+    const calls =
+      item.kind === "assistant" &&
+      isObj(item.value) &&
+      Array.isArray(item.value.tool_calls)
+        ? item.value.tool_calls.map(functionCallPart)
+        : [];
+    if (text === undefined && calls.length === 0) continue;
+    if (item.kind === "system" || item.kind === "developer") {
+      if (text !== undefined) system.push(text);
+      continue;
+    }
+    contents.push({
+      role: item.kind === "assistant" ? "model" : "user",
+      parts: [...(text === undefined ? [] : [{ text }]), ...calls],
+    });
   }
   if (media.length) {
     const user = [...contents].reverse().find((m) => m.role === "user");
@@ -371,6 +410,35 @@ function toGeminiBody(
       ? { tools: [{ functionDeclarations: toolsParam }] }
       : {}),
   };
+}
+// R011: a canonical assistant tool_calls entry becomes a Gemini functionCall part.
+function functionCallPart(value: unknown): Obj {
+  if (
+    !isObj(value) ||
+    !isObj(value.function) ||
+    typeof value.function.name !== "string" ||
+    !value.function.name
+  )
+    throw new ProtocolError("Gemini function calls require a function name.");
+  let args: unknown = value.function.arguments;
+  if (typeof args === "string")
+    try {
+      args = args === "" ? {} : JSON.parse(args);
+    } catch {
+      throw new ProtocolError("Gemini function arguments must be JSON.");
+    }
+  if (args == null) args = {};
+  if (!isObj(args))
+    throw new ProtocolError("Gemini function arguments must be an object.");
+  return { functionCall: { name: value.function.name, args } };
+}
+function geminiFunctionOutput(output: string): Obj {
+  try {
+    const parsed = JSON.parse(output);
+    return isObj(parsed) ? parsed : { result: parsed };
+  } catch {
+    return { result: output };
+  }
 }
 function parse(raw: string): Obj | undefined {
   let value: unknown;

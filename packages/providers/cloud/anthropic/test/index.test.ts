@@ -286,4 +286,92 @@ describe("Anthropic Messages provider", () => {
     expect(resolutions).toBe(0);
     expect(events.at(-1)).toMatchObject({ type: "RunFailed" });
   });
+
+  it("replays canonical tool exchanges with tool_use and tool_result blocks (R011)", () => {
+    const body = encodeAnthropicRequest({
+      ...request,
+      context: [
+        { kind: "user", value: { content: "read a.txt" } },
+        {
+          kind: "assistant",
+          value: {
+            role: "assistant",
+            content: "reading",
+            tool_calls: [
+              {
+                id: "toolu-1",
+                type: "function",
+                function: { name: "lookup", arguments: { q: "a.txt" } },
+              },
+              {
+                id: "toolu-2",
+                type: "function",
+                function: { name: "lookup", arguments: { q: "b.txt" } },
+              },
+            ],
+          },
+        },
+        {
+          kind: "tool",
+          value: {
+            role: "tool",
+            tool_call_id: "toolu-1",
+            name: "lookup",
+            content: '{"found":true}',
+          },
+        },
+        {
+          kind: "tool",
+          value: {
+            role: "tool",
+            tool_call_id: "toolu-2",
+            name: "lookup",
+            content: "boom: not found",
+          },
+        },
+      ],
+    }) as { messages: { role: string; content: Record<string, unknown>[] }[] };
+    expect(body.messages).toEqual([
+      { role: "user", content: [{ type: "text", text: "read a.txt" }] },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "reading" },
+          {
+            type: "tool_use",
+            id: "toolu-1",
+            name: "lookup",
+            input: { q: "a.txt" },
+          },
+          {
+            type: "tool_use",
+            id: "toolu-2",
+            name: "lookup",
+            input: { q: "b.txt" },
+          },
+        ],
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "toolu-1",
+            content: '{"found":true}',
+          },
+          {
+            type: "tool_result",
+            tool_use_id: "toolu-2",
+            content: "boom: not found",
+          },
+        ],
+      },
+    ]);
+    expect(() =>
+      encodeAnthropicRequest({
+        ...request,
+        context: [{ kind: "tool", value: { name: "lookup", content: "x" } }],
+      }),
+    ).toThrow(/tool_use_id/);
+  });
 });

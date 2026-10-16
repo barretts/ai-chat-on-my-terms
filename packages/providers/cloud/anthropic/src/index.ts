@@ -54,9 +54,40 @@ export function encodeAnthropicRequest(
       system = [system, plainText(item.value)].filter(Boolean).join("\n\n");
       continue;
     }
+    if (item.kind === "tool") {
+      // R011: Anthropic requires tool_result blocks inside user turns.
+      if (
+        !isRecord(item.value) ||
+        typeof item.value.tool_call_id !== "string" ||
+        !item.value.tool_call_id
+      )
+        throw new AnthropicError(
+          "malformed",
+          "Tool results require a matching tool_use_id.",
+          false,
+        );
+      const block = {
+        type: "tool_result",
+        tool_use_id: item.value.tool_call_id,
+        content:
+          typeof item.value.content === "string"
+            ? item.value.content
+            : JSON.stringify(item.value.content ?? null),
+      };
+      const previous = messages.at(-1);
+      if (previous?.role === "user") previous.content.push(block);
+      else messages.push({ role: "user", content: [block] });
+      continue;
+    }
     if (item.kind !== "user" && item.kind !== "assistant") continue;
     const role = item.kind;
     const content = anthropicContent(item.value);
+    if (
+      role === "assistant" &&
+      isRecord(item.value) &&
+      Array.isArray(item.value.tool_calls)
+    )
+      for (const call of item.value.tool_calls) content.push(toolUseBlock(call));
     const previous = messages.at(-1);
     if (previous?.role === role) previous.content.push(...content);
     else messages.push({ role, content });
@@ -112,6 +143,8 @@ function anthropicContent(value: unknown): unknown[] {
   if (typeof value === "string") return [{ type: "text", text: value }];
   if (isRecord(value) && typeof value.text === "string")
     return [{ type: "text", text: value.text }];
+  if (isRecord(value) && typeof value.content === "string")
+    return [{ type: "text", text: value.content }];
   const parts =
     isRecord(value) && Array.isArray(value.parts)
       ? value.parts
@@ -166,6 +199,41 @@ function anthropicContent(value: unknown): unknown[] {
       );
   }
   return content;
+}
+// R011: a canonical assistant tool_calls entry becomes an Anthropic tool_use block.
+function toolUseBlock(value: unknown): Record<string, unknown> {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    !isRecord(value.function) ||
+    typeof value.function.name !== "string" ||
+    !value.function.name
+  )
+    throw new AnthropicError(
+      "malformed",
+      "Assistant tool_use blocks require an id and function name.",
+      false,
+    );
+  let input: unknown = value.function.arguments;
+  if (typeof input === "string")
+    try {
+      input = JSON.parse(input);
+    } catch {
+      input = undefined;
+    }
+  if (input != null && !isRecord(input))
+    throw new AnthropicError(
+      "malformed",
+      "tool_use arguments must be a JSON object.",
+      false,
+    );
+  return {
+    type: "tool_use",
+    id: value.id,
+    name: value.function.name,
+    input: input ?? {},
+  };
 }
 function plainText(value: unknown): string {
   if (typeof value === "string") return value;

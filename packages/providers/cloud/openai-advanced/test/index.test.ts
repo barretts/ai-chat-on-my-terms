@@ -276,4 +276,82 @@ describe("OpenAI advanced provider", () => {
       }),
     ).toThrow(/malformed function call/);
   });
+  it("replays canonical tool-call exchanges into Responses input items (R011)", () => {
+    const body = encodeOpenAIAdvancedRequest({
+      ...request,
+      context: [
+        { kind: "user", value: { content: "read a.txt" } },
+        {
+          kind: "assistant",
+          value: {
+            role: "assistant",
+            content: "reading",
+            tool_calls: [
+              {
+                id: "call-1",
+                type: "function",
+                function: { name: "lookup", arguments: { q: "a.txt" } },
+              },
+              {
+                id: "call-2",
+                type: "function",
+                function: { name: "lookup", arguments: { q: "b.txt" } },
+              },
+            ],
+          },
+        },
+        {
+          kind: "tool",
+          value: {
+            role: "tool",
+            tool_call_id: "call-1",
+            name: "lookup",
+            content: '{"found":true}',
+          },
+        },
+        {
+          kind: "tool",
+          value: {
+            role: "tool",
+            tool_call_id: "call-2",
+            name: "lookup",
+            content: "boom: not found",
+          },
+        },
+      ],
+    }) as { input: Record<string, unknown>[] };
+    expect(body.input).toEqual([
+      { role: "user", content: "read a.txt" },
+      { role: "assistant", content: "reading" },
+      {
+        type: "function_call",
+        call_id: "call-1",
+        name: "lookup",
+        arguments: '{"q":"a.txt"}',
+      },
+      {
+        type: "function_call",
+        call_id: "call-2",
+        name: "lookup",
+        arguments: '{"q":"b.txt"}',
+      },
+      {
+        type: "function_call_output",
+        call_id: "call-1",
+        output: '{"found":true}',
+      },
+      {
+        type: "function_call_output",
+        call_id: "call-2",
+        output: "boom: not found",
+      },
+    ]);
+    expect(() =>
+      encodeOpenAIAdvancedRequest({
+        ...request,
+        context: [{ kind: "tool", value: { name: "lookup", content: "x" } }],
+      }),
+    ).toThrow(/tool_call_id/);
+  });
 });
+

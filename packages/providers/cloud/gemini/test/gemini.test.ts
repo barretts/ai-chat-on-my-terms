@@ -312,4 +312,103 @@ describe("Gemini native streaming adapter", () => {
       ],
     });
   });
+
+  it("replays canonical tool exchanges as functionCall and functionResponse parts (R011)", async () => {
+    const fixture = await readFile(
+      new URL("../fixtures/generate-content.sse", import.meta.url),
+      "utf8",
+    );
+    let body: Record<string, unknown> = {};
+    const fetch: FetchLike = async (_url, init) => {
+      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(new TextEncoder().encode(fixture), {
+        headers: { "content-type": "text/event-stream" },
+      });
+    };
+    const provider = createGeminiProvider({
+      secrets,
+      fetch,
+      resolveConnection: async () => ({
+        modelId: "gemini-test",
+        apiKeyRef: ref,
+      }),
+      now: () => "2026-01-01T00:00:00.000Z",
+    });
+    await collect(
+      provider.startRun(
+        {
+          ...request,
+          context: [
+            { kind: "user", value: { content: "read a.txt" } },
+            {
+              kind: "assistant",
+              value: {
+                role: "assistant",
+                content: "reading",
+                tool_calls: [
+                  {
+                    id: "call-1",
+                    type: "function",
+                    function: { name: "lookup", arguments: { q: "a.txt" } },
+                  },
+                  {
+                    id: "call-2",
+                    type: "function",
+                    function: { name: "lookup", arguments: { q: "b.txt" } },
+                  },
+                ],
+              },
+            },
+            {
+              kind: "tool",
+              value: {
+                role: "tool",
+                tool_call_id: "call-1",
+                name: "lookup",
+                content: '{"found":true}',
+              },
+            },
+            {
+              kind: "tool",
+              value: {
+                role: "tool",
+                tool_call_id: "call-2",
+                name: "lookup",
+                content: "boom: not found",
+              },
+            },
+          ],
+        },
+        new AbortController().signal,
+      ),
+    );
+    expect(body.contents).toEqual([
+      { role: "user", parts: [{ text: "read a.txt" }] },
+      {
+        role: "model",
+        parts: [
+          { text: "reading" },
+          { functionCall: { name: "lookup", args: { q: "a.txt" } } },
+          { functionCall: { name: "lookup", args: { q: "b.txt" } } },
+        ],
+      },
+      {
+        role: "user",
+        parts: [
+          { functionResponse: { name: "lookup", response: { found: true } } },
+        ],
+      },
+      {
+        role: "user",
+        parts: [
+          {
+            functionResponse: {
+              name: "lookup",
+              response: { result: "boom: not found" },
+            },
+          },
+        ],
+      },
+    ]);
+  });
 });

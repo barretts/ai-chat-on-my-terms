@@ -47,8 +47,36 @@ export function encodeOpenAIAdvancedRequest(
   request: RunRequest,
 ): Record<string, unknown> {
   const input = request.context.flatMap(({ kind, value }) => {
+    if (kind === "tool") {
+      // R011: canonical tool results replay as Responses-API function_call_output items.
+      if (
+        !record(value) ||
+        typeof value.tool_call_id !== "string" ||
+        !value.tool_call_id
+      )
+        throw malformed("Function results require a matching tool_call_id.");
+      return [
+        {
+          type: "function_call_output",
+          call_id: value.tool_call_id,
+          output:
+            typeof value.content === "string"
+              ? value.content
+              : JSON.stringify(value.content ?? null),
+        },
+      ];
+    }
     if (!["system", "developer", "user", "assistant"].includes(kind)) return [];
-    return [{ role: kind, content: openAIContent(value) }];
+    const calls =
+      kind === "assistant" && record(value) && Array.isArray(value.tool_calls)
+        ? value.tool_calls.map(historyFunctionCall)
+        : [];
+    const content = openAIContent(value);
+    const items: Record<string, unknown>[] = [];
+    if (!calls.length || (typeof content === "string" && content.length > 0))
+      items.push({ role: kind, content });
+    items.push(...calls);
+    return items;
   });
   const definitions = request.context.find(
     ({ kind }) => kind === "tool-definitions",
@@ -112,6 +140,7 @@ function openAIContent(value: unknown): unknown {
     if (record(value) && Array.isArray(value.content))
       return openAIContent(value.content);
     if (record(value) && typeof value.text === "string") return value.text;
+    if (record(value) && typeof value.content === "string") return value.content;
     if (record(value) && Array.isArray(value.parts))
       return openAIContent(value.parts);
     return JSON.stringify(value);
@@ -147,6 +176,27 @@ function openAIContent(value: unknown): unknown {
     }
   }
   return content;
+}
+// R011: replay a canonical assistant tool_calls entry as a Responses function_call item.
+function historyFunctionCall(value: unknown): Record<string, unknown> {
+  if (
+    !record(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    !record(value.function) ||
+    typeof value.function.name !== "string" ||
+    !value.function.name
+  )
+    throw malformed("Assistant function calls require an ID and function name.");
+  return {
+    type: "function_call",
+    call_id: value.id,
+    name: value.function.name,
+    arguments:
+      typeof value.function.arguments === "string"
+        ? value.function.arguments
+        : JSON.stringify(value.function.arguments ?? {}),
+  };
 }
 function oneOf<T extends string>(
   value: unknown,

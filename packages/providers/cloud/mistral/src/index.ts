@@ -312,12 +312,39 @@ function toMessages(
   r: RunRequest,
   images: readonly { mimeType: string; base64: string }[],
 ): Obj[] {
-  const messages: Obj[] = r.context.flatMap(({ kind, value }) => {
+  const messages: Obj[] = r.context.flatMap<Obj>(({ kind, value }) => {
+    if (kind === "tool") {
+      // R011: replay OpenAI-compatible tool results into the next round.
+      if (
+        !isObj(value) ||
+        typeof value.tool_call_id !== "string" ||
+        !value.tool_call_id
+      )
+        throw new ProtocolError(
+          "Mistral tool results require a matching tool_call_id.",
+        );
+      return [
+        {
+          role: "tool",
+          tool_call_id: value.tool_call_id,
+          content:
+            typeof value.content === "string"
+              ? value.content
+              : JSON.stringify(value.content ?? null),
+        },
+      ];
+    }
     if (!["system", "developer", "user", "assistant"].includes(kind)) return [];
     const role = kind === "developer" ? "system" : kind;
-    if (typeof value === "string") return [{ role, content: value }];
+    const calls =
+      kind === "assistant" && isObj(value) && Array.isArray(value.tool_calls)
+        ? value.tool_calls.map(mistralHistoryCall)
+        : [];
+    const attached = calls.length ? { tool_calls: calls } : {};
+    if (typeof value === "string")
+      return [{ role, content: value, ...attached }];
     if (isObj(value) && typeof value.content === "string")
-      return [{ role, content: value.content }];
+      return [{ role, content: value.content, ...attached }];
     if (isObj(value) && Array.isArray(value.parts)) {
       const text = value.parts
         .flatMap((part) =>
@@ -328,9 +355,9 @@ function toMessages(
             : [],
         )
         .join("");
-      return text ? [{ role, content: text }] : [];
+      return text ? [{ role, content: text, ...attached }] : [];
     }
-    return [];
+    return calls.length ? [{ role, content: "", ...attached }] : [];
   });
   if (images.length) {
     let user: Obj | undefined = [...messages]
@@ -355,6 +382,32 @@ function toMessages(
     ];
   }
   return messages;
+}
+
+// R011: a canonical assistant tool_calls entry replays as an OpenAI-shaped history call.
+function mistralHistoryCall(value: unknown): Obj {
+  if (
+    !isObj(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    !isObj(value.function) ||
+    typeof value.function.name !== "string" ||
+    !value.function.name
+  )
+    throw new ProtocolError(
+      "Assistant function calls require an ID and function name.",
+    );
+  return {
+    id: value.id,
+    type: "function",
+    function: {
+      name: value.function.name,
+      arguments:
+        typeof value.function.arguments === "string"
+          ? value.function.arguments
+          : JSON.stringify(value.function.arguments ?? {}),
+    },
+  };
 }
 async function resolveImages(
   r: RunRequest,
