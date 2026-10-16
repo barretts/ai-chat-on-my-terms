@@ -64,6 +64,7 @@ export interface McpCallResult {
 
 interface JsonRpcEnvelope {
   result?: unknown;
+  error?: unknown;
 }
 
 interface RpcRequest {
@@ -97,6 +98,11 @@ export class McpHttpClient {
   private initializedFlag = false;
   private disposed = false;
   private nextId = 1;
+  private legacyStream: AbortController | undefined;
+  private readonly legacyPending = new Map<
+    number,
+    { resolve(envelope: JsonRpcEnvelope): void; reject(reason: Error): void }
+  >();
 
   constructor(
     config: McpServerConfig,
@@ -273,6 +279,17 @@ export class McpHttpClient {
     if (this.disposed) return;
     this.disposed = true;
     this.initializedFlag = false;
+    if (this.legacyStream) {
+      const stream = this.legacyStream;
+      this.legacyStream = undefined;
+      const closed = new McpProtocolError(
+        `The MCP server "${this.config.label}" client has been disposed.`,
+      );
+      for (const pending of this.legacyPending.values())
+        pending.reject(closed);
+      this.legacyPending.clear();
+      stream.abort();
+    }
     if (!this.sessionId) return;
     try {
       const response = await this.fetchImpl(this.config.url, {
@@ -379,6 +396,8 @@ export class McpHttpClient {
     request: RpcRequest,
     callerSignal: AbortSignal,
   ): Promise<JsonRpcEnvelope> {
+    if (this.legacyStream)
+      return this.legacyRpc(initialTarget, request, callerSignal);
     const baseOrigin = new URL(this.config.url).origin;
     const pair = this.normalizeSignal(callerSignal);
     let target = initialTarget;
@@ -570,6 +589,7 @@ export class McpHttpClient {
       let endpoint: string | undefined;
       let target = new URL(this.config.url);
       let frames: AsyncGenerator<string> | undefined;
+      const streamController = new AbortController();
       try {
         for (let hop = 0; ; hop += 1) {
           const response = await this.fetchImpl(target.href, {
@@ -610,11 +630,16 @@ export class McpHttpClient {
             throw new McpUnsupportedTransportError(
               `GET answered an empty SSE body; ${TRANSPORT_SUMMARY}`,
             );
-          frames = this.readEventStreamFrames(response, pair.signal);
+          frames = this.readEventStreamFrames(
+            response,
+            streamController.signal,
+          );
           break;
         }
-        for await (const frame of frames) {
-          const lines = frame.split("\n");
+        for (;;) {
+          const next = await frames.next();
+          if (next.done) break;
+          const lines = next.value.split("\n");
           const event =
             lines
               .filter((line) => line.startsWith("event:"))
@@ -629,16 +654,27 @@ export class McpHttpClient {
       } catch (cause) {
         throw this.classifyFailure(cause, pair.signal);
       }
-      if (endpoint === undefined)
+      if (endpoint === undefined) {
+        streamController.abort();
         throw new McpUnsupportedTransportError(
           `GET event stream offered no "endpoint" event; ${TRANSPORT_SUMMARY}`,
         );
+      }
       const messageEndpoint = new URL(endpoint, this.config.url);
-      if (messageEndpoint.origin !== baseOrigin)
+      if (messageEndpoint.origin !== baseOrigin) {
+        streamController.abort();
         throw new McpProtocolError(
           `Legacy SSE endpoint "${messageEndpoint.origin}" of MCP server "${this.config.label}" is on a foreign origin.`,
         );
-      const envelope = await this.postRpc(
+      }
+      // A spec-compliant legacy server answers every POST with an empty
+      // acceptance (typically 202) and sends JSON-RPC replies as `message`
+      // events on this still-open GET stream. Keep consuming it for the
+      // whole session and dispatch replies by JSON-RPC id; POST responses
+      // are treated purely as message acceptance from here on.
+      this.legacyStream = streamController;
+      this.consumeLegacyFrames(frames);
+      const envelope = await this.legacyRpc(
         messageEndpoint,
         {
           jsonrpc: "2.0",
@@ -660,6 +696,174 @@ export class McpHttpClient {
     } finally {
       pair.cleanup();
     }
+  }
+
+  /** Runs one request over the legacy transport: POST is acceptance-only,
+   * the JSON-RPC reply arrives on the kept-open GET stream and is awaited
+   * through the pending map. Cancellation, timeout and stream closure all
+   * settle the pending entry; a dropped stream never hangs a caller. */
+  private async legacyRpc(
+    endpoint: URL,
+    request: RpcRequest,
+    callerSignal: AbortSignal,
+  ): Promise<JsonRpcEnvelope> {
+    const pair = this.normalizeSignal(callerSignal);
+    let wait: Promise<JsonRpcEnvelope> | undefined;
+    if (request.id !== undefined) {
+      const id = request.id;
+      wait = new Promise<JsonRpcEnvelope>((resolve, reject) => {
+        this.legacyPending.set(id, { resolve, reject });
+        pair.signal.addEventListener(
+          "abort",
+          () => {
+            if (!this.legacyPending.delete(id)) return;
+            reject(this.classifyFailure(new Error("canceled"), pair.signal));
+          },
+          { once: true },
+        );
+      });
+      wait.catch(() => undefined);
+    }
+    try {
+      await this.postLegacyMessage(endpoint, request, pair.signal);
+      if (wait === undefined) return {};
+      const envelope = await wait;
+      if (isRecord(envelope.error)) {
+        const error = envelope.error;
+        throw new McpProtocolError(
+          `MCP server "${this.config.label}" reported a JSON-RPC error: ${
+            typeof error.message === "string"
+              ? error.message
+              : "no message given"
+          }.`,
+        );
+      }
+      return envelope;
+    } catch (cause) {
+      if (request.id !== undefined) {
+        const pending = this.legacyPending.get(request.id);
+        if (pending) {
+          this.legacyPending.delete(request.id);
+          pending.reject(
+            cause instanceof Error ? cause : new Error(String(cause)),
+          );
+        }
+      }
+      throw cause;
+    } finally {
+      pair.cleanup();
+    }
+  }
+
+  /** POSTs one message to the legacy endpoint and treats the HTTP answer
+   * strictly as a delivery receipt: any non-error status is acceptance and
+   * its body is discarded. Redirect and origin policy match postRpc. */
+  private async postLegacyMessage(
+    initialTarget: URL,
+    request: RpcRequest,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const baseOrigin = new URL(this.config.url).origin;
+    let target = initialTarget;
+    for (let hop = 0; ; hop += 1) {
+      const headers = this.baseHeaders(target.origin === baseOrigin);
+      headers["Accept"] = "application/json";
+      headers["Content-Type"] = "application/json";
+      let response: Response;
+      try {
+        response = await this.fetchImpl(target.href, {
+          method: "POST",
+          headers,
+          redirect: "manual",
+          signal,
+          body: JSON.stringify(request),
+        });
+      } catch (cause) {
+        throw this.classifyFailure(cause, signal);
+      }
+      if (response.status >= 300 && response.status < 400) {
+        await response.body?.cancel();
+        const location = response.headers.get("location");
+        if (!location)
+          throw new McpProtocolError(
+            `MCP server "${this.config.label}" answered ${response.status} without a Location header.`,
+          );
+        const next = new URL(location, target);
+        if (next.origin !== baseOrigin)
+          throw new McpProtocolError(
+            `Refused a cross-origin redirect from MCP server "${this.config.label}" ` +
+              `(${target.origin} -> ${next.origin}); configured credentials were not sent.`,
+          );
+        if (hop >= MAX_REDIRECT_HOPS)
+          throw new McpProtocolError(
+            `MCP server "${this.config.label}" exceeded ${MAX_REDIRECT_HOPS} same-origin redirect hops.`,
+          );
+        target = next;
+        continue;
+      }
+      if (response.status === 401 || response.status === 403)
+        throw new McpAuthError(
+          `MCP server "${this.config.label}" rejected the request with HTTP ${response.status}.`,
+        );
+      if (response.status >= 400)
+        throw new McpProtocolError(
+          `MCP server "${this.config.label}" answered HTTP ${response.status} to the legacy SSE message POST.`,
+        );
+      await response.body?.cancel();
+      return;
+    }
+  }
+
+  /** Consumes the kept-open legacy GET stream for the whole session,
+   * resolving pending JSON-RPC replies by id. When the stream closes or
+   * dies, every pending request settles with an honest error instead of
+   * hanging. */
+  private consumeLegacyFrames(
+    frames: AsyncGenerator<string>,
+  ): void {
+    void (async () => {
+      try {
+        for (;;) {
+          const next = await frames.next();
+          if (next.done) break;
+          const lines = next.value.split("\n");
+          const event =
+            lines
+              .filter((line) => line.startsWith("event:"))
+              .map((line) => line.slice(6).trim())[0] ?? "message";
+          if (event !== "message") continue;
+          const data = lines
+            .filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice(5))
+            .join("\n");
+          if (!data) continue;
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            continue;
+          }
+          if (
+            !isRecord(parsed) ||
+            parsed.jsonrpc !== "2.0" ||
+            typeof parsed.id !== "number"
+          )
+            continue;
+          const pending = this.legacyPending.get(parsed.id);
+          if (!pending) continue;
+          this.legacyPending.delete(parsed.id);
+          pending.resolve(parsed as JsonRpcEnvelope);
+        }
+      } catch {
+        // The stream died; the same settlement below applies.
+      }
+      const failure = new McpProtocolError(
+        `The legacy SSE reply stream of MCP server "${this.config.label}" ` +
+          "closed before answering the pending request(s).",
+      );
+      for (const pending of this.legacyPending.values()) pending.reject(failure);
+      this.legacyPending.clear();
+    })();
   }
 
   /** Normalizes low-level fetch/stream failures: cancellations surface as

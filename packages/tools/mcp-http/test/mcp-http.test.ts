@@ -317,52 +317,85 @@ describe("streamable HTTP transport", () => {
 });
 
 describe("legacy SSE fallback", () => {
-  it("negotiates via the endpoint event and POSTs without extra streams", async () => {
+  /** Spec-compliant legacy server: every POST is answered with an empty
+   * 202 acceptance and JSON-RPC replies are written as `message` events on
+   * the still-open GET stream, keyed by request id. */
+  async function startLegacyServer(): Promise<
+    Fixture & { closeStream(): void }
+  > {
+    let stream: ServerResponse | undefined;
+    let heldSlow: (() => void) | undefined;
+    let heldFast: (() => void) | undefined;
     const fixture = await startFixture("/legacy", (req, res, body) => {
       if (req.method === "GET") {
         res.writeHead(200, { "content-type": "text/event-stream" });
         res.write("event: endpoint\ndata: /legacy/messages?sid=77\n\n");
         trackSse(res);
-        return;
-      }
-      if (req.method === "DELETE") {
-        res.writeHead(204).end();
+        stream = res;
         return;
       }
       if (!req.url?.startsWith("/legacy/messages")) {
-        res.writeHead(404).end();
+        res.writeHead(405).end();
         return;
       }
+      res.writeHead(202).end();
       const message = JSON.parse(body) as {
         id?: number;
         method?: string;
+        params?: { arguments?: { tag?: string } };
       };
-      const answer = (result: unknown): void => {
-        res
-          .writeHead(200, { "content-type": "application/json" })
-          .end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }));
+      const reply = (result: unknown): void => {
+        stream?.write(
+          `event: message\ndata: ${JSON.stringify({
+            jsonrpc: "2.0",
+            id: message.id,
+            result,
+          })}\n\n`,
+        );
       };
       switch (message.method) {
         case "initialize":
-          answer({
-            protocolVersion: "2025-03-26",
+          reply({
+            protocolVersion: "2024-11-05",
             capabilities: {},
             serverInfo: { name: "legacy-fixture", version: "0.4" },
           });
           break;
-        case "notifications/initialized":
-          res.writeHead(202).end();
-          break;
         case "tools/list":
-          answer({ tools: [{ name: "legacy_tool", inputSchema: {} }] });
+          reply({ tools: [{ name: "legacy_tool", inputSchema: {} }] });
           break;
-        case "tools/call":
-          answer({ content: [{ type: "text", text: "legacy pong" }] });
+        case "tools/call": {
+          const tag = message.params?.arguments?.tag ?? "?";
+          const frame = { content: [{ type: "text", text: `pong:${tag}` }] };
+          if (tag !== "slow" && tag !== "fast") {
+            reply(frame);
+            break;
+          }
+          // Deterministic out-of-order delivery: buffer the two tagged
+          // calls and emit the fast-id reply before the slow-id reply
+          // regardless of the order their POSTs arrive in.
+          const thunk = (): void => reply(frame);
+          if (tag === "slow") heldSlow = thunk;
+          else heldFast = thunk;
+          if (heldSlow && heldFast) {
+            const fast = heldFast;
+            const slow = heldSlow;
+            heldSlow = undefined;
+            heldFast = undefined;
+            fast();
+            slow();
+          }
           break;
+        }
         default:
-          res.writeHead(400).end();
+          break;
       }
     });
+    return { ...fixture, closeStream: () => stream?.end() };
+  }
+
+  it("answers the initialize handshake on the kept-open GET stream", async () => {
+    const fixture = await startLegacyServer();
     const client = new McpHttpClient(
       config({ ...fixture, configUrl: () => `${fixture.origin}/legacy` }),
     );
@@ -372,21 +405,57 @@ describe("legacy SSE fallback", () => {
     expect(discovery.tools[0]?.name).toBe("legacy_tool");
     const call = await client.callTool(
       "legacy_tool",
-      {},
+      { tag: "ping" },
       new AbortController().signal,
     );
-    expect(call.content[0]?.text).toBe("legacy pong");
-    expect(
-      fixture.requests.some(
-        (entry) => entry.method === "GET" && entry.path === "/legacy",
-      ),
-    ).toBe(true);
-    expect(
-      fixture.requests.some(
-        (entry) =>
-          entry.method === "POST" && entry.path === "/legacy/messages",
-      ),
-    ).toBe(true);
+    expect(call.content[0]?.text).toBe("pong:ping");
+    const gets = fixture.requests.filter(
+      (entry) => entry.method === "GET" && entry.path === "/legacy",
+    );
+    expect(gets.length).toBe(1);
+    const posts = fixture.requests.filter(
+      (entry) => entry.method === "POST" && entry.path === "/legacy/messages",
+    );
+    expect(posts.length).toBe(4);
+  });
+
+  it("matches concurrent requests by id when replies arrive out of order", async () => {
+    const fixture = await startLegacyServer();
+    const client = new McpHttpClient(
+      config({ ...fixture, configUrl: () => `${fixture.origin}/legacy` }),
+    );
+    await client.initialize(new AbortController().signal);
+    const slow = client.callTool(
+      "slow_tool",
+      { tag: "slow" },
+      new AbortController().signal,
+    );
+    const fast = client.callTool(
+      "legacy_tool",
+      { tag: "fast" },
+      new AbortController().signal,
+    );
+    const [slowCall, fastCall] = await Promise.all([slow, fast]);
+    expect(slowCall.content[0]?.text).toBe("pong:slow");
+    expect(fastCall.content[0]?.text).toBe("pong:fast");
+  });
+
+  it("settles pending requests when the reply stream dies instead of hanging", async () => {
+    const fixture = await startLegacyServer();
+    const client = new McpHttpClient(
+      config({ ...fixture, configUrl: () => `${fixture.origin}/legacy` }),
+    );
+    await client.initialize(new AbortController().signal);
+    const call = await client.callTool(
+      "legacy_tool",
+      { tag: "first" },
+      new AbortController().signal,
+    );
+    expect(call.content[0]?.text).toBe("pong:first");
+    fixture.closeStream();
+    await expect(
+      client.callTool("legacy_tool", { tag: "second" }, new AbortController().signal),
+    ).rejects.toThrow(/closed before answering|answered HTTP/);
   });
 });
 
