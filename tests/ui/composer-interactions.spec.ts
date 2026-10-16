@@ -36,16 +36,58 @@ async function expectOwnedClipboard(page: Page, markdown: string) {
   ).toBe(markdown);
 }
 
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
+
 async function openPowerChat(page: Page) {
   await page.goto("/");
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page.getByRole("button", { name: /^Choose dark theme/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
+}
+
+async function openConnectionsPanel(page: Page) {
+  const heading = page.getByRole("heading", {
+    name: "Your connections",
+    exact: true,
+  });
+  try {
+    await heading.first().waitFor({ state: "visible", timeout: 4000 });
+    return;
+  } catch {
+    // The panel starts closed; open it via the rail/appbar trigger.
+  }
+  const appbar = page.getByRole("button", {
+    name: "Choose chat connection",
+  });
+  if (await appbar.count()) await appbar.click();
+  else await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await expect(heading.first()).toBeVisible();
 }
 
 async function useFixtureProvider(page: Page, hold?: Promise<void>) {
@@ -82,25 +124,37 @@ async function useFixtureProvider(page: Page, hold?: Promise<void>) {
       });
     },
   );
-  await page.getByRole("button", { name: "OpenAI", exact: true }).click();
+  await openConnectionsPanel(page);
+  await page.getByRole("button", { name: "Add provider" }).click();
+  const other = page.getByRole("button", { name: "Other", exact: true });
+  if (await other.count()) await other.click();
+  const nameBox = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
+  if (!(await nameBox.count()))
+    await page.getByRole("button", { name: "Connection settings" }).click();
+  await page.getByRole("button", { name: "Provider type", exact: true }).click();
   await page
-    .getByRole("button", { name: "Set up OpenAI", exact: true })
+    .getByRole("button", { name: "Choose OpenAI", exact: true })
     .click();
+  await nameBox.fill("Composer fixture");
   await page
-    .getByRole("textbox", { name: "Responses endpoint URL", exact: true })
+    .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
     .fill("https://composer-fixture.test/v1/responses");
   await page
-    .getByRole("textbox", { name: "OpenAI model ID", exact: true })
+    .getByRole("button", { name: "Enter custom model ID" })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Exact chat model ID", exact: true })
     .fill("composer-fixture");
   await page
-    .getByLabel("OpenAI API key", { exact: true })
+    .getByRole("textbox", { name: "Provider API key", exact: true })
     .fill("fixture-key-no-live-provider");
-  await page
-    .getByRole("button", {
-      name: "Save OpenAI endpoint and model",
-      exact: true,
-    })
-    .click();
+  const save = page.getByRole("button", { name: "Save and use provider" });
+  if (!(await save.count()))
+    await page.getByRole("button", { name: "More actions" }).click();
+  await save.click();
   await expect(
     page.getByRole("textbox", { name: "Message", exact: true }),
   ).toBeVisible();
@@ -110,22 +164,55 @@ async function useFixtureProvider(page: Page, hold?: Promise<void>) {
 test("composer mode, starters and actual Return/Shift+Return behavior persist", async ({
   page,
 }, testInfo) => {
+  const phone = testInfo.project.name === "phone";
   await openPowerChat(page);
+  // Composer preferences now live behind the Writing options dialog.
+  const openOptions = async () => {
+    // On phone the Writing options chip lives inside the message-tools
+    // panel, so open that panel first.
+    if (phone) {
+      const panel = page.getByTestId("message-tools");
+      if (!(await panel.isVisible().catch(() => false)))
+        await page
+          .getByRole("button", { name: /^(Show|Hide) message tools$/ })
+          .click();
+      await panel.waitFor({ state: "visible" });
+    }
+    await page.getByRole("button", { name: "Writing options" }).click();
+  };
+  const closeOptions = async () => {
+    await page
+      .getByRole("button", { name: "Done with writing options" })
+      .click();
+  };
+  // Desktop exposes mode radios and testid switches in the dialog; the
+  // phone dialog offers a Return-sends switch instead, and starter chips
+  // render on desktop surfaces only by current design.
   const compact = page.getByRole("radio", { name: "Compact", exact: true });
   const shine = page.getByRole("radio", { name: "Shine", exact: true });
   const starters = page.getByTestId("composer-starters-toggle");
-  const returnToggle = page.getByTestId("composer-return-toggle");
-  await compact.click();
-  await expect(compact).toBeChecked();
-  await starters.click();
-  await expect(starters).not.toBeChecked();
-  await expect(page.getByTestId("composer-starter-explain")).toHaveCount(0);
+  const returnToggle = phone
+    ? page.getByRole("switch", { name: "Return sends message", exact: true })
+    : page.getByTestId("composer-return-toggle");
+  await openOptions();
+  if (!phone) {
+    await compact.click();
+    await expect(compact).toBeChecked();
+    await starters.click();
+    await expect(starters).not.toBeChecked();
+    await expect(page.getByTestId("composer-starter-explain")).toHaveCount(0);
+  }
   await returnToggle.click();
   await expect(returnToggle).not.toBeChecked();
+  await closeOptions();
   await page.reload();
-  await expect(compact).toBeChecked();
-  await expect(starters).not.toBeChecked();
+  await openOptions();
+  if (!phone) {
+    await expect(compact).toBeChecked();
+    await expect(starters).not.toBeChecked();
+  }
   await expect(returnToggle).not.toBeChecked();
+  await closeOptions();
   // Browser API keys are intentionally held in memory, so configure the fixture after reload.
   const sent = await useFixtureProvider(page);
   const message = page.getByRole("textbox", { name: "Message", exact: true });
@@ -144,7 +231,10 @@ test("composer mode, starters and actual Return/Shift+Return behavior persist", 
     page.getByText("Response complete", { exact: true }),
   ).toHaveCount(1);
   await expect(message).toHaveValue("");
+  await openOptions();
   await returnToggle.click();
+  await expect(returnToggle).toBeChecked();
+  await closeOptions();
   await message.fill("Shift preserves a line break");
   await message.press("End");
   await message.press("Shift+Enter");
@@ -158,24 +248,35 @@ test("composer mode, starters and actual Return/Shift+Return behavior persist", 
     page.getByText("Response complete", { exact: true }),
   ).toHaveCount(2);
   await expect(message).toHaveValue("");
-  await shine.click();
-  await starters.click();
-  await page.getByTestId("composer-starter-explain").click();
-  await expect.poll(() => sent.length).toBe(3);
-  expect(sent[2]).toBe(
-    "Explain a useful programming concept with a short example.",
-  );
-  await expect(
-    page.getByText("Response complete", { exact: true }),
-  ).toHaveCount(3);
+  if (phone) {
+    // Starter chips are desktop-only; verify the phone design keeps them out.
+    await expect(page.getByTestId("composer-starter-explain")).toHaveCount(0);
+  } else {
+    await openOptions();
+    await shine.click();
+    await starters.click();
+    await closeOptions();
+    await page.getByTestId("composer-starter-explain").click();
+    await expect.poll(() => sent.length).toBe(3);
+    expect(sent[2]).toBe(
+      "Explain a useful programming concept with a short example.",
+    );
+    await expect(
+      page.getByText("Response complete", { exact: true }),
+    ).toHaveCount(3);
+  }
   await expect(message).toHaveValue("");
   await page.reload();
-  await expect(shine).toBeChecked();
-  await expect(starters).toBeChecked();
+  await openOptions();
+  if (!phone) {
+    await expect(shine).toBeChecked();
+    await expect(starters).toBeChecked();
+  }
   await expect(returnToggle).toBeChecked();
+  await closeOptions();
   await expect(
     page.getByText("Response complete", { exact: true }),
-  ).toHaveCount(3);
+  ).toHaveCount(phone ? 2 : 3);
   await page.screenshot({
     path: testInfo.outputPath("keyboard-and-preferences.png"),
     fullPage: true,
@@ -200,6 +301,13 @@ test("Copy preserves fenced Markdown, exposes denied permission, and Attach is d
     .fill("Produce the owned clipboard fixture.");
   await page.getByTestId("advanced-composer-send").click();
   await expect.poll(() => sent.length).toBe(1);
+  if (testInfo.project.name === "phone") {
+    // Attach lives inside the message-tools panel on phone.
+    await page
+      .getByRole("button", { name: /^(Show|Hide) message tools$/ })
+      .click();
+    await page.getByTestId("message-tools").waitFor({ state: "visible" });
+  }
   try {
     await expect(
       page.getByRole("button", { name: "Attach", exact: true }),
@@ -210,9 +318,22 @@ test("Copy preserves fenced Markdown, exposes denied permission, and Attach is d
   await expect(
     page.getByText("Response complete", { exact: true }),
   ).toBeVisible();
-  const copy = page
-    .getByTestId("assistant-response-text")
-    .getByRole("button", { name: "Copy Markdown", exact: true });
+  if (testInfo.project.name === "phone") {
+    // The open message-tools panel would intercept the Copy click.
+    await page
+      .getByRole("button", { name: /^(Close|Hide) message tools$/ })
+      .click();
+    await page.getByTestId("message-tools").waitFor({ state: "hidden" });
+  }
+  // On phone the Copy action sits beside (not inside) the response text
+  // node, so scope to the enclosing message row.
+  const responseRow = testInfo.project.name === "phone"
+    ? page.getByTestId("assistant-response-text").locator("..")
+    : page.getByTestId("assistant-response-text");
+  const copy = responseRow.getByRole("button", {
+    name: "Copy Markdown",
+    exact: true,
+  });
   await observeRealClipboardWrites(page);
   await copy.click();
   await expect(
@@ -232,6 +353,13 @@ test("Copy preserves fenced Markdown, exposes denied permission, and Attach is d
   await expect(page.getByRole("alert")).toContainText(
     "Clipboard access was denied. Allow clipboard permission and try Copy again.",
   );
+  if (testInfo.project.name === "phone") {
+    // Reopen the tools panel that was closed so its Attach button is visible.
+    await page
+      .getByRole("button", { name: /^(Show|Hide) message tools$/ })
+      .click();
+    await page.getByTestId("message-tools").waitFor({ state: "visible" });
+  }
   await expect(
     page.getByRole("button", { name: "Attach", exact: true }),
   ).toBeEnabled();
