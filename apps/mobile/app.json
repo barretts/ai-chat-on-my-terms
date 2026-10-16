@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "supportsAlternateIcons": true,
-      "buildNumber": "15",
+      "buildNumber": "16",
       "deploymentTarget": "17.0",
       "bundleIdentifier": "app.locallab.mobile",
       "infoPlist": {

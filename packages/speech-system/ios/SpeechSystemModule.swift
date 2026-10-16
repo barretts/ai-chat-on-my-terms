@@ -3,6 +3,31 @@ import ExpoModulesCore
 import Speech
 
 public final class SpeechSystemModule: Module {
+  private final class SpeechDelegate: NSObject, AVSpeechSynthesizerDelegate {
+    weak var owner: SpeechSystemModule?
+
+    init(owner: SpeechSystemModule) {
+      self.owner = owner
+      super.init()
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+      DispatchQueue.main.async { [weak self] in
+        guard let owner = self?.owner, let promise = owner.speakPromise else { return }
+        owner.speakPromise = nil
+        promise.resolve(["ok": true, "value": NSNull()])
+      }
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+      DispatchQueue.main.async { [weak self] in
+        guard let owner = self?.owner, let promise = owner.speakPromise else { return }
+        owner.speakPromise = nil
+        promise.resolve(SpeechSystemModule.failure("CANCELED", "System playback was interrupted."))
+      }
+    }
+  }
+
   private final class ActiveRequest {
     let requestId: String
     let recognizer: SFSpeechRecognizer
@@ -19,9 +44,10 @@ public final class SpeechSystemModule: Module {
 
   private var engine: AVAudioEngine?
   private var active: [String: ActiveRequest] = [:]
+  private lazy var speechDelegate = SpeechDelegate(owner: self)
   private lazy var synthesizer: AVSpeechSynthesizer = {
     let synth = AVSpeechSynthesizer()
-    synth.delegate = self
+    synth.delegate = speechDelegate
     return synth
   }()
   private var speakPromise: Promise?
@@ -337,7 +363,7 @@ public final class SpeechSystemModule: Module {
           }
           guard conversionError == nil, out.frameLength > 0,
                 let channel = out.floatChannelData?[0] else { return }
-          self.captureBuffer.append(contentsOf: channel[0..<Int(out.frameLength)])
+          self.captureBuffer.append(contentsOf: UnsafeBufferPointer(start: channel, count: Int(out.frameLength)))
         }
         engine.prepare()
         try engine.start()
@@ -423,27 +449,5 @@ public final class SpeechSystemModule: Module {
   }
   private static func failure(_ code: String, _ message: String) -> [String: Any] {
     ["ok": false, "error": ["code": code, "message": message]]
-  }
-}
-
-extension SpeechSystemModule: AVSpeechSynthesizerDelegate {
-  public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-    DispatchQueue.main.async {
-      guard let promise = self.speakPromise else {
-        return
-      }
-      self.speakPromise = nil
-      promise.resolve(["ok": true, "value": NSNull()])
-    }
-  }
-
-  public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-    DispatchQueue.main.async {
-      guard let promise = self.speakPromise else {
-        return
-      }
-      self.speakPromise = nil
-      promise.resolve(Self.failure("CANCELED", "System playback was interrupted."))
-    }
   }
 }

@@ -1,6 +1,16 @@
 # Install LocalLab on an iPhone
 
-## Latest internal build: 15 (October 10, 2026)
+## Latest internal build: 16 (October 15, 2026)
+
+[Install LocalLab build 16](https://expo.dev/accounts/barrett/projects/locallab/builds/ec35f74d-b175-4cbd-a743-2b22e075e6e1) from Safari on the registered iPhone.
+
+- EAS reports `FINISHED` at `2026-10-16T03:23:42.922Z` (October 15 in America/Chicago), app version `0.1.0`, build `16`, internal `preview` distribution.
+- Existing EAS-managed ad hoc signing and the registered iPhone provisioning profile were reused. The signed IPA download returned HTTP 200 (26,790,433 bytes).
+- This build includes the current task implementations and committed review fixes, plus the Metro workspace TypeScript resolution fix and speech delegate/PCM Swift compilation fixes required by this build.
+- The first build-16 attempt failed native compilation; the replacement linked above succeeded. Build receipts are in [the build record](./builds/ios-preview-16.md).
+- Physical installation and app behavior on the iPhone remain unverified.
+
+## Previous internal build: 15 (October 10, 2026)
 
 [Install LocalLab build 15](https://expo.dev/accounts/barrett/projects/locallab/builds/fb3288a3-42f8-4586-8572-4363cca77035) from Safari on the registered iPhone.
 
