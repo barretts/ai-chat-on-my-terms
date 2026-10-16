@@ -25,11 +25,11 @@ export function reactNativeBatterySource(): BatterySource {
   const battery = (
     NativeModules as unknown as Record<
       string,
-      RNBatteryNativeModule | undefined
+      RNBatteryNativeModule | null | undefined
     >
   ).Battery;
   if (
-    battery === undefined ||
+    battery == null ||
     typeof battery.getBatteryInfoAsync !== "function"
   )
     return inertBatterySource;

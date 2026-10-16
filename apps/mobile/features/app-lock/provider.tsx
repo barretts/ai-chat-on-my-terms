@@ -10,6 +10,7 @@ import {
 import { AppState, Pressable, StyleSheet, View } from "react-native";
 import type { AppStateStatus } from "react-native";
 import { Button, Text, useTheme } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { MD3Theme } from "react-native-paper";
 import { useWorkspaceLayout } from "@locallab/ui-native-primitives";
 import { createLockSession } from "@locallab/app-lock";
@@ -23,6 +24,8 @@ import type {
 import { openMobileDatabase } from "../../platform/database-open";
 import { expoSaltedHashPort, secureStoreRecordStore } from "./adapters";
 import { createLockPrefsStore, ensureAppLockSchema } from "./index";
+import { ErrorNotice } from "../diagnostics/error-notice";
+import { describeError } from "../diagnostics/errors";
 
 export const GRACE_LABELS: Record<GracePeriod, string> = {
   immediate: "Immediate",
@@ -63,6 +66,8 @@ export function AppLockProvider(options: {
   const sessionRef = useRef<LockSession | null>(null);
   const prefsRef = useRef<ReturnType<typeof createLockPrefsStore> | null>(null);
   const [booted, setBooted] = useState(false);
+  const [bootError, setBootError] = useState<string | null>(null);
+  const [bootAttempt, setBootAttempt] = useState(0);
   const [locked, setLocked] = useState(false);
   const [lockReason, setLockReason] = useState<string | null>(null);
   const [hasLock, setHasLock] = useState(false);
@@ -78,6 +83,9 @@ export function AppLockProvider(options: {
 
   useEffect(() => {
     let cancelled = false;
+    setBooted(false);
+    setBootError(null);
+    sessionRef.current = null;
     void (async () => {
       const db = await openMobileDatabase();
       await ensureAppLockSchema(db);
@@ -93,14 +101,27 @@ export function AppLockProvider(options: {
       const loadedPrefs = await prefs.load();
       session.setGrace(loadedPrefs.grace);
       await session.coldStart();
+      const nextHasLock = await session.hasLock();
+      const nextBiometricAvailable = biometric
+        ? await biometric.isAvailable()
+        : false;
       if (cancelled) return;
       sessionRef.current = session;
       setGraceState(loadedPrefs.grace);
-      setHasLock(await session.hasLock());
-      if (biometric) setBiometricAvailable(await biometric.isAvailable());
+      setHasLock(nextHasLock);
+      setBiometricAvailable(nextBiometricAvailable);
       syncGate(session);
       setBooted(true);
-    })();
+    })().catch((cause: unknown) => {
+      if (cancelled) return;
+      setBootError(
+        describeError(cause, {
+          operation: "Initialize app lock",
+          recovery:
+            "Tap Try again to reopen secure storage. The app stays locked until initialization succeeds.",
+        }),
+      );
+    });
     const previousRef = { current: AppState.currentState };
     const subscription = AppState.addEventListener(
       "change",
@@ -123,7 +144,7 @@ export function AppLockProvider(options: {
       cancelled = true;
       subscription.remove();
     };
-  }, [biometric, entitlements, recovery, syncGate]);
+  }, [biometric, bootAttempt, entitlements, recovery, syncGate]);
 
   const value = useMemo<AppLockValue | null>(() => {
     const session = sessionRef.current;
@@ -181,7 +202,23 @@ export function AppLockProvider(options: {
     syncGate,
   ]);
 
-  if (value === null) return null;
+  if (value === null)
+    return bootError === null ? null : (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", padding: 24, gap: 16 }}
+      >
+        <ErrorNotice message={bootError} />
+        <Button
+          mode="contained"
+          onPress={() => {
+            setBootError(null);
+            setBootAttempt((attempt) => attempt + 1);
+          }}
+        >
+          Try again
+        </Button>
+      </SafeAreaView>
+    );
   return (
     <AppLockContext.Provider value={value}>
       {children}
