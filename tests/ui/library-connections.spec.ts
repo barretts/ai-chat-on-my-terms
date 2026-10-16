@@ -492,6 +492,7 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   // Removal clears it from chat and the list; the other server survives.
   // The current chat provider cannot be removed until another provider is
   // selected for this chat, so switch to Server B first.
+  await openConnectionsPanel(page, phone);
   await page
     .getByRole("button", { name: "Use saved provider Server B" })
     .click();
