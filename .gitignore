@@ -9,6 +9,9 @@ apps/mobile/ios/
 apps/mobile/android/
 apps/mobile/expo-env.d.ts
 apps/desktop/src-tauri/target/
+apps/desktop/out/
+apps/desktop/src-tauri/binaries/*.exe
+apps/desktop/src-tauri/gen/
 target/
 .env
 .env.*
