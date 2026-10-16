@@ -68,10 +68,14 @@ test("batches are chunked to the frozen cap and drained by acks", async () => {
   assert.equal(sent.length, 2, "500 + 100 records");
   assert.deepEqual(sent[0]!.ids.length, 500);
   assert.deepEqual(sent[1]!.ids.length, 100);
+  // R008/CR005 (commit cb44ec5) added `pendingBatches` to the status
+  // contract (consumed by the composition delivery gate); the drained
+  // queue reports an empty batch count alongside the empty record count.
   assert.deepEqual(transport.status(), {
     state: "idle",
     note: "",
     pendingRecords: 0,
+    pendingBatches: 0,
     resumeCursor: 2,
     attempts: 0,
   });
