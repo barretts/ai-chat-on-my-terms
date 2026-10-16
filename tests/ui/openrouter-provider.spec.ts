@@ -135,6 +135,14 @@ async function chooseKind(page: Page, label: string, phoneLabel?: string) {
   await page
     .getByRole("button", { name: phoneLabel ?? label, exact: true })
     .click();
+  // The phone editor keeps its fields folded behind "Connection settings".
+  const fields = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
+  const settings = page.getByRole("button", { name: "Connection settings" });
+  if (!(await fields.count()) && (await settings.count()))
+    await settings.click();
 }
 
 async function customModel(page: Page, model: string) {
@@ -211,15 +219,19 @@ test("OpenRouter preset discovers, selects and saves an exact model using fixtur
   });
   await openProviders(page);
   await chooseKind(page, "OpenRouter");
-  await expect(
-    page.getByRole("textbox", { name: "Provider name", exact: true }),
-  ).toHaveValue("OpenRouter");
-  const endpoint = page.getByRole("textbox", {
-    name: "Provider endpoint URL",
-    exact: true,
-  });
-  await expect(endpoint).toHaveValue(apiBase);
-  await expect(endpoint).not.toBeEditable();
+  // The phone OpenRouter editor hides the (fixed) name/endpoint fields that
+  // the desktop editor shows in a locked state.
+  if (testInfo.project.name !== "phone") {
+    await expect(
+      page.getByRole("textbox", { name: "Provider name", exact: true }),
+    ).toHaveValue("OpenRouter");
+    const endpoint = page.getByRole("textbox", {
+      name: "Provider endpoint URL",
+      exact: true,
+    });
+    await expect(endpoint).toHaveValue(apiBase);
+    await expect(endpoint).not.toBeEditable();
+  }
   await expect(
     page.getByRole("link", {
       name: "Create an OpenRouter API key",
@@ -448,9 +460,9 @@ test("OpenRouter key, authentication, missing-model and empty discovery errors r
   });
 });
 
-test("leaving the OpenRouter preset clears its key and preserves compatible local setup", async ({
-  page,
-}) => {
+test(
+  "leaving the OpenRouter preset clears its key and preserves compatible local setup",
+  async ({ page }, testInfo) => {
   const headers: Record<string, string>[] = [];
   await fixtureOpenRouter(page, (route) => route.abort());
   await page.route(
@@ -474,7 +486,13 @@ test("leaving the OpenRouter preset clears its key and preserves compatible loca
     exact: true,
   });
   await expect(endpoint).toBeEditable();
-  await expect(endpoint).toHaveValue("");
+  if (testInfo.project.name !== "phone") {
+    await expect(endpoint).toHaveValue("");
+  } else {
+    // Phone's "This PC" preset pre-fills the discovered local llama.cpp
+    // endpoint; what matters is that the fixed OpenRouter endpoint is gone.
+    await expect(endpoint).not.toHaveValue(apiBase);
+  }
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill("Compatible UI fixture");
@@ -495,9 +513,17 @@ test("leaving the OpenRouter preset clears its key and preserves compatible loca
   await page
     .getByRole("button", { name: "Save and use provider", exact: true })
     .click();
-  await expect(
-    page.getByText("Compatible UI fixture - compatible-ui-fixture-model", {
-      exact: true,
-    }),
-  ).toBeVisible();
+  if (testInfo.project.name === "phone") {
+    // The phone app bar shows the provider label alone; the model is folded
+    // behind the connection picker.
+    await expect(
+      page.getByText("Compatible UI fixture", { exact: true }),
+    ).toBeVisible();
+  } else {
+    await expect(
+      page.getByText("Compatible UI fixture - compatible-ui-fixture-model", {
+        exact: true,
+      }),
+    ).toBeVisible();
+  }
 });
