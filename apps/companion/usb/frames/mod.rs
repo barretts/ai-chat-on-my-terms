@@ -9,7 +9,7 @@
 //! pairing crypto's MAX_FRAME_BYTES so sealed frames never straddle a
 //! transport limit.
 
-use crate::remote::crypto::{b64url_decode, Frame, MAX_FRAME_BYTES};
+use crate::remote::crypto::{b64url_decode, Frame, MAX_FRAME_BYTES, FRAME_PROTOCOL_MAJOR, FRAME_PROTOCOL_MINOR};
 
 pub const MAX_USB_PAYLOAD_BYTES: usize = MAX_FRAME_BYTES;
 
@@ -75,6 +75,10 @@ impl FrameDecoder {
 /// (identical field names to the relay envelope golden vectors).
 pub fn frame_to_json(frame: &Frame) -> serde_json::Value {
     serde_json::json!({
+        // R028: sealed relay frames ride this codec and MUST satisfy the
+        // TypeScript receiver's strict `EncryptedRelayFrameV1` schema, which
+        // requires the protocol version pair; the golden vectors carry it too.
+        "protocol": { "major": frame.protocol_major, "minor": frame.protocol_minor },
         "routeId": frame.route_id,
         "requestId": frame.request_id,
         "sequence": frame.sequence,
@@ -107,7 +111,23 @@ pub fn frame_from_json(value: &serde_json::Value) -> Result<Frame> {
     if declared > MAX_FRAME_BYTES {
         return Err(UsbFrameError { kind: "oversize", message: "frame size exceeds cap".into() });
     }
+    let protocol = &value["protocol"];
+    let (protocol_major, protocol_minor) = if protocol.is_null() {
+        (FRAME_PROTOCOL_MAJOR, FRAME_PROTOCOL_MINOR)
+    } else {
+        (
+            protocol["major"]
+                .as_u64()
+                .filter(|major| *major as u32 == FRAME_PROTOCOL_MAJOR)
+                .ok_or_else(|| UsbFrameError { kind: "malformed", message: "frame protocol.major must be 1".into() })? as u32,
+            protocol["minor"]
+                .as_u64()
+                .ok_or_else(|| UsbFrameError { kind: "malformed", message: "frame protocol.minor missing".into() })? as u32,
+        )
+    };
     Ok(Frame {
+        protocol_major,
+        protocol_minor,
         route_id: string_field("routeId")?,
         request_id: string_field("requestId")?,
         sequence,

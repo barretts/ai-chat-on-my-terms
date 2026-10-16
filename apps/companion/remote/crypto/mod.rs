@@ -30,6 +30,14 @@ use subtle::ConstantTimeEq;
 pub const REPLAY_WINDOW: u64 = 1_000;
 pub const REPLAY_TRACK: u64 = 64;
 pub const MAX_FRAME_BYTES: usize = 1_048_576;
+
+/// R028: transport frame protocol stamped into every sealed frame, mirroring
+/// `EncryptedRelayFrameV1.protocol` on the TypeScript side (which validates
+/// it exactly). The companion's advertised session minor
+/// (`composition::remote::COMPANION_PROTOCOL_MINOR`) is this minor; the
+/// two constants MUST stay equal — a test pins the cross-module invariant.
+pub const FRAME_PROTOCOL_MAJOR: u32 = 1;
+pub const FRAME_PROTOCOL_MINOR: u32 = 1;
 const HELLO_LABEL: &str = "locallab-pairing-hello-v1|1.1";
 const KEY_LABEL: &str = "locallab-pairing-key-v1|1.1";
 const NONCE_LABEL: &str = "locallab-pairing-nonce-v1|1.1";
@@ -255,8 +263,16 @@ pub fn mobile_route_ticket_hash(mobile_route_ticket: &str) -> Result<String> {
     Ok(hex_encode(&mac.finalize().into_bytes()))
 }
 
+/// Transport frame version pair, mirroring `EncryptedRelayFrameV1.protocol`
+/// (major 1 fixed; minor = the pairing protocol level, R007/R028). The
+/// TypeScript receiver validates it EXACTLY; a companion must stamp its
+/// responses with the minor it advertises, or the phone fails the frame
+/// closed on its zod schema (R028: the old codec emitted none at all, so
+/// every Rust response was schema-invalid for a real mobile handle).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Frame {
+    pub protocol_major: u32,
+    pub protocol_minor: u32,
     pub route_id: String,
     pub request_id: String,
     pub sequence: u64,
@@ -285,6 +301,8 @@ pub fn seal_bytes(
 ) -> Result<Frame> {
     let nonce = derive_nonce(nonce_key, sequence);
     let frame = Frame {
+        protocol_major: FRAME_PROTOCOL_MAJOR,
+        protocol_minor: FRAME_PROTOCOL_MINOR,
         route_id: route_id.to_string(),
         request_id: request_id.to_string(),
         sequence,
@@ -365,6 +383,9 @@ impl OpeningChannel {
         if frame.route_id != self.route_id {
             return Err(PairingCryptoError::unauthorized("frame route does not match this session"));
         }
+        if frame.protocol_major != FRAME_PROTOCOL_MAJOR || frame.protocol_minor > FRAME_PROTOCOL_MINOR {
+            return Err(PairingCryptoError::unauthorized("frame protocol does not match this session"));
+        }
         let advertised = b64url_decode(&frame.nonce_base64url)?;
         let expected = derive_nonce(&self.nonce_key, frame.sequence);
         if advertised.len() != 12 || advertised.ct_eq(&expected).unwrap_u8() != 1 {
@@ -420,6 +441,8 @@ mod tests {
 
     fn frame_of(jf: &Value) -> Frame {
         Frame {
+            protocol_major: jf["protocol"]["major"].as_u64().expect("protocol.major") as u32,
+            protocol_minor: jf["protocol"]["minor"].as_u64().expect("protocol.minor") as u32,
             route_id: jf["routeId"].as_str().expect("routeId").to_string(),
             request_id: jf["requestId"].as_str().expect("requestId").to_string(),
             sequence: jf["sequence"].as_u64().expect("sequence"),

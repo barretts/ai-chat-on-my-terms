@@ -88,19 +88,22 @@ interface RunWaiter {
   settled: PromiseWithResolvers<{ runId: string; text: string }>;
 }
 
-function chatCompleteRunId(body: unknown): string | null {
+function requestSettlement(body: unknown): { type: string; runId: string | null; reason?: string | undefined } | null {
   if (typeof body !== "object" || body === null) return null;
-  const candidate = body as { type?: unknown; runId?: unknown };
-  return candidate.type === "chat-complete" && typeof candidate.runId === "string"
-    ? candidate.runId
-    : null;
+  const candidate = body as { type?: unknown; runId?: unknown; reason?: unknown };
+  if (typeof candidate.type !== "string") return null;
+  if (candidate.type !== "chat-complete" && candidate.type !== "chat-refused") return null;
+  const runId = typeof candidate.runId === "string" ? candidate.runId : null;
+  return { type: candidate.type, runId, reason: typeof candidate.reason === "string" ? candidate.reason : undefined };
 }
 
 /**
  * Chat-over-sealed-session connection for one paired device. `streamRun`
  * speaks the session body convention and resolves when the companion
- * answers the matching chat-complete frame; every TextDelta in between
- * feeds `handlers.onDelta` and the accumulated `text`.
+ * answers the matching chat-complete frame — or REJECTS with the refusal
+ * reason if the companion settles the run with chat-refused (R028: a
+ * refusal must never leave the chat screen waiting). Every TextDelta in
+ * between feeds `handlers.onDelta` and the accumulated `text`.
  */
 export function createRemoteChatConnection(
   session: RemoteSessionPort,
@@ -122,12 +125,19 @@ export function createRemoteChatConnection(
         return;
       }
       if (payload.tag !== "request") return;
-      const runId = chatCompleteRunId(payload.body);
-      if (runId === null) return;
-      const waiter = waiters.get(runId);
+      const settlement = requestSettlement(payload.body);
+      if (settlement === null || settlement.runId === null) return;
+      const waiter = waiters.get(settlement.runId);
       if (!waiter) return;
-      waiters.delete(runId);
-      waiter.settled.resolve({ runId, text: waiter.text });
+      waiters.delete(settlement.runId);
+      // R028: a refusal is terminal — settle the waiter (reject) so the
+      // phone's chat never hangs forever on a companion that will not
+      // serve the request (unknown chat-request version, policy refusal).
+      if (settlement.type === "chat-refused") {
+        waiter.settled.reject(new Error(settlement.reason ?? "chat request refused"));
+      } else {
+        waiter.settled.resolve({ runId: settlement.runId, text: waiter.text });
+      }
     });
   }
 
@@ -146,7 +156,7 @@ export function createRemoteChatConnection(
       waiters.set(runId, waiter);
       session.send({
         tag: "request",
-        body: { type: "chat-request", runId, routeId, messages: [...messages], tools: [] },
+        body: { type: "chat-request", version: 1, runId, routeId, messages: [...messages], tools: [] },
       });
       return waiter.settled.promise;
     },

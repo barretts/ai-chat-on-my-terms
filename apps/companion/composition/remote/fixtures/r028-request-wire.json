@@ -1,0 +1,19 @@
+{
+  "protocol": "r028-request-wire-v1",
+  "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+  "runId": "0198f2a3-0000-7000-8000-0000000000c0",
+  "requestId": "0198f2a3-0000-7000-8000-0000000000d0",
+  "frame": {
+    "protocol": {
+      "major": 1,
+      "minor": 1
+    },
+    "routeId": "0198f2a3-0000-7000-8000-0000000000c3",
+    "requestId": "0198f2a3-0000-7000-8000-0000000000d0",
+    "sequence": 0,
+    "nonceBase64Url": "UTg0CMhZulrINvA9",
+    "contentTag": "request",
+    "declaredSize": 227,
+    "ciphertextBase64Url": "SPFhdrp_VnIene_pdQSQX5T9Jx29wSkuXgOgalSuYSdPXe2kQlOga6oJntzB9AQyxXaSqVtpnDciT5YB_N1ALF5jvYvoC3y_5SSBH9uuqNK9WbUmIAEMyJEXQHFHVKD4K1RWtx43GVYaSEC8Ycqdg51YSGWjmmymsjRjXu6dfgPevDdXPqdWX_jzxrwSlL7UgdjcjGDkRXrf96b4yg1xuhAg5xsFpvKTqo_q1CyVduO8X5jM66B8tbLPwiR_gQy484E0vtv87ki4qCIiY88TQc9cc4ZGY-Qhz-BV3WrmSEv8AKU"
+  }
+}

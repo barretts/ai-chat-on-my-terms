@@ -94,6 +94,7 @@ describe("createRemoteChatConnection", () => {
     assert.equal(request.type, "chat-request");
     assert.equal(request.routeId, pairingQr.companionRouteId);
     assert.deepEqual(request.messages, [{ role: "user", content: "hello companion" }]);
+    assert.equal(request.version, 1, "the mobile stamps the payload version the companion accepts");
     assert.deepEqual(request.tools, []);
     const runId = String(request.runId);
     assert.match(runId, /^[0-9a-f-]{36}$/);
@@ -128,6 +129,31 @@ describe("createRemoteChatConnection", () => {
     session.deliver({ tag: "request", body: { type: "chat-complete", runId } });
     const result = await streaming;
     assert.equal(result.text, "");
+  });
+
+  it("a chat-refused payload rejects the stream with the refusal reason (R028)", async () => {
+    // A companion that declines the payload settles the waiter instead of
+    // leaving the chat stuck pending forever (R028).
+    const session = fakeSession();
+    const connection = createRemoteChatConnection(session, {
+      routeId: pairingQr.companionRouteId,
+      label: "Home Mac",
+    });
+    const streaming = connection.streamRun(
+      [{ role: "user", content: "future-payload" }],
+      "route-x",
+      { onDelta: () => {} },
+    );
+    const runId = String(parseBody(session.sent[0]!).runId);
+    session.deliver({
+      tag: "request",
+      body: { type: "chat-refused", runId, reason: "unsupported chat-request version 2" },
+    });
+    await assert.rejects(
+      () => streaming,
+      /unsupported chat-request version 2/,
+      "the refusal reason surfaces to the caller",
+    );
   });
 });
 

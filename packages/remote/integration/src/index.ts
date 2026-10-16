@@ -134,7 +134,8 @@ export function sendChatRequest(
     tag: "request",
     body: {
       type: "chat-request",
-      runId: request.runId,
+      version: 1, // R028: versioned payload contract with the companion; an
+                  // unsupported version comes back as chat-refused, never a hang.
       routeId: request.routeId,
       messages: request.messages,
       tools: request.tools,
@@ -144,8 +145,10 @@ export function sendChatRequest(
 
 /**
  * Mobile side: chat-request out, then collect tag:event frames for this runId
- * until the companion's chat-complete request arrives. A close payload (or a
- * sealed close frame) rejects the stream.
+ * until the companion's chat-complete request arrives. A chat-refused request
+ * (R028: the companion declines payloads it will never serve, e.g. a future
+ * chat-request version) rejects the stream with the refusal reason. A close
+ * payload (or a sealed close frame) rejects the stream.
  */
 export function streamChat(
   handle: RemoteSessionHandle,
@@ -165,6 +168,16 @@ export function streamChat(
     ) {
       done = true;
       settled.resolve(events);
+    } else if (
+      payload.tag === "request" &&
+      isBodyType(payload.body, "chat-refused") &&
+      "runId" in payload.body && payload.body.runId === request.runId
+    ) {
+      // R028: a refusal settles the waiter — the companion answered "no",
+      // which is terminal just like chat-complete. Without this branch a
+      // refused run hangs the phone's caller forever.
+      done = true;
+      settled.reject(new Error(String(payload.body.reason ?? "chat request refused")));
     } else if (payload.tag === "close") {
       done = true;
       settled.reject(new Error(`chat stream closed before completion: ${payload.reason ?? "no reason"}`));

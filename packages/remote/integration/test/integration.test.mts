@@ -298,7 +298,7 @@ test("chat round-trip resolves exactly the emitted events; the companion sees th
       seenRequests[0],
       {
         type: "chat-request",
-        runId,
+        version: 1,
         routeId: session.qr.companionRouteId,
         messages: [{ role: "user", content: "chat-text-alpha" }],
         tools: [],
@@ -313,6 +313,37 @@ test("chat round-trip resolves exactly the emitted events; the companion sees th
     session.mobileSocket.send(replayFrame);
     session.mobileSocket.send(replayFrame);
     await replayRejected.promise;
+  } finally {
+    await session.relay.close();
+  }
+});
+
+test("a sealed chat-refused settles streamChat with the refusal reason (R028)", async () => {
+  // The version-guard counterpart on the phone side: a companion that
+  // declines the payload (e.g. future chat-request version) must settle
+  // the waiter — reject with the reason — never leave it pending.
+  const runId = syncId(5);
+  const session = await pairedRelaySession((live, payload) => {
+    if (payload.tag !== "request") return;
+    const body = payload.body;
+    if (typeof body === "object" && body !== null && "type" in body && body.type === "chat-request")
+      live.companionHandle.send({
+        tag: "request",
+        body: { type: "chat-refused", runId, reason: "unsupported chat-request version 2" },
+      });
+  });
+  try {
+    await assert.rejects(
+      () =>
+        streamChat(session.mobileHandle, {
+          runId,
+          routeId: session.qr.companionRouteId,
+          messages: [{ role: "user", content: "future-payload" }],
+          tools: [],
+        }),
+      /unsupported chat-request version 2/,
+      "the refusal reason surfaces to the awaiting caller",
+    );
   } finally {
     await session.relay.close();
   }
