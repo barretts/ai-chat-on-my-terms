@@ -497,7 +497,18 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
     .getByRole("button", { name: "Use saved provider Server B" })
     .click();
   await openConnectionsPanel(page, phone);
-  await page.getByRole("button", { name: "Remove provider Renamed A", exact: true }).click();
+  const removeRenamed = page.getByRole("button", {
+    name: "Remove provider Renamed A",
+    exact: true,
+  });
+  try {
+    await expect(removeRenamed).toBeVisible({ timeout: 4000 });
+  } catch {
+    // Selecting Server B can close the panel asynchronously; reopen it.
+    await openConnectionsPanel(page, phone);
+    await expect(removeRenamed).toBeVisible();
+  }
+  await removeRenamed.click();
   await expect(
     page.getByRole("region", { name: "Confirm provider removal" }),
   ).toBeVisible();
