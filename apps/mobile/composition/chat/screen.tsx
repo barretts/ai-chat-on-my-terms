@@ -858,15 +858,25 @@ export default function CompleteChatScreen() {
         if (active) setVoicePrefs(stored ?? DEFAULT_VOICE_PREFERENCES);
       })
       .catch(() => {});
-    void Promise.all([
-      runtime.voiceImports.list(),
-      runtime.identities.personas.list(),
-      runtime.connectionRepo.list(),
-    ])
-      .then(([imports, personas, connections]) => {
+    // R005: three INDEPENDENT loads. A broken optional recording store must
+    // not clear the Persona/cloud-voice selections (one shared Promise.all
+    // meant one rejection emptied all three lists).
+    void runtime.voiceImports
+      .list()
+      .then((imports) => {
+        if (active) setVoiceImports(imports);
+      })
+      .catch(() => {});
+    void runtime.identities.personas
+      .list()
+      .then((personas) => {
+        if (active) setVoicePersonas(toVoiceStudioPersonas(personas));
+      })
+      .catch(() => {});
+    void runtime.connectionRepo
+      .list()
+      .then((connections) => {
         if (!active) return;
-        setVoiceImports(imports);
-        setVoicePersonas(toVoiceStudioPersonas(personas));
         setVoiceConnections(
           connections
             .filter(

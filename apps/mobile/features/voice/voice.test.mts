@@ -23,8 +23,28 @@ function fakeDb() {
   const db = {
     execAsync: async () => undefined,
     getFirstAsync: async () => settings.row,
-    getAllAsync: async () =>
-      [...imports].sort((a, b) => (b.created_at as number) - (a.created_at as number)),
+    getAllAsync: async (sql: string) => {
+      // Emulate SQLite column resolution for the imports query: unknown
+      // columns in the SELECT throw exactly like a real database would.
+      if (!sql.includes("FROM voice_transcription_imports")) return [];
+      const selectList = sql.slice(
+        sql.indexOf("SELECT") + 6,
+        sql.indexOf("FROM"),
+      );
+      return [...imports]
+        .sort((a, b) => (b.created_at as number) - (a.created_at as number))
+        .map((row) => {
+          const projected: FakeRow = {};
+          for (const part of selectList.split(",")) {
+            const m = /^\s*(\w+)(?:\s+AS\s+(\w+))?\s*$/.exec(part);
+            if (!m) throw new Error(`fake getAllAsync: bad select part ${part}`);
+            const col = m[1]!;
+            if (!(col in row)) throw new Error(`no such column: ${col}`);
+            projected[m[2] ?? col] = row[col]!;
+          }
+          return projected;
+        });
+    },
     runAsync: async (sql: string, ...params: (string | number)[]) => {
       if (sql.startsWith("INSERT INTO voice_preferences"))
         settings.row = { singleton: 1, settings: String(params[0]) };
@@ -261,6 +281,10 @@ describe("transcription import store", () => {
     const listed = await store.list();
     expect(listed.map((item) => item.id)).toEqual(["newest01", "older01"]);
     expect(listed[0]?.name).toBe("second.mp3");
+    expect(listed.map((item) => item.audioUri)).toEqual([
+      "file:///doc/voice-transcriptions/newest01.m4a",
+      "file:///doc/voice-transcriptions/older01.m4a",
+    ]);
     await store.remove("newest01");
     expect((await store.list()).map((item) => item.id)).toEqual(["older01"]);
   });

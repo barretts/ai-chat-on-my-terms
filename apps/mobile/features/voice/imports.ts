@@ -42,7 +42,7 @@ export class SQLiteTranscriptionImportStore {
   async list(): Promise<ImportedTranscription[]> {
     await this.ensureSchema();
     const rows = await this.database.getAllAsync<ImportedTranscription>(
-      `SELECT id, name, audio_uri AS audioUri, transcript AS text,
+      `SELECT id, name, audio_path AS audioUri, transcript AS text,
               created_at AS createdAt
          FROM ${TABLE} ORDER BY created_at DESC`,
     );
