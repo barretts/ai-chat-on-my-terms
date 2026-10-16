@@ -100,6 +100,8 @@ test("phone shows and copies complete redacted HTTP and stream errors, then reco
     }),
   ).toBeVisible();
   await page.goto("/chat?panel=connections");
+  const add = page.getByRole("button", { name: "Add provider" });
+  if (await add.count()) await add.click();
   await button("Other").click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })

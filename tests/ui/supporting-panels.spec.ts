@@ -2,18 +2,41 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.use({ actionTimeout: 10_000 });
 
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
+
 async function openChat(page: Page) {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Welcome to LocalLab" }),
   ).toBeVisible();
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page.getByRole("button", { name: /^Choose dark theme/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
 }
 

@@ -286,9 +286,16 @@ test("OpenRouter preset discovers, selects and saves an exact model using fixtur
   await page
     .getByRole("button", { name: "Save and use provider", exact: true })
     .click();
-  await expect(
-    page.getByText(`OpenRouter - ${fixtureModel}`, { exact: true }),
-  ).toBeVisible();
+  if (testInfo.project.name === "phone") {
+    // Phone's app bar shows the provider label; the model is folded away.
+    await expect(
+      page.getByRole("button", { name: "Choose chat connection" }),
+    ).toContainText("OpenRouter");
+  } else {
+    await expect(
+      page.getByText(`OpenRouter - ${fixtureModel}`, { exact: true }),
+    ).toBeVisible();
+  }
   await expect(
     page.getByRole("heading", { name: "Your connections", exact: true }),
   ).toHaveCount(0);
@@ -326,9 +333,15 @@ test("OpenRouter preset discovers, selects and saves an exact model using fixtur
       .every((request) => request.authorization === `Bearer ${fixtureKey}`),
   ).toBe(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(
-    page.getByText(`OpenRouter - ${fixtureModel}`, { exact: true }),
-  ).toBeVisible();
+  if (testInfo.project.name === "phone") {
+    await expect(
+      page.getByRole("button", { name: "Choose chat connection" }),
+    ).toContainText("OpenRouter");
+  } else {
+    await expect(
+      page.getByText(`OpenRouter - ${fixtureModel}`, { exact: true }),
+    ).toBeVisible();
+  }
   await expect(page.getByTestId("assistant-response-text")).toContainText(
     "OpenRouter UI fixture response.",
   );

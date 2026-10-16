@@ -2,14 +2,37 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { mobileArchiveZip } from "../../apps/mobile/composition/chat/archives/zip";
 
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
+
 async function startChat(page: Page) {
   await page.goto("/");
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
 }
 
@@ -284,8 +307,20 @@ test("saved title and message search scopes, literal characters and exact older 
     fullPage: true,
   });
   // Select the intercepted fixture on this imported conversation, then return to its older source.
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
-  await page.getByRole("tab", { name: "compatible", exact: true }).click();
+  const phone = testInfo.project.name === "phone";
+  if (phone)
+    await page.getByRole("button", { name: "Choose chat connection" }).click();
+  else await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your connections", exact: true }),
+  ).toBeVisible();
+  const addFixture = page.getByRole("button", { name: "Add provider" });
+  if (await addFixture.count()) await addFixture.click();
+  const otherFixture = page.getByRole("button", {
+    name: "Other",
+    exact: true,
+  });
+  if (await otherFixture.count()) await otherFixture.click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill("Search follow fixture");
