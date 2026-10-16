@@ -35,6 +35,12 @@ export interface ProGate {
   isPro(userId: string): Promise<boolean>;
 }
 
+// Storage keys are scoped to the owning account so two users can use the
+// same displayed object ID without collision. Exported so tests can verify
+// stored ciphertext without duplicating the key format.
+export const ownedKey = (userId: string, id: string) =>
+  JSON.stringify([userId, id]);
+
 export function registerBackupRoutes(
   app: FastifyInstance,
   store: BackupObjectStore = memoryBackupStore(),
@@ -48,9 +54,6 @@ export function registerBackupRoutes(
     const session = await auth.findSession(createHash("sha256").update(token).digest("hex"));
     return session?.userId ?? null;
   };
-  // Existing unscoped objects are intentionally inaccessible: guessing an
-  // old object ID is not evidence that an account owns it.
-  const ownedKey = (userId: string, id: string) => JSON.stringify([userId, id]);
   app.addContentTypeParser(
     "application/octet-stream",
     (_request, payload, done) => {
