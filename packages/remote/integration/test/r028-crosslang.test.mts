@@ -92,7 +92,11 @@ test(
     for (const raw of marker.frames) {
       const frame = frameOf(raw);
       assert.equal(frame.routeId, wire.routeId, "every response frame rides the session route");
-      assert.deepEqual(frame.protocol, { major: 1, minor: 1 }, "Rust negotiates the phone's protocol");
+      // Protocol minor 1.2 since cb44ec5 (R007/CR001 random handshake nonces):
+      // PAIRING_PROTOCOL in service-contracts/pairing.ts is frozen at {1,2},
+      // pairing-vectors.json and r028-request-wire.json KATs carry minor 2, and
+      // the TS opener that consumes these frames below requires minor == 2.
+      assert.deepEqual(frame.protocol, { major: 1, minor: 2 }, "Rust negotiates the phone's protocol");
       assert.equal(frame.sequence, expectedSequence, "response sequences are monotonic from 0");
       expectedSequence += 1;
       seenRequestIds.add(frame.requestId);
