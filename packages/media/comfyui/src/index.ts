@@ -378,6 +378,16 @@ export class ComfyUiClient {
         "malformed",
         `ComfyUI /prompt returned no prompt_id: ${JSON.stringify(promptRecord.error ?? promptRecord.node_errors ?? {})}`,
       );
+    const nodeErrors = promptRecord.node_errors;
+    if (
+      nodeErrors &&
+      typeof nodeErrors === "object" &&
+      Object.keys(nodeErrors as Record<string, unknown>).length > 0
+    )
+      throw err(
+        "malformed",
+        `ComfyUI rejected the graph: ${JSON.stringify(nodeErrors)}`,
+      );
     const promptId = promptRecord.prompt_id;
     context.onPromptId?.(promptId);
     const outputs = await this.followPrompt(promptId, context);
