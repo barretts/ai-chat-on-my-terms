@@ -104,9 +104,10 @@ function makePairing() {
   const pairingSecret = new Uint8Array(Buffer.from(qr.pairingSecret, "base64url"));
   const mobileSalt = generateSessionSalt();
   const companionSalt = generateSessionSalt();
+  const entropy = { mobileEphemeral: generateSessionSalt(), companionEphemeral: generateSessionSalt() };
   const keys = (from: "mobile" | "companion", to: "mobile" | "companion") => ({
-    directionKey: deriveSessionKey(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId, from, to),
-    nonceKey: deriveNonceKey(pairingSecret, mobileSalt, companionSalt, qr.companionRouteId, from, to),
+    directionKey: deriveSessionKey(pairingSecret, mobileSalt, companionSalt, entropy, qr.companionRouteId, from, to),
+    nonceKey: deriveNonceKey(pairingSecret, mobileSalt, companionSalt, entropy, qr.companionRouteId, from, to),
   });
   return { qr, mobileSalt, companionSalt, m2c: keys("mobile", "companion"), c2m: keys("companion", "mobile") };
 }
