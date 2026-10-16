@@ -328,9 +328,16 @@ async function authHeaders(
     if (!value || /[\r\n]/.test(value)) throw new Error();
     return { authorization: `Bearer ${value}` };
   } catch (cause) {
+    // The secret store's own failure text can quote the very key it failed
+    // to resolve, and RunFailed events cross display, wire, and storage
+    // boundaries. At this boundary report the failure kind only; never the
+    // cause message, which this adapter cannot scrub against an unknown
+    // secret value.
+    const kind =
+      cause instanceof Error && cause.name ? cause.name : "unknown error";
     throw new OpenAIResponsesError(
       "unauthorized",
-      `The saved API key is unavailable for this endpoint.\n${errorDetails(cause)}`,
+      `The saved API key is unavailable for this endpoint.\nSecret store failure: ${kind}`,
       true,
     );
   }

@@ -194,8 +194,13 @@ export function createGgufInferencePort(
         }
 
         // Queued completions require parallel mode in llama.rn 0.12.4.
-        // One slot retains the full selected context for this foreground run.
-        await context.parallel.enable({ n_parallel: 1, n_batch: nBatch });
+        // One slot retains the full selected context for this foreground
+        // run; initLlama already reserved that slot via n_parallel: 1, so
+        // runtimes without a runtime enable/configure toggle are valid and
+        // must not be failed by an unconditional enable call.
+        if (typeof context.parallel.enable === "function") {
+          await context.parallel.enable({ n_parallel: 1, n_batch: nBatch });
+        }
         if (canceled || signal.aborted) {
           canceled = true;
           yield emit({
