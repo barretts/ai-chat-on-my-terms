@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MemoryJobStore } from "@locallab/jobs/memory-store";
 import {
   createHuggingFaceDescriptor,
   createHuggingFaceJob,
@@ -104,5 +105,49 @@ describe("model imports and lifecycle", () => {
     registry.update("owner/model", { downloaded: true });
     expect(registry.search("downloaded")).toHaveLength(1);
     expect(registry.search("loaded")).toHaveLength(0);
+  });
+  it("enqueues a Hugging Face job with a correctly typed entity revision (R012)", async () => {
+    const registry = new ModelLifecycleRegistry();
+    const descriptor = createHuggingFaceDescriptor({
+      repository: "owner/model",
+      revision: "main",
+      file: "model.gguf",
+    });
+    const revision = {
+      wallMs: 1_750_000_000_000,
+      counter: 0,
+      deviceId: "018f0b1a-7b3c-7abc-8def-123456789abc",
+    };
+    const jobs = new MemoryJobStore();
+    const state = await registry.enqueueHuggingFace(
+      jobs,
+      descriptor,
+      "download-1",
+      "2026-01-01T00:00:00.000Z",
+      "018f0b1a-7b3c-7abc-8def-123456789abd",
+      revision,
+    );
+    expect(state).toEqual({
+      modelId: "owner/model/model.gguf",
+      imported: false,
+      downloaded: false,
+      selected: false,
+      loaded: false,
+      source: "huggingface",
+      jobId: "018f0b1a-7b3c-7abc-8def-123456789abd",
+    });
+    expect((await jobs.get(state.jobId ?? ""))?.revision).toEqual(revision);
+    const partial = new MemoryJobStore();
+    await expect(
+      registry.enqueueHuggingFace(
+        partial,
+        descriptor,
+        "download-2",
+        "2026-01-01T00:00:00.000Z",
+        "018f0b1a-7b3c-7abc-8def-123456789abe",
+        { wallMs: -5, counter: 0, deviceId: "not-an-id" } as never,
+      ),
+    ).rejects.toThrow();
+    expect(await partial.listAll()).toHaveLength(0);
   });
 });

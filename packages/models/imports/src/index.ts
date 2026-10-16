@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { CreateJobInput, JobStore } from "@locallab/jobs";
-import { EntityIdSchema, RevisionSchema } from "@locallab/contracts/identity";
+import {
+  EntityIdSchema,
+  RevisionSchema,
+  type Revision,
+} from "@locallab/contracts/identity";
 
 export const ModelLifecycleSchema = z
   .object({
@@ -250,7 +254,7 @@ export class ModelLifecycleRegistry {
     idempotencyKey: string,
     now: string,
     id: string,
-    revision: string,
+    revision: Revision,
   ): Promise<ModelLifecycle> {
     const input = createHuggingFaceJob(descriptor, idempotencyKey);
     const result = await jobs.create(
