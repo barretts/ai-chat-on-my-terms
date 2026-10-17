@@ -121,7 +121,22 @@ test("phone autonomous web tools search, read, answer and cite", async ({
   await button("Continue without a model").click();
   await button("Open chat menu").click();
   await button("Connections").click();
-  await button("Other").click();
+  const add = page.getByRole("button", { name: "Add provider" });
+  const other = page.getByRole("button", { name: "Other", exact: true });
+  // The first "Add provider" tap can land while the Connections panel is
+  // still animating; re-tap until the editor with the preset row opens.
+  await expect
+    .poll(
+      async () => {
+        if (await other.isVisible().catch(() => false)) return true;
+        if (await add.isVisible().catch(() => false))
+          await add.click({ timeout: 2_000 }).catch(() => {});
+        return false;
+      },
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+  await other.click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill("Autonomous web fixture");
@@ -131,6 +146,41 @@ test("phone autonomous web tools search, read, answer and cite", async ({
   await button("Load endpoint models").click();
   await expect(page.getByText(/Found 1 models/)).toBeVisible();
   await button("Save and use provider").click();
+  // "Save and use provider" leaves the editor open on both platforms;
+  // return to the chat explicitly (web-research.spec.ts pattern).
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .waitFor({ state: "visible", timeout: 10000 })
+    .catch(() => {});
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (
+      await page
+        .getByRole("textbox", { name: "Message", exact: true })
+        .isVisible()
+        .catch(() => false)
+    )
+      break;
+    const back = page
+      .getByRole("button", {
+        name: /^(Return to (conversation|chat)|Back to chat)$/,
+      })
+      .first();
+    if (await back.isVisible().catch(() => false)) {
+      await back.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    const rail = page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .first();
+    if (await rail.isVisible().catch(() => false)) {
+      await rail.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    break;
+  }
+  await expect(
+    page.getByRole("textbox", { name: "Message", exact: true }),
+  ).toBeVisible();
   const message = page.getByRole("textbox", { name: "Message", exact: true });
   const send = page.getByTestId("advanced-composer-send");
 

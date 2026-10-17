@@ -28,6 +28,9 @@ async function setup(page: Page, testInfo: TestInfo, nativeTools: boolean) {
     const localOrigin = new URL(testInfo.project.use.baseURL as string).origin;
     if (["data:", "blob:"].includes(url.protocol) || url.origin === localOrigin)
       return route.continue();
+    // The machine-seeded default provider (default-chat-connection.ts) is probed
+    // by the app itself; that first-party local traffic is not third-party content.
+    if (url.origin === "http://127.0.0.1:1234") return route.continue();
     if (url.origin !== origin) {
       blockedOrigins.push(url.origin);
       return route.abort();
@@ -119,7 +122,34 @@ async function setup(page: Page, testInfo: TestInfo, nativeTools: boolean) {
   await button(page, "Continue without a model").click();
   await button(page, "Open chat menu").click();
   await button(page, "Connections").click();
-  await button(page, "Other").click();
+  const add = page.getByRole("button", { name: "Add provider" });
+  const editor = page.getByRole("region", {
+    name: "Provider connection editor",
+  });
+  // The panel's provider-list reload can close a freshly opened editor; retry
+  // loop: the panel's provider-list reload can close a freshly opened editor.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await add.first().click();
+    if (
+      await editor
+        .waitFor({ state: "visible", timeout: 2500 })
+        .then(() => true)
+        .catch(() => false)
+    )
+      break;
+  }
+  await expect(editor).toBeVisible();
+  const other = page.getByRole("button", { name: "Other", exact: true });
+  if (await other.count()) await other.click();
+  const providerName = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
+  if (!(await providerName.count())) {
+    const fold = page.getByRole("button", { name: "Connection settings" });
+    if (await fold.count()) await fold.click();
+  }
+  await providerName.waitFor({ state: "visible" });
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill(nativeTools ? "Native file fixture" : "Text file fixture");

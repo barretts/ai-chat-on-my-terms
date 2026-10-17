@@ -67,6 +67,9 @@ test("phone follows natural web requests, reuses a follow-up topic, reads links 
         },
       });
     }
+    // The machine-seeded default provider (default-chat-connection.ts) is probed
+    // by the app itself; that first-party local traffic is not third-party content.
+    if (url.origin === "http://127.0.0.1:1234") return route.continue();
     if (url.origin !== new URL(endpoint).origin) {
       blockedOrigins.push(url.origin);
       return route.abort();
@@ -97,6 +100,10 @@ test("phone follows natural web requests, reuses a follow-up topic, reads links 
   await button("Continue without a model").click();
   await button("Open chat menu").click();
   await button("Connections").click();
+  const add = page.getByRole("button", { name: "Add provider" });
+  await expect(add.or(button("Other")).first()).toBeVisible();
+  if (await add.isVisible()) await add.click();
+  await expect(button("Other")).toBeVisible();
   await button("Other").click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
@@ -111,13 +118,44 @@ test("phone follows natural web requests, reuses a follow-up topic, reads links 
   const send = page.getByTestId("advanced-composer-send");
   const search = page.getByRole("switch", { name: "Web search", exact: true });
   const fetchPages = page.getByRole("switch", {
-    name: "Read linked pages",
+    name: /^(Read linked pages|Fetch pages)$/,
     exact: true,
   });
-  await button("Show message tools").click();
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (await message.isVisible().catch(() => false)) break;
+    const back = page
+      .getByRole("button", {
+        name: /^(Return to (conversation|chat)|Back to chat)$/,
+      })
+      .first();
+    if (await back.isVisible().catch(() => false)) {
+      await back.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    const rail = page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .first();
+    if (await rail.isVisible().catch(() => false)) {
+      await rail.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    break;
+  }
+  const openTools = async () => {
+    const open = page.getByRole("button", { name: "Show message tools" });
+    if (await open.count()) await open.click();
+    await expect(search.or(fetchPages).first()).toBeVisible();
+  };
+  const closeTools = async () => {
+    const close = page
+      .getByRole("button", { name: /^(Close|Hide) message tools$/ })
+      .first();
+    if (await close.count()) await close.click();
+  };
+  await openTools();
   await expect(search).not.toBeChecked();
   await expect(fetchPages).not.toBeChecked();
-  await button("Close message tools").click();
+  await closeTools();
 
   const sendAndComplete = async (text: string, count: number) => {
     await message.fill(text);
@@ -166,18 +204,18 @@ test("phone follows natural web requests, reuses a follow-up topic, reads links 
   expect(webRequests[4].type).toBe("fetch");
 
   // A deliberate offline request applies even when the manual switch is on.
-  await button("Show message tools").click();
+  await openTools();
   await expect(search).not.toBeChecked();
   await search.click();
-  await button("Close message tools").click();
+  await closeTools();
   await sendAndComplete(
     "Answer offline. Explain web search without using the internet.",
     4,
   );
   expect(webRequests).toHaveLength(5);
-  await button("Show message tools").click();
+  await openTools();
   await expect(search).toBeChecked();
-  await button("Close message tools").click();
+  await closeTools();
 
   failSearch = true;
   const preservedDraft = "Find refreshed Expo documentation (check web)";

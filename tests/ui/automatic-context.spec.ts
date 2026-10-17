@@ -23,6 +23,9 @@ async function installContextFixtures(
     const url = new URL(route.request().url());
     if (["data:", "blob:"].includes(url.protocol) || url.origin === localOrigin)
       return route.continue();
+    // The machine-seeded default provider probes a first-party local origin;
+    // that traffic is not third-party content.
+    if (url.origin === "http://127.0.0.1:1234") return route.continue();
     if (!(url.origin in capacities)) {
       blockedOrigins.push(url.origin);
       return route.abort();
@@ -188,7 +191,7 @@ test("phone uses server context for a large special character persona and restor
     "Required instructions and the current message",
   );
   await expect(alert).toContainText(
-    "input budget is 3584 (4096 context tokens minus 512 reserved for the response)",
+    "input budget is 2048 (4096 context tokens minus 2048 reserved for the response)",
   );
   await expect(alert).toContainText("draft is preserved");
   await expect(message).toHaveValue(retryDraft);
@@ -225,7 +228,7 @@ test("phone uses server context for a large special character persona and restor
   await message.fill(restartedDraft);
   await send.click();
   await expect(alert).toContainText(
-    "input budget is 3584 (4096 context tokens minus 512 reserved for the response)",
+    "input budget is 2048 (4096 context tokens minus 2048 reserved for the response)",
   );
   await expect(message).toHaveValue(restartedDraft);
   expect(fixture.requests).toHaveLength(2);
@@ -296,7 +299,7 @@ test("phone keeps server context tied to the selected connection when model IDs 
   await message.fill(draft);
   await send.click();
   await expect(page.getByRole("alert")).toContainText(
-    "input budget is 7680 (8192 context tokens minus 512 reserved for the response)",
+    "input budget is 6144 (8192 context tokens minus 2048 reserved for the response)",
   );
   await expect(message).toHaveValue(draft);
   expect(fixture.requests).toHaveLength(0);

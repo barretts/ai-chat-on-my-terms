@@ -37,10 +37,50 @@ async function startChat(page: Page) {
 }
 
 async function openSearch(page: Page) {
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Search conversations", exact: true }),
-  ).toBeVisible();
+  const heading = page.getByRole("heading", {
+    name: "Search conversations",
+    exact: true,
+  });
+  // After a reload the search panel is restored from the URL but hydrates
+  // slowly (header and chat chrome are unmounted during that window); give
+  // the restoration a chance before navigating.
+  const restored = await heading
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!restored) {
+    const back = page.getByRole("button", {
+      name: /^(Return to conversation|Back to (conversation|chat))$/,
+    });
+    if (await back.first().isVisible().catch(() => false))
+      await back.first().click({ timeout: 3000 }).catch(() => {});
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      // The phone drawer animates in; wait for the tool toggle before
+      // deciding whether "Search chats" needs the More tools expansion.
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      await expect
+        .poll(async () => more.first().isVisible().catch(() => false), {
+          timeout: 5_000,
+        })
+        .toBeTruthy()
+        .catch(() => false);
+      if (await more.first().isVisible().catch(() => false))
+        await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Search|Search chats)$/ })
+      .first()
+      .click();
+  }
+  await expect(heading).toBeVisible();
   return page.getByLabel("Search saved conversations", { exact: true });
 }
 
@@ -172,7 +212,29 @@ test("saved title and message search scopes, literal characters and exact older 
     ],
   };
   await startChat(page);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const importExport = page.getByRole("button", {
+    name: "Import LM Studio export",
+    exact: true,
+  });
+  if (!(await importExport.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(importExport).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
   await page
     .getByRole("button", { name: "Import LM Studio export", exact: true })
@@ -184,13 +246,35 @@ test("saved title and message search scopes, literal characters and exact older 
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(archive)),
   });
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
   await expect(
     page.getByRole("textbox", { name: "Message", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Library", exact: true }).click();
-  await page
-    .getByRole("button", { name: `Open ${alphaTitle}`, exact: true })
-    .click();
+  const openAlpha = page.getByRole("button", {
+    name: `Open ${alphaTitle}`,
+    exact: true,
+  });
+  if (!(await openAlpha.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page.getByRole("button", { name: "Library", exact: true }).click();
+  }
+  await openAlpha.click();
 
   await openSearch(page);
   await expect(
@@ -199,9 +283,11 @@ test("saved title and message search scopes, literal characters and exact older 
       { exact: true },
     ),
   ).toBeVisible();
+  // The Semantic choice now renders only when a semantic port is wired;
+  // this build wires none, so the control is absent rather than disabled.
   await expect(
     page.getByRole("button", { name: "Semantic", exact: true }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await searchFor(page, "sharedtoken");
   const alphaHit = page.getByRole("button", {
     name: `Open ${alphaTitle}, user message`,
@@ -327,6 +413,11 @@ test("saved title and message search scopes, literal characters and exact older 
   await page
     .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
     .fill("https://search-follow-fixture.test/v1");
+  const customModelId = page.getByRole("button", {
+    name: "Enter custom model ID",
+    exact: true,
+  });
+  if (await customModelId.count()) await customModelId.click();
   await page
     .getByRole("textbox", { name: "Exact chat model ID", exact: true })
     .fill("search-follow");
@@ -422,7 +513,29 @@ test("search excludes archived unselected variants, superseded base text and pri
     },
   ]);
   await startChat(page);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const importZip = page.getByRole("button", {
+    name: "Import ZIP archive",
+    exact: true,
+  });
+  if (!(await importZip.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(importZip).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
   await page
     .getByRole("button", { name: "Import ZIP archive", exact: true })
@@ -434,6 +547,32 @@ test("search excludes archived unselected variants, superseded base text and pri
     mimeType: "application/zip",
     buffer: Buffer.from(bytes),
   });
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
+  const openVariantArchive = page.getByRole("button", {
+    name: "Open Variant archive",
+    exact: true,
+  });
+  if (!(await openVariantArchive.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page.getByRole("button", { name: "Library", exact: true }).click();
+  }
+  await openVariantArchive.click();
   await expect(page.getByTestId("assistant-response-text")).toContainText(
     currentText,
   );
@@ -485,7 +624,34 @@ test("search excludes archived unselected variants, superseded base text and pri
     path: testInfo.outputPath("search-selected-variant-durable.png"),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const exportZip = page.getByRole("button", {
+    name: "Export all chats as ZIP",
+    exact: true,
+  });
+  if (!(await exportZip.isVisible().catch(() => false))) {
+    const back = page.getByRole("button", {
+      name: /^(Return to conversation|Back to (conversation|chat))$/,
+    });
+    if (await back.first().isVisible().catch(() => false))
+      await back.first().click();
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(exportZip).toBeVisible();
   const pendingDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Export all chats as ZIP", exact: true })

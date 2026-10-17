@@ -32,9 +32,9 @@ async function openSettings(page: Page, phone: boolean) {
     await page.getByRole("button", { name: "Settings", exact: true }).click();
   }
   await expect(
-    phone
-      ? page.getByRole("heading", { name: "Settings", exact: true })
-      : page.getByRole("heading", { name: "Chat and model settings" }),
+    page
+      .getByRole("heading", { name: /^(Chat and model settings|Settings)$/ })
+      .first(),
   ).toBeVisible();
 }
 
@@ -266,17 +266,59 @@ test("beginner setup opens a simpler chat and sends a durable test response", as
   // Route the chat through the local Responses-API fixture provider instead
   // of the seeded default connection (kind "openai" speaks the Responses API).
   if (phone) {
-    await page.getByRole("button", { name: "Choose chat connection" }).click();
+    const connect = page.getByRole("button", {
+      name: "Connect a model",
+      exact: true,
+    });
+    if (await connect.count()) await connect.click();
+    else if (
+      await page
+        .getByRole("button", { name: "Choose chat connection" })
+        .count()
+    )
+      await page.getByRole("button", { name: "Choose chat connection" }).click();
+    else {
+      await page.getByRole("button", { name: "Open chat menu" }).click();
+      await page
+        .getByRole("button", { name: /^(Providers|Connections)$/ })
+        .first()
+        .click();
+    }
   } else {
-    await page.getByRole("button", { name: "Providers", exact: true }).click();
+    await page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .first()
+      .click();
   }
   await expect(
     page.getByRole("heading", { name: "Your connections" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Add provider" }).click();
-  if (phone) await page.getByRole("button", { name: "Other", exact: true }).click();
-  await page.getByRole("button", { name: "Provider type", exact: true }).click();
-  await page.getByRole("button", { name: "Choose OpenAI" }).click();
+  const addProvider = page.getByRole("button", { name: "Add provider" });
+  const editorRegion = page.getByRole("region", {
+    name: "Provider connection editor",
+  });
+  // The panel's provider-list reload can close a freshly opened editor; retry.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await addProvider.first().click();
+    if (
+      await editorRegion
+        .waitFor({ state: "visible", timeout: 2500 })
+        .then(() => true)
+        .catch(() => false)
+    )
+      break;
+  }
+  if (!(await page.getByRole("textbox", { name: "Provider name" }).count())) {
+    const fold = page.getByRole("button", { name: "Connection settings" });
+    if (await fold.count()) await fold.click();
+  }
+  const other = page.getByRole("button", { name: "Other", exact: true });
+  if (await other.count()) await other.click();
+  const providerType = page.getByRole("button", { name: "Provider type" });
+  if (await providerType.count()) {
+    await providerType.click();
+    await page.getByRole("button", { name: "Choose OpenAI" }).click();
+  }
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill("UI fixture");
@@ -291,6 +333,36 @@ test("beginner setup opens a simpler chat and sends a durable test response", as
     .getByRole("textbox", { name: "Exact chat model ID", exact: true })
     .fill("ui-fixture");
   await page.getByRole("button", { name: "Save and use provider" }).click();
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .waitFor({ state: "visible", timeout: 10000 })
+    .catch(() => {});
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (
+      await page
+        .getByRole("textbox", { name: "Message", exact: true })
+        .isVisible()
+        .catch(() => false)
+    )
+      break;
+    const backAfterSave = page
+      .getByRole("button", {
+        name: /^(Return to (conversation|chat)|Back to chat)$/,
+      })
+      .first();
+    if (await backAfterSave.isVisible().catch(() => false)) {
+      await backAfterSave.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    const rail = page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .first();
+    if (await rail.isVisible().catch(() => false)) {
+      await rail.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    break;
+  }
   await expect(
     page.getByRole("textbox", { name: "Message", exact: true }),
   ).toBeVisible();

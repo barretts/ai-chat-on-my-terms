@@ -1,4 +1,24 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
 
 test("hydrated transcript follows the latest reply and preserves manual reading through layout changes", async ({
   page,
@@ -40,15 +60,40 @@ test("hydrated transcript follows the latest reply and preserves manual reading 
     ],
   };
   await page.goto("/");
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page.getByRole("button", { name: /^Choose dark theme/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const importExport = page.getByRole("button", {
+    name: "Import LM Studio export",
+    exact: true,
+  });
+  if (!(await importExport.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(importExport).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
   await page
     .getByRole("button", { name: "Import LM Studio export", exact: true })
@@ -60,6 +105,25 @@ test("hydrated transcript follows the latest reply and preserves manual reading 
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(archive)),
   });
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
+  const openFixture = page.getByRole("button", {
+    name: "Open Transcript scroll fixture",
+    exact: true,
+  });
+  if (!(await openFixture.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) await menu.click();
+    await page.getByRole("button", { name: "Library", exact: true }).click();
+  }
+  await openFixture.click();
   const primary = page.getByTestId("assistant-response-text").last();
   await expect(primary).toContainText(latestText);
   await expect(primary).toBeInViewport({ ratio: 0.9 });

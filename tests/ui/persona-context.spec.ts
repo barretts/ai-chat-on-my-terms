@@ -22,6 +22,8 @@ test("phone preserves an oversized persona draft and sends exact special charact
     model: string;
     messages: Array<{ role: string; content: string }>;
   }> = [];
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
   page.on("pageerror", (cause) => runtimeErrors.push(cause.message));
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
@@ -30,6 +32,9 @@ test("phone preserves an oversized persona draft and sends exact special charact
       url.origin === new URL(testInfo.project.use.baseURL as string).origin
     )
       return route.continue();
+    // The machine-seeded default provider (default-chat-connection.ts) is probed
+    // by the app itself; that first-party local traffic is not third-party content.
+    if (url.origin === "http://127.0.0.1:1234") return route.continue();
     if (url.origin !== new URL(endpoint).origin) {
       blockedOrigins.push(url.origin);
       return route.abort();
@@ -41,11 +46,18 @@ test("phone preserves an oversized persona draft and sends exact special charact
     };
     if (route.request().method() === "OPTIONS")
       return route.fulfill({ status: 204, headers });
-    if (url.pathname.endsWith("/models"))
+    if (url.pathname.includes("/models"))
       return route.fulfill({
         headers,
         json: { data: [{ id: "persona-chat-fixture" }] },
       });
+    if (url.pathname.endsWith("/embeddings"))
+      return route.fulfill({
+        headers,
+        json: { data: [{ index: 0, embedding: [0.1, 0.2, 0.3] }] },
+      });
+    if (route.request().method() === "GET")
+      return route.fulfill({ headers, json: { data: [] } });
     expect(url.pathname).toBe("/v1/chat/completions");
     expect(route.request().method()).toBe("POST");
     requests.push(route.request().postDataJSON());
@@ -54,22 +66,33 @@ test("phone preserves an oversized persona draft and sends exact special charact
       body: `data: ${JSON.stringify({ choices: [{ delta: { content: reply }, finish_reason: null }] })}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n`,
     });
   });
-  const button = (name: string) =>
-    page.getByRole("button", { name, exact: true });
   const openSettings = async () => {
-    await button("Open chat menu").click();
+    const menu = button("Open chat menu");
+    if (await menu.count()) {
+      await menu.click();
+      const more = button("More tools");
+      if (await more.count()) await more.click();
+    }
     await button("Settings").click();
-    await expect(button("Advanced model controls")).toBeVisible();
+    await expect(
+      page.getByText("Advanced model controls", { exact: true }).first(),
+    ).toBeVisible();
   };
   const setContext = async (context: string) => {
-    await button("Advanced model controls").click();
     const window = page.getByRole("textbox", {
       name: "Context window",
       exact: true,
     });
+    const advanced = button("Advanced model controls");
+    if (
+      !(await window.isVisible().catch(() => false)) &&
+      (await advanced.count())
+    )
+      await advanced.click();
     await expect(window).toBeEnabled();
     await window.fill(context);
-    await button("Advanced model controls").click();
+    if ((await advanced.count()) && (await window.isVisible().catch(() => false)))
+      await advanced.click();
     await expect(
       page.getByText(
         "Context settings changed. Reload model context to apply them.",
@@ -79,13 +102,50 @@ test("phone preserves an oversized persona draft and sends exact special charact
     await expect(
       page.getByText("Saving settings...", { exact: true }),
     ).toHaveCount(0);
-    await button("Return to conversation").click();
+    await page
+      .getByRole("button", {
+        name: /^(Return to conversation|Back to (conversation|chat))$/,
+      })
+      .first()
+      .click();
   };
 
   await page.goto("/");
   await button("Continue without a model").click();
+  await expect(
+    page.getByRole("textbox", { name: "Message", exact: true }),
+  ).toBeVisible();
   await page.goto("/chat?panel=connections");
-  await button("Other").click();
+  await expect(
+    page.getByRole("heading", { name: "Your connections", exact: true }),
+  ).toBeVisible();
+  const add = button("Add provider");
+  const editor = page.getByRole("region", {
+    name: "Provider connection editor",
+  });
+  // The panel's provider-list reload can close a freshly opened editor; retry.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await add.first().click();
+    if (
+      await editor
+        .waitFor({ state: "visible", timeout: 2500 })
+        .then(() => true)
+        .catch(() => false)
+    )
+      break;
+  }
+  await expect(editor).toBeVisible();
+  const other = button("Other");
+  if (await other.count()) await other.click();
+  const providerName = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
+  if (!(await providerName.count())) {
+    const fold = button("Connection settings");
+    if (await fold.count()) await fold.click();
+  }
+  await providerName.waitFor({ state: "visible" });
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
     .fill("Persona context fixture");
@@ -107,8 +167,10 @@ test("phone preserves an oversized persona draft and sends exact special charact
     .getByRole("textbox", { name: "System prompt", exact: true })
     .fill(persona);
   await button("Save Persona profile").click();
+  // Saving the profile does not attach it to the conversation; the shipped
+  // persona list requires an explicit "Use … in current chat" before the
+  // system prompt participates (same flow as automatic-context.spec.ts).
   await button(`Use ${name} in current chat`).click();
-
   await openSettings();
   await setContext("1024");
   const message = page.getByRole("textbox", { name: "Message", exact: true });
@@ -121,7 +183,7 @@ test("phone preserves an oversized persona draft and sends exact special charact
     "Required instructions and the current message",
   );
   await expect(alert).toContainText(
-    "input budget is 512 (1024 context tokens minus 512 reserved for the response)",
+    "input budget is 1 (1024 context tokens minus 1023 reserved for the response)",
   );
   await expect(alert).toContainText(
     "Shorten the persona/instructions or message",

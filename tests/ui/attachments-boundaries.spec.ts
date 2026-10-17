@@ -6,14 +6,37 @@ const decoder = new TextDecoder();
 const shortenedNotice =
   "Attachment text was shortened to fit this message. Original files remain saved.";
 
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
+
 async function startChat(page: Page) {
   await page.goto("/");
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
 }
 
@@ -33,21 +56,97 @@ async function fixtureProvider(page: Page) {
       });
     },
   );
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
-  await page.getByRole("tab", { name: "compatible", exact: true }).click();
-  await page
-    .getByRole("textbox", { name: "Provider name", exact: true })
-    .fill("Attachment boundary fixture");
+  const heading = page.getByRole("heading", {
+    name: "Your connections",
+    exact: true,
+  });
+  const rail = page.getByRole("button", { name: "Providers", exact: true });
+  const appbar = page.getByRole("button", {
+    name: "Choose chat connection",
+  });
+  if (await appbar.count()) await appbar.click();
+  else await rail.first().click();
+  await heading
+    .waitFor({ state: "visible", timeout: 8000 })
+    .catch(() => {});
+  const add = page.getByRole("button", { name: "Add provider" });
+  const editor = page.getByRole("region", {
+    name: "Provider connection editor",
+  });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (await editor.isVisible().catch(() => false)) break;
+    if (await add.count()) await add.first().click().catch(() => {});
+    if (
+      await editor
+        .waitFor({ state: "visible", timeout: 2500 })
+        .then(() => true)
+        .catch(() => false)
+    )
+      break;
+  }
+  const other = page.getByRole("button", {
+    name: "Other",
+    exact: true,
+  });
+  if (await other.count()) await other.click();
+  const name = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
+  if (!(await name.count()))
+    await page.getByRole("button", { name: "Connection settings" }).click();
+  await name.fill("Attachment boundary fixture");
   await page
     .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
     .fill("https://attachment-boundary-fixture.test/v1");
+  await page.getByRole("button", { name: "Enter custom model ID" }).click();
   await page
     .getByRole("textbox", { name: "Exact chat model ID", exact: true })
     .fill("attachment-boundary");
-  await page
+  const save = page
     .getByRole("button", { name: "Save and use provider", exact: true })
-    .click();
+    .first();
+  await save.click();
+  const composerBox = page.getByRole("textbox", {
+    name: "Message",
+    exact: true,
+  });
+  await composerBox
+    .waitFor({ state: "visible", timeout: 10000 })
+    .catch(() => {});
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (await composerBox.isVisible().catch(() => false)) break;
+    const back = page
+      .getByRole("button", {
+        name: /^(Return to (conversation|chat)|Back to chat)$/,
+      })
+      .first();
+    if (await back.isVisible().catch(() => false)) {
+      await back.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    const closeRail = page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .first();
+    if (await closeRail.isVisible().catch(() => false)) {
+      await closeRail.click({ timeout: 3000 }).catch(() => {});
+      continue;
+    }
+    break;
+  }
+  await expect(composerBox).toBeVisible();
   return requests;
+}
+
+async function closeMessageTools(page: Page) {
+  // Phone opens Attach through a modal tools sheet whose backdrop covers
+  // the whole page until closed; desktop has no sheet.
+  const closeTools = page
+    .getByRole("button", {
+      name: /^(Close|Hide) message tools$/,
+    })
+    .first();
+  if (await closeTools.isVisible().catch(() => false)) await closeTools.click();
 }
 
 async function choose(
@@ -57,9 +156,26 @@ async function choose(
   mimeType: string,
   bytes: Buffer,
 ) {
-  const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: button, exact: true }).click();
-  await (await chooser).setFiles({ name, mimeType, buffer: bytes });
+  const attachTools = page.getByRole("button", {
+    name: "Show message tools",
+    exact: true,
+  });
+  const target = page.getByRole("button", { name: button, exact: true });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (await attachTools.count()) await attachTools.click();
+    const chooser = page
+      .waitForEvent("filechooser", { timeout: 5000 })
+      .catch(() => null);
+    await target.click();
+    const picked = await chooser;
+    if (picked) {
+      await picked.setFiles({ name, mimeType, buffer: bytes });
+      await closeMessageTools(page);
+      return;
+    }
+    await page.waitForTimeout(750);
+  }
+  throw new Error(`Clicking "${button}" never opened a file chooser`);
 }
 
 async function download(page: Page, button: string, path: string) {
@@ -72,7 +188,22 @@ async function download(page: Page, button: string, path: string) {
 }
 
 async function archiveSnapshot(page: Page, path: string) {
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const exportZip = page.getByRole("button", {
+    name: "Export all chats as ZIP",
+    exact: true,
+  });
+  if (!(await exportZip.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) await menu.click();
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(exportZip).toBeVisible();
   const entries = await mobileArchiveZip.decode(
     await download(page, "Export all chats as ZIP", path),
   );
@@ -81,7 +212,12 @@ async function archiveSnapshot(page: Page, path: string) {
       entries.find((entry) => entry.path === "manifest.json")!.bytes,
     ),
   );
-  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
   return { entries, manifest };
 }
 
@@ -102,6 +238,11 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
     "Attachment boundary draft stays unchanged through cancellation.";
   const message = page.getByRole("textbox", { name: "Message", exact: true });
   await message.fill(draft);
+  const messageTools = page.getByRole("button", {
+    name: "Show message tools",
+    exact: true,
+  });
+  if (await messageTools.count()) await messageTools.click();
   const pendingChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Attach", exact: true }).click();
   const chooser = await pendingChooser;
@@ -110,6 +251,7 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
     .element()
     .evaluate((input) => input.dispatchEvent(new Event("cancel")));
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  await closeMessageTools(page);
   await expect(message).toHaveValue(draft);
   const canceled = await archiveSnapshot(
     page,
@@ -179,18 +321,65 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
     }),
   ).toBeVisible();
   await expect(message).toHaveValue(draft);
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  if (
+    !(await page
+      .getByRole("tab", { name: "Global", exact: true })
+      .isVisible()
+      .catch(() => false))
+  ) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) await menu.click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+  }
+  if (
+    !(await page
+      .getByRole("tab", { name: "Global", exact: true })
+      .isVisible()
+      .catch(() => false))
+  ) {
+    // Phone keeps the scope tabs inside the collapsed "Settings scope"
+    // section; desktop reaches them directly.
+    const scopeSection = page.getByRole("button", {
+      name: "Settings scope",
+      exact: true,
+    });
+    if (await scopeSection.count()) await scopeSection.click();
+  }
   await page.getByRole("tab", { name: "Global", exact: true }).click();
   const context = page.getByRole("textbox", {
     name: "Context window",
     exact: true,
   });
+  const advanced = page.getByRole("button", {
+    name: "Advanced model controls",
+    exact: true,
+  });
+  if (
+    (await advanced.count()) &&
+    !(await context.isVisible().catch(() => false))
+  )
+    await advanced.click();
   await context.fill("32768");
   await context.press("Tab");
   await expect(
     page.getByText("Saving settings...", { exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const backSettings = page.getByRole("button", {
+    name: /^(Return to conversation|Back to (conversation|chat))$/,
+  });
+  if (await backSettings.first().isVisible().catch(() => false))
+    await backSettings.first().click();
+  else {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) await menu.click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+  }
   await page.getByTestId("advanced-composer-send").click();
   await expect(
     page.getByTestId("assistant-response-text").last(),
@@ -241,8 +430,12 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
   ).toBeInViewport({ ratio: 0.9 });
   await expect(page.getByText(shortenedNotice, { exact: true })).toHaveCount(0);
   await page.reload();
+  // After reload the app restores the existing chat, whose app-bar heading
+  // is the conversation title (not "LocalLab"); the new-chat header button
+  // is the stable shipped anchor on both platforms (the connection picker
+  // only exists in the phone header).
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("button", { name: /^(New chat|Start a new chat)$/ }).first(),
   ).toBeVisible();
   await expect(
     page.getByTestId("assistant-response-text").last(),
@@ -277,7 +470,10 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
     page.getByTestId("assistant-response-text").last(),
   ).toBeInViewport({ ratio: 0.9 });
   await expect(page.getByText(shortenedNotice, { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New chat", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^(New chat|Start a new chat)$/ })
+    .first()
+    .click();
   await expect(page.getByText(shortenedNotice, { exact: true })).toHaveCount(0);
   expect(requests).toHaveLength(3);
   expect(errors).toEqual([]);
@@ -361,7 +557,29 @@ test("mixed user and assistant fenced code exports complete real TXT and PDF ras
     ).join("\n") +
     "\n```\nFINAL_ASSISTANT_END";
   await startChat(page);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const importExport = page.getByRole("button", {
+    name: "Import LM Studio export",
+    exact: true,
+  });
+  if (!(await importExport.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(importExport).toBeVisible();
   await choose(
     page,
     "Import LM Studio export",
@@ -383,10 +601,51 @@ test("mixed user and assistant fenced code exports complete real TXT and PDF ras
       }),
     ),
   );
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
+  const openMixed = page.getByRole("button", {
+    name: "Open Mixed fenced code export",
+    exact: true,
+  });
+  if (!(await openMixed.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) await menu.click();
+    await page.getByRole("button", { name: "Library", exact: true }).click();
+  }
+  await openMixed.click();
   await expect(
     page.getByTestId("assistant-response-text").last(),
   ).toContainText("FINAL_ASSISTANT_END");
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  const exportTxt = page.getByRole("button", {
+    name: "Export chat as TXT",
+    exact: true,
+  });
+  if (!(await exportTxt.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", {
+      name: "Open chat menu",
+      exact: true,
+    });
+    if (await menu.count()) {
+      await menu.click();
+      const more = page.getByRole("button", {
+        name: "More tools",
+        exact: true,
+      });
+      if (await more.count()) await more.click();
+    }
+    await page
+      .getByRole("button", { name: /^(Archives|Import & export)$/ })
+      .first()
+      .click();
+  }
+  await expect(exportTxt).toBeVisible();
   const txt = await download(
     page,
     "Export chat as TXT",

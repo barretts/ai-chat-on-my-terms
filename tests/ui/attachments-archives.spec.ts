@@ -3,6 +3,28 @@ import { readFile } from "node:fs/promises";
 import { mobileArchiveZip } from "../../apps/mobile/composition/chat/archives/zip";
 
 const decoder = new TextDecoder();
+
+// Phone exposes Archives inside the chat menu (drawer, behind "More
+// tools"); desktop keeps the rail button visible.
+async function openArchives(page: Page) {
+  const item = page
+    .getByRole("button", { name: /^(Archives|Import & export)$/ })
+    .first();
+  if (await item.isVisible().catch(() => false)) return item.click();
+  const menu = page.getByRole("button", {
+    name: "Open chat menu",
+    exact: true,
+  });
+  if (await menu.count()) {
+    await menu.click();
+    const more = page.getByRole("button", {
+      name: "More tools",
+      exact: true,
+    });
+    if (await more.count()) await more.click();
+  }
+  await item.click();
+}
 const apiBase = process.env.LOCALLAB_LIVE_API_BASE;
 const model = process.env.LOCALLAB_LIVE_MODEL ?? "local-coder";
 const attachmentText =
@@ -28,14 +50,41 @@ const lmStudioFile = {
   ),
 };
 
+async function closeMessageTools(page: Page) {
+  // Phone opens Attach through a modal tools sheet whose backdrop covers
+  // the whole page until closed; desktop has no sheet.
+  const closeTools = page
+    .getByRole("button", {
+      name: /^(Close|Hide) message tools$/,
+    })
+    .first();
+  if (await closeTools.isVisible().catch(() => false)) await closeTools.click();
+}
+
 async function choose(
   page: Page,
   button: string,
   file: { name: string; mimeType: string; buffer: Buffer },
 ) {
-  const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: button, exact: true }).click();
-  await (await chooser).setFiles(file);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const attachTools = page.getByRole("button", {
+      name: "Show message tools",
+      exact: true,
+    });
+    if (await attachTools.count()) await attachTools.click();
+    const chooser = page
+      .waitForEvent("filechooser", { timeout: 5000 })
+      .catch(() => null);
+    await page.getByRole("button", { name: button, exact: true }).click();
+    const picked = await chooser;
+    if (picked) {
+      await picked.setFiles(file);
+      await closeMessageTools(page);
+      return;
+    }
+    await page.waitForTimeout(750);
+  }
+  throw new Error(`Clicking "${button}" never opened a file chooser`);
 }
 
 async function download(
@@ -51,15 +100,38 @@ async function download(
   return readFile(path);
 }
 
+async function expandSetupPreferences(page: Page) {
+  const controls = page.getByRole("button", {
+    name: /^Choose power user setup/,
+  });
+  if (await controls.count()) return;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const disclosure = page.getByRole("button", {
+      name: "Show setup preferences",
+    });
+    if (await disclosure.count()) await disclosure.click();
+    try {
+      await controls.waitFor({ state: "visible", timeout: 3000 });
+      return;
+    } catch {
+      // The disclosure can re-render while hydration finishes; retry.
+    }
+  }
+  await controls.waitFor({ state: "visible" });
+}
+
 async function startChat(page: Page) {
   await page.goto("/");
+  await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
   await page.getByRole("button", { name: /^Choose light theme/ }).click();
   await page
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page
+      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .first(),
   ).toBeVisible();
 }
 
@@ -74,13 +146,19 @@ test("real browser file intake and archive downloads round trip persistent bytes
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await startChat(page);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^(Archives|Import & export)$/ })
+    .first()
+    .click();
   await choose(page, "Import LM Studio export", lmStudioFile);
   await expect(
     page.getByText(importText, { exact: false }).first(),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^(Archives|Import & export)$/ })
+    .first()
+    .click();
   const txt = await download(
     page,
     "Export chat as TXT",
@@ -98,8 +176,16 @@ test("real browser file intake and archive downloads round trip persistent bytes
     path: testInfo.outputPath("archive-downloads.png"),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
-  await page.getByRole("button", { name: "New chat", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: /^(New chat|Start a new chat)$/ })
+    .first()
+    .click();
   await expect(page.getByText(importText, { exact: false })).toHaveCount(0);
 
   // This is the running local server, without intercepted or fabricated responses.
@@ -182,7 +268,10 @@ test("real browser file intake and archive downloads round trip persistent bytes
     fullPage: true,
   });
 
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^(Archives|Import & export)$/ })
+    .first()
+    .click();
   const zip = await download(
     page,
     "Export all chats as ZIP",
@@ -221,7 +310,10 @@ test("real browser file intake and archive downloads round trip persistent bytes
   await expect(
     page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^(Archives|Import & export)$/ })
+    .first()
+    .click();
   const reopened = await download(
     page,
     "Export all chats as ZIP",
@@ -302,13 +394,18 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
     page.getByRole("button", { name: "Remove invalid-utf8.txt", exact: true }),
   ).toHaveCount(0);
   await expect.poll(managedFileCount).toBe(0);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await openArchives(page);
   const originalPdf = await download(
     page,
     "Export chat as PDF",
     testInfo.outputPath("document-original.pdf"),
   );
-  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: /^(Return to (conversation|chat)|Back to chat)$/,
+    })
+    .first()
+    .click();
   await choose(page, "Attach", {
     name: "document-original.pdf",
     mimeType: "application/pdf",
@@ -333,16 +430,16 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
     .getByRole("button", { name: "Remove document-original.pdf", exact: true })
     .click();
   await expect.poll(managedFileCount).toBe(0);
-  await page.getByRole("button", { name: "Archives", exact: true }).click();
+  await openArchives(page);
   await choose(page, "Import LM Studio export", {
     name: "invalid.json",
     mimeType: "application/json",
     buffer: Buffer.from("not valid JSON"),
   });
   await expect(
-    page.getByText("Selected LM Studio export is not valid JSON", {
-      exact: true,
-    }),
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Selected LM Studio export is not valid JSON" }),
   ).toBeVisible();
   await choose(page, "Import ZIP archive", {
     name: "invalid.zip",
@@ -350,7 +447,7 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
     buffer: Buffer.from("not a ZIP file"),
   });
   await expect(
-    page.getByText("ZIP is malformed or unreadable", { exact: true }),
+    page.getByRole("alert").filter({ hasText: "ZIP is malformed or unreadable" }),
   ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("invalid-archive-error.png"),

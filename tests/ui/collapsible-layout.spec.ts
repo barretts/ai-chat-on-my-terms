@@ -61,8 +61,15 @@ for (const size of [
     await page.goto("/");
     if (size.width === 440) await page.addStyleTag({ content: safeAreaStyle });
     await button("Continue without a model").click();
-    await button("Connect a model").click();
-    await button("Other").click();
+    await page
+      .getByRole("button", { name: "Choose chat connection" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Your connections", exact: true }),
+    ).toBeVisible();
+    await button("Add provider").click();
+    const other = button("Other");
+    if (await other.count()) await other.click();
     await page
       .getByRole("textbox", { name: "Provider name", exact: true })
       .fill("Barrett's PC");
@@ -175,7 +182,7 @@ for (const size of [
     ).toBeVisible();
     await button("Open chat history").click();
     await expect(
-      page.getByRole("tab", { name: "Recent", exact: true }),
+      page.getByRole("button", { name: "Recent", exact: true }),
     ).toBeVisible();
     await button("Return to conversation").click();
     await button("Start a new chat").click();
