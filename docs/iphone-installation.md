@@ -1,12 +1,21 @@
 # Install LocalLab on an iPhone
 
-## Latest internal build: 20 (October 17, 2026)
+## Latest internal build: 21 (October 17, 2026)
+
+[Install LocalLab build 21](https://expo.dev/accounts/barrett/projects/locallab/builds/1e7b4d3f-c5f8-4903-a8c4-3dd1a1820db1) from Safari on the registered iPhone.
+
+- EAS reports `finished` at 10/17/2026 05:40:38 local time (cloud run ~6.5 minutes), app version `0.1.0`, build `21`, internal `preview` distribution.
+- Source commit `c2a72e8` (built-in theme sets with light+dark palettes, the theme-set dropdown and deep cobalt navy darks) plus working-tree changes; iOS build number bumped from 20 to 21 for this build.
+- Existing EAS-managed ad hoc signing and the registered iPhone provisioning profile were reused. Signed IPA HEAD returned 200 (26,831,501 bytes).
+- Full details and receipts: [the build record](./builds/ios-preview-21.md).
+- Physical installation and app behavior on the iPhone remain unverified.
+
+## Previous internal build: 20 (October 17, 2026)
 
 [Install LocalLab build 20](https://expo.dev/accounts/barrett/projects/locallab/builds/92641eac-95ca-4724-b902-c498ebcd1949) from Safari on the registered iPhone.
 
 - EAS reports `finished` at 10/17/2026 00:54:13 local time (cloud run ~7 minutes), app version `0.1.0`, build `20`, internal `preview` distribution.
-- Source commit `8b20642` (the cobalt-blue recolor) plus working-tree changes; iOS build number bumped from 18 to 20 for this build. The committed onboarding/UI test-retarget series is also in.
-- Existing EAS-managed ad hoc signing and the registered iPhone provisioning profile were reused. Signed IPA HEAD returned 200 (26,829,307 bytes).
+- Source commit `8b20642` (the cobalt-blue recolor) plus working-tree changes; iOS build number bumped from 18 to 20 for this build. Signed IPA HEAD returned 200 (26,829,307 bytes).
 - Full details and receipts: [the build record](./builds/ios-preview-20.md).
 - Physical installation and app behavior on the iPhone remain unverified.
 
