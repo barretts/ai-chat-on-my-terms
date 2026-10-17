@@ -116,6 +116,7 @@ export function NativeDropdown({
               <View
                 style={[
                   styles.title,
+                  { backgroundColor: theme.colors.primary },
                   theme.roundness > 0 && {
                     backgroundColor: theme.colors.surface,
                     paddingVertical: 8,
@@ -125,6 +126,7 @@ export function NativeDropdown({
                 <Text
                   style={[
                     styles.titleText,
+                    { color: theme.colors.onPrimary },
                     theme.roundness > 0 && {
                       color: theme.colors.onSurface,
                       fontSize: 20,
@@ -148,7 +150,14 @@ export function NativeDropdown({
                     onPress={() => setOpen(false)}
                     hitSlop={10}
                   >
-                    <Text style={styles.titleText}>×</Text>
+                    <Text
+                      style={[
+                        styles.titleText,
+                        { color: theme.colors.onPrimary },
+                      ]}
+                    >
+                      ×
+                    </Text>
                   </Pressable>
                 )}
               </View>
@@ -251,10 +260,9 @@ const styles = StyleSheet.create({
   },
   popup: { width: "100%", maxWidth: 480, maxHeight: "85%", borderWidth: 2 },
   title: {
-    backgroundColor: "#59328b",
     padding: 10,
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  titleText: { color: "white", fontWeight: "700" },
+  titleText: { fontWeight: "700" },
 });

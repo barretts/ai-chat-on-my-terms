@@ -34,10 +34,10 @@ export function NativeButton({
           : {
               borderRadius: 0,
               borderWidth: props.mode === "text" ? 0 : 2,
-              borderTopColor: theme.dark ? "#756880" : "#ffffff",
-              borderLeftColor: theme.dark ? "#756880" : "#ffffff",
-              borderRightColor: "#6a6070",
-              borderBottomColor: "#6a6070",
+              borderTopColor: theme.dark ? "#68737f" : "#ffffff",
+              borderLeftColor: theme.dark ? "#68737f" : "#ffffff",
+              borderRightColor: "#5c6672",
+              borderBottomColor: "#5c6672",
             },
         props.style,
       ]}

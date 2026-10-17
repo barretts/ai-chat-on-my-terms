@@ -116,10 +116,10 @@ export function ThemeEditorSheet({
   const [draftName, setDraftName] = useState("");
   const [scheme, setScheme] = useState<ThemeScheme>("light");
   const [paletteDraft, setPaletteDraft] = useState<Record<keyof PaletteV1, string>>({
-    background: "#faf9f7",
+    background: "#f8f9fb",
     surface: "#ffffff",
-    primary: "#59328b",
-    text: "#26232b",
+    primary: "#2f5fa8",
+    text: "#20232b",
   });
   const [controls, setControls] = useState<ThemeControlsV1>(() => ({
     fontScale: 1,
@@ -348,7 +348,7 @@ export function ThemeEditorSheet({
               ...current,
               gradient: enabled
                 ? {
-                    from: "#59328b",
+                    from: "#2f5fa8",
                     to: "#176e70",
                     angleDegrees: 90,
                   }

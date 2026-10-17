@@ -35,10 +35,10 @@ export function NativeSurface({
           : {
               borderRadius: 0,
               borderWidth: 2,
-              borderTopColor: theme.dark ? "#756880" : "#ffffff",
-              borderLeftColor: theme.dark ? "#756880" : "#ffffff",
-              borderRightColor: "#89818d",
-              borderBottomColor: "#89818d",
+              borderTopColor: theme.dark ? "#68737f" : "#ffffff",
+              borderLeftColor: theme.dark ? "#68737f" : "#ffffff",
+              borderRightColor: "#7b848d",
+              borderBottomColor: "#7b848d",
             },
         theme.roundness > 0 ? props.style : undefined,
       ]}

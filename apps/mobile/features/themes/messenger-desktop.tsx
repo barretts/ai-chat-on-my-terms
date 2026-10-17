@@ -101,7 +101,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           {
             opacity,
             backgroundColor: theme.colors.surface,
-            borderColor: theme.dark ? "#756880" : "#f9f6ea",
+            borderColor: theme.dark ? "#68737f" : "#f9f6ea",
           },
         ]}
       >
@@ -112,7 +112,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           ]}
         >
           <View style={styles.appIcon}>
-            <Text style={{ color: "#59328b", fontWeight: "900", fontSize: 17 }}>
+            <Text style={{ color: "#2f5fa8", fontWeight: "900", fontSize: 17 }}>
               L
             </Text>
           </View>
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   titlebar: {
-    backgroundColor: "#59328b",
+    backgroundColor: "#2f5fa8",
     padding: 10,
     minHeight: 60,
     gap: 10,
@@ -325,14 +325,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.2,
   },
-  subtitle: { color: "#e5d8f8", fontSize: 10, marginTop: 3 },
+  subtitle: { color: "#d6e4fb", fontSize: 10, marginTop: 3 },
   focusButton: {
     minWidth: 44,
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#a489c5",
+    borderColor: "#86a6d8",
   },
   menuBar: {
     paddingHorizontal: 12,

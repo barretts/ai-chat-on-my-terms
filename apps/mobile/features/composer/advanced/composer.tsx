@@ -344,8 +344,8 @@ export function AdvancedComposer({
               layout.phone
                 ? undefined
                 : {
-                    color: "white",
-                    backgroundColor: "#59328b",
+                    color: theme.colors.onPrimary,
+                    backgroundColor: theme.colors.primary,
                     margin: 0,
                     padding: 14,
                     fontSize: 18,
