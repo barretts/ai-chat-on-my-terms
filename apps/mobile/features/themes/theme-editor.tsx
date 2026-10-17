@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import {
   Button,
-  Chip,
+  Menu,
   SegmentedButtons,
   Switch,
   Text,
@@ -111,7 +111,12 @@ export function ThemeEditorSheet({
   const settings = useAppTheme();
   const perChat = conversationId !== undefined;
   const allThemes = [...BUILTIN_THEMES, ...settings.customThemes];
-  const [selectedId, setSelectedId] = useState("builtin");
+  const [selectedId, setSelectedId] = useState(() =>
+    perChat && conversationId !== undefined
+      ? settings.chatAppearanceFor(conversationId).theme.id
+      : settings.themeId,
+  );
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [draftId, setDraftId] = useState("");
   const [draftName, setDraftName] = useState("");
   const [scheme, setScheme] = useState<ThemeScheme>("light");
@@ -138,9 +143,15 @@ export function ThemeEditorSheet({
     const theme = allThemes.find((candidate) => candidate.id === id);
     setSelectedId(id);
     if (theme === undefined) return;
-    setScheme(theme.scheme);
-    setPaletteDraft({ ...theme.palette });
+    setScheme(theme.variants ? scheme : theme.scheme);
+    setPaletteDraft({
+      ...(theme.variants ? theme.variants[scheme] : theme.palette),
+    });
     setControls({ ...theme.controls, gradient: theme.controls.gradient });
+  }
+  function chooseTheme(id: string) {
+    selectTheme(id);
+    if (!perChat) void settings.setThemeId(id);
   }
   const paletteReady = (Object.keys(paletteDraft) as (keyof PaletteV1)[]).every(
     (key) => isHexColor(paletteDraft[key]),
@@ -230,18 +241,44 @@ export function ThemeEditorSheet({
       title={perChat ? "Chat appearance" : "Themes"}
       closeLabel="Close theme editor"
     >
-      <Text variant="labelLarge">Theme</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-        {allThemes.map((theme) => (
-          <Chip
-            key={theme.id}
-            selected={theme.id === selectedId}
-            onPress={() => selectTheme(theme.id)}
+      <Text variant="labelLarge">Theme set</Text>
+      <Menu
+        visible={themeMenuOpen}
+        onDismiss={() => setThemeMenuOpen(false)}
+        anchor={
+          <Button
+            mode="outlined"
+            testID="theme-set-select"
+            accessibilityLabel="Choose theme set"
+            onPress={() => setThemeMenuOpen(true)}
+            style={{ marginTop: 4 }}
           >
-            {theme.name}
-          </Chip>
+            {selected?.name ?? "Choose a theme set"}
+          </Button>
+        }
+      >
+        {allThemes.map((theme) => (
+          <Menu.Item
+            key={theme.id}
+            testID={`theme-option-${theme.id}`}
+            title={
+              !perChat && theme.id === settings.themeId
+                ? `${theme.name} (active)`
+                : theme.name
+            }
+            onPress={() => {
+              setThemeMenuOpen(false);
+              chooseTheme(theme.id);
+            }}
+          />
         ))}
-      </View>
+      </Menu>
+      {selected?.variants !== undefined && (
+        <Text variant="bodySmall" style={{ marginTop: 4 }}>
+          Includes light and dark palettes; the active one follows your
+          System/Light/Dark setting.
+        </Text>
+      )}
       {!perChat && (
         <>
           <Text
@@ -285,7 +322,12 @@ export function ThemeEditorSheet({
           </View>
           <SegmentedButtons
             value={scheme}
-            onValueChange={(value) => setScheme(value as ThemeScheme)}
+            onValueChange={(value) => {
+              const next = value as ThemeScheme;
+              setScheme(next);
+              if (selected?.variants !== undefined)
+                setPaletteDraft({ ...selected.variants[next] });
+            }}
             buttons={[
               { value: "light", label: "Light" },
               { value: "dark", label: "Dark" },

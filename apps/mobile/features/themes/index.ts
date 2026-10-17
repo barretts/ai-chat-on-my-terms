@@ -115,7 +115,11 @@ export function createThemesStore(db: SQLiteDatabasePort): ThemesStore {
     },
     async setGlobalThemeId(id) {
       await db.execAsync(themeStateSql);
-      await db.runAsync(upsertStateSql, GLOBAL_SCOPE, JSON.stringify({ themeId: id }));
+      await db.runAsync(
+        upsertStateSql,
+        GLOBAL_SCOPE,
+        JSON.stringify({ themeId: id }),
+      );
     },
     async saveCustomTheme(theme) {
       if (builtinIds.has(theme.id))
@@ -135,7 +139,10 @@ export function createThemesStore(db: SQLiteDatabasePort): ThemesStore {
     },
     async deleteCustomTheme(id) {
       if (builtinIds.has(id))
-        return { ok: false as const, reason: "built-in themes cannot be deleted" };
+        return {
+          ok: false as const,
+          reason: "built-in themes cannot be deleted",
+        };
       await db.execAsync(customThemesSql);
       await db.runAsync("DELETE FROM custom_themes WHERE id=?", id);
       return { ok: true as const };
@@ -176,14 +183,26 @@ export function applyThemeV1(
 ) {
   // Re-clamped so any caller-forged scale still yields a finite readable size.
   const scale = clampControls(controls).fontScale;
+  const activePalette =
+    theme.variants !== undefined
+      ? base.dark
+        ? theme.variants.dark
+        : theme.variants.light
+      : theme.scheme === (base.dark ? "dark" : "light")
+        ? theme.palette
+        : null;
   return {
     ...base,
     colors: {
       ...base.colors,
-      background: theme.palette.background,
-      surface: theme.palette.surface,
-      primary: theme.palette.primary,
-      onSurface: theme.palette.text,
+      ...(activePalette !== null
+        ? {
+            background: activePalette.background,
+            surface: activePalette.surface,
+            primary: activePalette.primary,
+            onSurface: activePalette.text,
+          }
+        : {}),
     },
     fonts: {
       ...base.fonts,

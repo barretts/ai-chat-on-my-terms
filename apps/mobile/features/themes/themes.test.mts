@@ -88,6 +88,7 @@ function sampleTheme(id = "teal-night"): ThemeV1 {
 
 /** Structurally enough of a Paper base for applyThemeV1's repaint surface. */
 const fakePaperBase = {
+  dark: true,
   colors: {
     background: "#faf9f7",
     surface: "#ffffff",
@@ -162,11 +163,11 @@ describe("theme and appearance persistence", () => {
   it("built-in ids are guarded on save and delete", async () => {
     const { db, customThemes } = fakeThemesDb();
     const store = createThemesStore(db);
-    const save = await store.saveCustomTheme(sampleTheme("light"));
+    const save = await store.saveCustomTheme(sampleTheme("teal"));
     expect(save.ok).toBe(false);
     if (!save.ok) expect(save.reason).toContain("built-in");
     expect(customThemes.size).toBe(0);
-    const remove = await store.deleteCustomTheme("dark");
+    const remove = await store.deleteCustomTheme("amber");
     expect(remove.ok).toBe(false);
   });
 
@@ -197,5 +198,75 @@ describe("theme and appearance persistence", () => {
     expect(repainted.colors.background).toBe("#101820");
     expect(repainted.fonts.bodyLarge.fontSize).toBe(16 * 2.0);
     expect(repainted.fonts.bodyMedium.fontSize).toBe(14 * 2.0);
+  });
+
+  it("keeps dark Paper surfaces when the selected palette is light", () => {
+    const light = {
+      ...sampleTheme("light-test"),
+      scheme: "light" as const,
+      palette: {
+        background: "#faf9f7",
+        surface: "#ffffff",
+        primary: "#59328b",
+        text: "#26232b",
+      },
+    };
+    const repainted = applyThemeV1(fakePaperBase, light, light.controls);
+    expect(repainted.colors.background).toBe("#faf9f7");
+
+    const darkBase = {
+      ...fakePaperBase,
+      colors: {
+        ...fakePaperBase.colors,
+        background: "#19171c",
+        surface: "#242128",
+        onSurface: "#f2edf5",
+      },
+    } as MobilePaperTheme;
+    const darkRepainted = applyThemeV1(darkBase, light, light.controls);
+    expect(darkRepainted.colors.background).toBe("#19171c");
+    expect(darkRepainted.colors.surface).toBe("#242128");
+    expect(darkRepainted.colors.onSurface).toBe("#f2edf5");
+  });
+
+  it("repaints each scheme variant when a theme set carries both palettes", () => {
+    const set: ThemeV1 = {
+      ...sampleTheme("set-with-variants"),
+      scheme: "light",
+      palette: {
+        background: "#f8f9fb",
+        surface: "#ffffff",
+        primary: "#2f5fa8",
+        text: "#20232b",
+      },
+      variants: {
+        light: {
+          background: "#f8f9fb",
+          surface: "#ffffff",
+          primary: "#2f5fa8",
+          text: "#20232b",
+        },
+        dark: {
+          background: "#0f1c38",
+          surface: "#16294c",
+          primary: "#a8c7fa",
+          text: "#e7eefb",
+        },
+      },
+    };
+    const darkRepainted = applyThemeV1(fakePaperBase, set, set.controls);
+    expect(darkRepainted.colors.background).toBe("#0f1c38");
+    expect(darkRepainted.colors.surface).toBe("#16294c");
+    expect(darkRepainted.colors.primary).toBe("#a8c7fa");
+    expect(darkRepainted.colors.onSurface).toBe("#e7eefb");
+    const lightBase = {
+      ...fakePaperBase,
+      dark: false,
+    } as MobilePaperTheme;
+    const lightRepainted = applyThemeV1(lightBase, set, set.controls);
+    expect(lightRepainted.colors.background).toBe("#f8f9fb");
+    expect(lightRepainted.colors.surface).toBe("#ffffff");
+    expect(lightRepainted.colors.primary).toBe("#2f5fa8");
+    expect(lightRepainted.colors.onSurface).toBe("#20232b");
   });
 });

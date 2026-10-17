@@ -64,6 +64,56 @@ test("built-in themes match declared ids and have distinct palettes", () => {
   }
 });
 
+test("built-in theme sets carry complete light and dark variants", () => {
+  assert.ok(BUILTIN_THEMES.length >= 2);
+  for (const theme of BUILTIN_THEMES) {
+    const variants = theme.variants;
+    assert.ok(variants !== undefined, `${theme.id} should carry variants`);
+    for (const palette of [variants.light, variants.dark]) {
+      for (const key of ["background", "surface", "primary", "text"] as const)
+        assert.ok(isHexColor(palette[key]), `${theme.id}.${key}`);
+    }
+    assert.deepEqual(theme.palette, variants.light);
+  }
+});
+
+test("theme import preserves variants and rejects malformed variant palettes", () => {
+  const variants = {
+    light: {
+      background: "#ffffff",
+      surface: "#f0f0f0",
+      primary: "#59328b",
+      text: "#111111",
+    },
+    dark: {
+      background: "#0f1c38",
+      surface: "#16294c",
+      primary: "#a8c7fa",
+      text: "#e7eefb",
+    },
+  };
+  const theme = requireTheme({ ...VALID_IMPORT, variants });
+  assert.deepEqual(theme.variants, variants);
+  const roundTrip = parseThemeImport(theme);
+  assert.ok(roundTrip.ok);
+  assert.deepEqual(roundTrip.ok ? roundTrip.theme.variants : null, variants);
+
+  const badVariant = {
+    ...VALID_IMPORT,
+    variants: { ...variants, dark: { ...variants.dark, primary: "nope" } },
+  };
+  assert.ok(requireReason(badVariant).includes("variants"));
+
+  const extraKey = {
+    ...VALID_IMPORT,
+    variants: {
+      ...variants,
+      light: { ...variants.light, accent: "#123456" },
+    },
+  };
+  assert.ok(!parseThemeImport(extraKey).ok);
+});
+
 test("valid import round-trips and kind is forced custom", () => {
   const theme = requireTheme(VALID_IMPORT);
   assert.deepEqual(theme, VALID_IMPORT);
@@ -165,7 +215,7 @@ test("resolveAppearance with unknown themeId keeps the given theme", () => {
 });
 
 test("resolveAppearance with null override returns identical controls", () => {
-  const dark = BUILTIN_THEMES.find((theme) => theme.id === "dark")!;
+  const dark = BUILTIN_THEMES.find((theme) => theme.id === "slate")!;
   const resolved = resolveAppearance(dark, null, BUILTIN_THEMES);
   assert.equal(resolved.theme, dark);
   assert.deepEqual(resolved.controls, dark.controls);

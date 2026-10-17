@@ -15,6 +15,12 @@ export interface PaletteV1 {
   text: string;
 }
 
+/** Light and dark palettes for a single theme set. */
+export interface ThemeVariantsV1 {
+  light: PaletteV1;
+  dark: PaletteV1;
+}
+
 export interface GradientV1 {
   from: string;
   to: string;
@@ -38,6 +44,8 @@ export interface ThemeV1 {
   kind: "builtin" | "custom";
   scheme: ThemeScheme;
   palette: PaletteV1;
+  /** When present, this theme repaints both schemes; palette mirrors the light one. */
+  variants?: ThemeVariantsV1;
   controls: ThemeControlsV1;
 }
 
@@ -80,7 +88,14 @@ const AVATAR_PLACEMENTS: Record<string, true> = {
   hidden: true,
 };
 
-export const BUILTIN_THEME_IDS = ["builtin", "light", "dark"] as const;
+export const BUILTIN_THEME_IDS = [
+  "builtin",
+  "teal",
+  "amber",
+  "forest",
+  "rose",
+  "slate",
+] as const;
 
 export const BUILTIN_THEMES: readonly ThemeV1[] = [
   {
@@ -95,33 +110,159 @@ export const BUILTIN_THEMES: readonly ThemeV1[] = [
       primary: "#2f5fa8",
       text: "#20232b",
     },
-    controls: { ...DEFAULT_CONTROLS },
-  },
-  {
-    version: THEMES_SCHEMA_VERSION,
-    id: "light",
-    name: "Light",
-    kind: "builtin",
-    scheme: "light",
-    palette: {
-      background: "#ffffff",
-      surface: "#f0f2f5",
-      primary: "#2f5fa8",
-      text: "#1a1c22",
+    variants: {
+      light: {
+        background: "#f8f9fb",
+        surface: "#ffffff",
+        primary: "#2f5fa8",
+        text: "#20232b",
+      },
+      dark: {
+        background: "#0f1c38",
+        surface: "#16294c",
+        primary: "#a8c7fa",
+        text: "#e7eefb",
+      },
     },
     controls: { ...DEFAULT_CONTROLS },
   },
   {
     version: THEMES_SCHEMA_VERSION,
-    id: "dark",
-    name: "Dark",
+    id: "teal",
+    name: "Harbor Teal",
     kind: "builtin",
-    scheme: "dark",
+    scheme: "light",
     palette: {
-      background: "#191b21",
-      surface: "#23262e",
-      primary: "#a8c7fa",
-      text: "#edf1f8",
+      background: "#f4faf9",
+      surface: "#ffffff",
+      primary: "#0f6b6e",
+      text: "#17252a",
+    },
+    variants: {
+      light: {
+        background: "#f4faf9",
+        surface: "#ffffff",
+        primary: "#0f6b6e",
+        text: "#17252a",
+      },
+      dark: {
+        background: "#08201f",
+        surface: "#103331",
+        primary: "#7fd4d2",
+        text: "#dff0ee",
+      },
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "amber",
+    name: "Amber Sepia",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#fdf7ec",
+      surface: "#fffdf8",
+      primary: "#96601c",
+      text: "#2b2116",
+    },
+    variants: {
+      light: {
+        background: "#fdf7ec",
+        surface: "#fffdf8",
+        primary: "#96601c",
+        text: "#2b2116",
+      },
+      dark: {
+        background: "#221708",
+        surface: "#36280f",
+        primary: "#e5b96b",
+        text: "#f5e9d6",
+      },
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "forest",
+    name: "Forest Trail",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#f3f8f2",
+      surface: "#ffffff",
+      primary: "#2f6b3d",
+      text: "#1b241d",
+    },
+    variants: {
+      light: {
+        background: "#f3f8f2",
+        surface: "#ffffff",
+        primary: "#2f6b3d",
+        text: "#1b241d",
+      },
+      dark: {
+        background: "#0c1d11",
+        surface: "#14301d",
+        primary: "#8ed49c",
+        text: "#e0f2e3",
+      },
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "rose",
+    name: "Sunset Rose",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#fdf4f3",
+      surface: "#ffffff",
+      primary: "#a4424e",
+      text: "#291a1c",
+    },
+    variants: {
+      light: {
+        background: "#fdf4f3",
+        surface: "#ffffff",
+        primary: "#a4424e",
+        text: "#291a1c",
+      },
+      dark: {
+        background: "#261014",
+        surface: "#3d1e24",
+        primary: "#f0a1aa",
+        text: "#fbe4e6",
+      },
+    },
+    controls: { ...DEFAULT_CONTROLS },
+  },
+  {
+    version: THEMES_SCHEMA_VERSION,
+    id: "slate",
+    name: "Slate Mono",
+    kind: "builtin",
+    scheme: "light",
+    palette: {
+      background: "#f5f6f7",
+      surface: "#ffffff",
+      primary: "#47525f",
+      text: "#1f242a",
+    },
+    variants: {
+      light: {
+        background: "#f5f6f7",
+        surface: "#ffffff",
+        primary: "#47525f",
+        text: "#1f242a",
+      },
+      dark: {
+        background: "#14171c",
+        surface: "#21262e",
+        primary: "#b7c3d0",
+        text: "#e8ecf1",
+      },
     },
     controls: { ...DEFAULT_CONTROLS },
   },
@@ -172,6 +313,10 @@ const themeImportSchema = z
     kind: z.enum(["builtin", "custom"]).optional(),
     scheme: z.enum(["light", "dark"]),
     palette: paletteSchema,
+    variants: z
+      .object({ light: paletteSchema, dark: paletteSchema })
+      .strict()
+      .optional(),
     controls: importControlsSchema,
   })
   .strict();
@@ -298,6 +443,9 @@ export function parseThemeImport(
       kind: "custom" as const,
       scheme: parsed.data.scheme,
       palette: parsed.data.palette,
+      ...(parsed.data.variants !== undefined
+        ? { variants: parsed.data.variants }
+        : {}),
       controls: parsed.data.controls,
     },
   };
