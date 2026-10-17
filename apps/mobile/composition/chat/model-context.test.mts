@@ -13,6 +13,7 @@ import {
 import {
   discoverRegisteredModelContext,
   modelContextKey,
+  supportsContextDiscovery,
 } from "./model-context";
 
 function adapter(native: DatabaseSync): SQLiteDatabasePort {
@@ -80,6 +81,41 @@ function secrets() {
 }
 
 describe("context identity across saved connection normalization", () => {
+  it("loads OpenRouter context, output and tool support for the selected model", async () => {
+    const selected: ChatProviderRegistration = {
+      id: createChatId(),
+      label: "OpenRouter",
+      kind: "openrouter",
+      endpoint: "https://openrouter.ai/api/v1",
+      modelId: "fixture/model",
+    };
+    const calls: string[] = [];
+    const detected = await discoverRegisteredModelContext(selected, {
+      secrets: secrets(),
+      fetch: async (input: string | URL) => {
+        calls.push(String(input));
+        return Response.json({
+          data: [
+            {
+              id: selected.modelId,
+              context_length: 131072,
+              top_provider: { max_completion_tokens: 8192 },
+              supported_parameters: ["tools"],
+            },
+          ],
+        });
+      },
+    });
+    expect(supportsContextDiscovery(selected)).toBe(true);
+    expect(detected).toEqual({
+      contextWindowTokens: 131072,
+      maxOutputTokens: 8192,
+      source: "models",
+      toolsSupported: true,
+    });
+    expect(calls).toEqual(["https://openrouter.ai/api/v1/models"]);
+  });
+
   it.each([undefined, false, true])(
     "keeps a new form's empty header references stable after SQLite save/select (HTTP authorization %s)",
     async (cleartextAuthorized) => {

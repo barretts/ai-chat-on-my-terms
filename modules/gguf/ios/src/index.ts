@@ -1,10 +1,8 @@
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import type { BlobMetadata, BlobStore } from "@locallab/storage-blobs";
 import type { LlamaContext } from "llama.rn";
-import {
-  createLlamaStreamDecoder,
-  type StreamDeltas,
-} from "./stream-decoder";
+import { createLlamaStreamDecoder, type StreamDeltas } from "./stream-decoder";
+import { nativeChatRequest, nativeToolCalls } from "./tool-protocol";
 
 type RunEventFields = RunEvent extends infer Event
   ? Event extends RunEvent
@@ -210,14 +208,12 @@ export function createGgufInferencePort(
           return;
         }
 
-        const messages = request.context.map(({ kind, value }) => ({
-          role: kind === "text" ? "user" : kind,
-          content: textOf(value),
-        }));
+        const { messages, tools } = nativeChatRequest(request);
         const prompt = textOf(request.context.at(-1)?.value);
         const params = request.parameters;
         const completionParams = {
           messages,
+          ...(tools.length ? { jinja: true, tools, tool_choice: "auto" } : {}),
           n_predict: boundedInteger(
             params["max_output_tokens"] ??
               params["max_tokens"] ??
@@ -245,7 +241,9 @@ export function createGgufInferencePort(
           wake?.();
           wake = undefined;
         };
-        const decoder = createLlamaStreamDecoder();
+        const decoder = createLlamaStreamDecoder({
+          toolsEnabled: tools.length > 0,
+        });
         const queueDeltas = ({ reasoning, text }: StreamDeltas) => {
           if (reasoning)
             queued.push(emit({ type: "ReasoningDelta", text: reasoning }));
@@ -300,11 +298,34 @@ export function createGgufInferencePort(
                 accumulated_text?: string;
                 timings?: { prompt_n?: number; predicted_n?: number };
                 stopped_limit?: number;
+                tool_calls?: unknown;
               };
             }
           ).value;
+          const calls = nativeToolCalls(
+            result.tool_calls,
+            request,
+            tools.map((tool) => tool.function.name),
+          );
+          if (calls.length && result.stopped_limit)
+            throw typedError(
+              "context-full",
+              "The native model reached its output limit before finishing a tool call. Increase the response limit and retry.",
+            );
+          if (
+            !calls.length &&
+            tools.length &&
+            `${result.content ?? ""}${result.text ?? ""}`.includes(
+              "<tool_call>",
+            )
+          )
+            throw typedError(
+              "malformed",
+              "The native runtime did not parse the model's tool call. Check this GGUF's chat template.",
+            );
           queueDeltas(decoder.finish(result));
           while (queued.length) yield queued.shift()!;
+          for (const call of calls) yield emit({ type: "ToolCall", ...call });
           yield emit({
             type: "Usage",
             ...(result.timings?.prompt_n === undefined
@@ -316,7 +337,11 @@ export function createGgufInferencePort(
           });
           yield emit({
             type: "RunCompleted",
-            finishReason: result.stopped_limit ? "length" : "stop",
+            finishReason: calls.length
+              ? "tool_calls"
+              : result.stopped_limit
+                ? "length"
+                : "stop",
           });
         }
       } catch (error) {

@@ -79,6 +79,7 @@ export interface ChatSettingsScreenProps {
   store: ChatSettingsStore;
   capabilities: CapabilityMap;
   serverContextWindow?: number;
+  serverMaxOutputTokens?: number;
   serverContextStatus?: "checking" | "available" | "unavailable";
   personaEnabled?: boolean;
   onContextReload?: () => Promise<void> | void;
@@ -101,7 +102,8 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
     () => createStyles(paperTheme, phone),
     [paperTheme, phone],
   );
-  const { themePreference, setThemePreference, openThemeEditor } = useAppTheme();
+  const { themePreference, setThemePreference, openThemeEditor } =
+    useAppTheme();
   const [presets, setPresets] = useState<SettingsPresets>(EMPTY_PRESETS);
   const [appearance, setAppearance] = useState<ChatAppearance>({});
   const [scope, setScope] = useState<SettingsScope>("chat");
@@ -202,12 +204,16 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         ...(props.serverContextWindow
           ? { serverContextWindow: props.serverContextWindow }
           : {}),
+        ...(props.serverMaxOutputTokens
+          ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
+          : {}),
       }),
     [
       presets,
       props.personaEnabled,
       props.capabilities,
       props.serverContextWindow,
+      props.serverMaxOutputTokens,
     ],
   );
   const displayed = useMemo(() => {
@@ -223,6 +229,9 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       ...(props.serverContextWindow
         ? { serverContextWindow: props.serverContextWindow }
         : {}),
+      ...(props.serverMaxOutputTokens
+        ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
+        : {}),
     });
   }, [
     presets,
@@ -230,6 +239,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
     props.personaEnabled,
     props.capabilities,
     props.serverContextWindow,
+    props.serverMaxOutputTokens,
   ]);
 
   const enqueueWrite = (work: () => Promise<void>) => {
@@ -253,6 +263,9 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         ...(props.serverContextWindow
           ? { serverContextWindow: props.serverContextWindow }
           : {}),
+        ...(props.serverMaxOutputTokens
+          ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
+          : {}),
       }).effective;
       const after = resolveSettings({
         presets: next,
@@ -260,6 +273,9 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         capabilities: props.capabilities,
         ...(props.serverContextWindow
           ? { serverContextWindow: props.serverContextWindow }
+          : {}),
+        ...(props.serverMaxOutputTokens
+          ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
           : {}),
       }).effective;
       presetsRef.current = next;
@@ -304,6 +320,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       props.capabilities,
       props.personaEnabled,
       props.serverContextWindow,
+      props.serverMaxOutputTokens,
       props.store,
       identity,
       scope,

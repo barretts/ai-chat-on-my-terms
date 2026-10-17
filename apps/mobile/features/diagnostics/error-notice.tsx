@@ -17,12 +17,15 @@ export function ErrorNotice({
   const diagnostics = useDiagnostics();
   const [copyStatus, setCopyStatus] = useState("");
   const [overflow, setOverflow] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const detailsScroll = useRef<ScrollView>(null);
   const safeMessage = sanitizeDiagnosticText(message);
   useEffect(() => {
     detailsScroll.current?.scrollTo({ y: 0, animated: false });
     setCopyStatus("");
+    setDismissed(false);
   }, [safeMessage]);
+  if (dismissed) return null;
   const details = (
     <Text
       onLayout={(event) =>
@@ -82,6 +85,16 @@ export function ErrorNotice({
         </Text>
       ) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <Button
+          compact
+          contentStyle={{ minHeight: 44 }}
+          mode="text"
+          textColor={theme.colors.onErrorContainer}
+          accessibilityLabel="Dismiss error"
+          onPress={() => setDismissed(true)}
+        >
+          Dismiss
+        </Button>
         <Button
           compact
           contentStyle={{ minHeight: 44 }}

@@ -1,6 +1,20 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { Linking, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Chip, Icon, List, ProgressBar, Switch, Text, useTheme } from "react-native-paper";
+import {
+  Chip,
+  Icon,
+  List,
+  ProgressBar,
+  Switch,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import {
   NativeButton,
   NativeInput,
@@ -54,12 +68,18 @@ export function SpeechPanel({
   const [text, setText] = useState(initialText);
   const [actionError, setActionError] = useState("");
   const [actionNotice, setActionNotice] = useState("");
+  const [inventoryReady, setInventoryReady] = useState(false);
   const busy = !["idle", "error"].includes(state.phase);
-  const stateError = useMemo(() => state.phase === "error"
-    ? `${activeOperation.current} failed.\n${state.message}\n${speechRecovery(activeOperation.current)}`
-    : "", [state.phase, state.message]);
+  const stateError = useMemo(
+    () =>
+      state.phase === "error"
+        ? `${activeOperation.current} failed.\n${state.message}\n${speechRecovery(activeOperation.current)}`
+        : "",
+    [state.phase, state.message],
+  );
   const hasError = !!actionError || state.phase === "error";
-  const feedbackMessage = actionError || stateError || actionNotice || state.message;
+  const feedbackMessage =
+    actionError || stateError || actionNotice || state.message;
   const voice = speechVoices.find((item) => item.id === state.selectedVoiceId)!;
   const installed = state.installedModelIds.includes(voice.modelId);
   const [languageFilter, setLanguageFilter] = useState("all");
@@ -72,13 +92,18 @@ export function SpeechPanel({
   useEffect(() => {
     let active = true;
     mounted.current = true;
-    void mobileSpeech.refresh().catch((error: unknown) => {
-      const message = describeError(error, {
-        operation: "Load downloaded offline voice packs",
-        recovery: speechRecovery("Reload offline voice packs"),
+    void mobileSpeech
+      .refresh()
+      .then(() => {
+        if (active) setInventoryReady(true);
+      })
+      .catch((error: unknown) => {
+        const message = describeError(error, {
+          operation: "Load downloaded offline voice packs",
+          recovery: speechRecovery("Reload offline voice packs"),
+        });
+        if (active) setActionError(message);
       });
-      if (active) setActionError(message);
-    });
     return () => {
       active = false;
       mounted.current = false;
@@ -86,7 +111,10 @@ export function SpeechPanel({
         traceLog.event(activeOperation.current, "cancelled");
       actionSequence.current++;
       void mobileSpeech.stop().catch((cause: unknown) => {
-        describeError(cause, { operation: "Stop offline speech on exit", recovery: "Reopen Voices and try Stop again." });
+        describeError(cause, {
+          operation: "Stop offline speech on exit",
+          recovery: "Reopen Voices and try Stop again.",
+        });
       });
     };
   }, []);
@@ -100,13 +128,22 @@ export function SpeechPanel({
     setActionError("");
     setActionNotice("");
     traceLog.event(operation, "start");
-    void work().then(() => {
-      if (sequence === actionSequence.current && mobileSpeech.snapshot().phase !== "error")
-        traceLog.event(operation, "complete");
-    }).catch((error: unknown) => {
-      const message = describeError(error, { operation, recovery: speechRecovery(operation) });
-      if (mounted.current && sequence === actionSequence.current) setActionError(message);
-    });
+    void work()
+      .then(() => {
+        if (
+          sequence === actionSequence.current &&
+          mobileSpeech.snapshot().phase !== "error"
+        )
+          traceLog.event(operation, "complete");
+      })
+      .catch((error: unknown) => {
+        const message = describeError(error, {
+          operation,
+          recovery: speechRecovery(operation),
+        });
+        if (mounted.current && sequence === actionSequence.current)
+          setActionError(message);
+      });
   };
 
   if (phone) {
@@ -135,12 +172,18 @@ export function SpeechPanel({
             Choose a voice and listen offline. Your words stay on this device.
           </Text>
           {Platform.OS === "web" ? (
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant }}
+            >
               Voice packs stay in this browser. Download them separately in the
               iPhone app.
             </Text>
           ) : null}
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          <Text
+            variant="bodySmall"
+            style={{ color: theme.colors.onSurfaceVariant }}
+          >
             Keep LocalLab open while downloading or reading aloud.
           </Text>
         </View>
@@ -173,19 +216,23 @@ export function SpeechPanel({
                 }
               />
             ) : null}
-            {hasError ? <ErrorNotice message={feedbackMessage} /> : <Text
-              accessibilityLiveRegion="polite"
-              style={{
-                color: hasError
-                  ? theme.colors.onErrorContainer
-                  : theme.colors.onSurfaceVariant,
-              }}
-            >
-              {feedbackMessage}
-              {state.progress === null
-                ? ""
-                : ` ${Math.round(state.progress * 100)}%`}
-            </Text>}
+            {hasError ? (
+              <ErrorNotice message={feedbackMessage} />
+            ) : (
+              <Text
+                accessibilityLiveRegion="polite"
+                style={{
+                  color: hasError
+                    ? theme.colors.onErrorContainer
+                    : theme.colors.onSurfaceVariant,
+                }}
+              >
+                {feedbackMessage}
+                {state.progress === null
+                  ? ""
+                  : ` ${Math.round(state.progress * 100)}%`}
+              </Text>
+            )}
             {state.progress !== null ? (
               <ProgressBar
                 progress={state.progress}
@@ -199,11 +246,15 @@ export function SpeechPanel({
                   accessibilityLabel="Reload offline voice packs"
                   mode="outlined"
                   disabled={busy}
-                  onPress={() => perform("Reload offline voice packs", async () => {
-                    await mobileSpeech.stop();
-                    await mobileSpeech.refresh();
-                    setActionNotice("Voice packs checked. Download a pack or try Read aloud again.");
-                  })}
+                  onPress={() =>
+                    perform("Reload offline voice packs", async () => {
+                      await mobileSpeech.stop();
+                      await mobileSpeech.refresh();
+                      setActionNotice(
+                        "Voice packs checked. Download a pack or try Read aloud again.",
+                      );
+                    })
+                  }
                 >
                   Reload voice packs
                 </NativeButton>
@@ -211,7 +262,11 @@ export function SpeechPanel({
                   <NativeButton
                     accessibilityLabel="Repair offline voices"
                     disabled={busy}
-                    onPress={() => perform("Repair offline voices", () => mobileSpeech.repairRuntime!())}
+                    onPress={() =>
+                      perform("Repair offline voices", () =>
+                        mobileSpeech.repairRuntime!(),
+                      )
+                    }
                   >
                     Repair offline voices
                   </NativeButton>
@@ -234,7 +289,11 @@ export function SpeechPanel({
               detail: `${item.description} · ${state.installedModelIds.includes(item.modelId) ? "Ready offline" : "Download voice pack to use"}`,
             }))}
             disabled={busy}
-            onChange={(id) => perform("Select an offline voice", () => mobileSpeech.selectVoice(id))}
+            onChange={(id) =>
+              perform("Select an offline voice", () =>
+                mobileSpeech.selectVoice(id),
+              )
+            }
           />
           <View style={styles.phoneReadyRow}>
             <Icon
@@ -260,7 +319,9 @@ export function SpeechPanel({
             }))}
             disabled={busy}
             onChange={(rate) =>
-              perform("Save offline voice speed", () => mobileSpeech.setRate(Number(rate)))
+              perform("Save offline voice speed", () =>
+                mobileSpeech.setRate(Number(rate)),
+              )
             }
           />
           <NativeInput
@@ -276,8 +337,21 @@ export function SpeechPanel({
               accessibilityLabel="Read aloud using selected offline voice"
               mode="contained"
               icon="volume-high"
-              disabled={busy || !text.trim()}
-              onPress={() => perform("Preview offline speech", () => mobileSpeech.speak(text))}
+              disabled={busy || !inventoryReady || !text.trim()}
+              onPress={() =>
+                perform("Preview offline speech", async () => {
+                  await mobileSpeech.refresh();
+                  if (
+                    !mobileSpeech
+                      .snapshot()
+                      .installedModelIds.includes(voice.modelId)
+                  )
+                    throw new Error(
+                      "The selected voice pack is still unavailable. Reload voice packs, then try again.",
+                    );
+                  await mobileSpeech.speak(text);
+                })
+              }
               contentStyle={styles.phonePrimaryContent}
             >
               Read aloud
@@ -288,9 +362,11 @@ export function SpeechPanel({
                 accessibilityLabel="Download selected voice pack"
                 mode="contained"
                 icon="download-outline"
-                disabled={busy}
+                disabled={busy || !inventoryReady}
                 onPress={() =>
-                  perform("Download and install an offline voice pack", () => mobileSpeech.install(voice.modelId))
+                  perform("Download and install an offline voice pack", () =>
+                    mobileSpeech.install(voice.modelId),
+                  )
                 }
                 contentStyle={styles.phonePrimaryContent}
               >
@@ -300,8 +376,9 @@ export function SpeechPanel({
                 variant="bodySmall"
                 style={{ color: theme.colors.onSurfaceVariant }}
               >
-                Download {selectedModel.name} once to read aloud with{" "}
-                {voice.name}.
+                {inventoryReady
+                  ? `Download ${selectedModel.name} once to read aloud with ${voice.name}.`
+                  : "Checking downloaded voice packs…"}
               </Text>
             </>
           )}
@@ -310,7 +387,9 @@ export function SpeechPanel({
               accessibilityLabel="Stop offline speech"
               mode="outlined"
               icon="stop"
-              onPress={() => perform("Stop offline speech", () => mobileSpeech.stop())}
+              onPress={() =>
+                perform("Stop offline speech", () => mobileSpeech.stop())
+              }
             >
               {state.phase === "downloading" ? "Cancel download" : "Stop"}
             </NativeButton>
@@ -382,7 +461,9 @@ export function SpeechPanel({
                     }}
                     onPress={() => {
                       if (!busy)
-                        perform("Select an offline voice", () => mobileSpeech.selectVoice(item.id));
+                        perform("Select an offline voice", () =>
+                          mobileSpeech.selectVoice(item.id),
+                        );
                     }}
                     right={(iconProps) => (
                       <List.Icon
@@ -411,7 +492,11 @@ export function SpeechPanel({
                 (Platform.OS !== "web" &&
                   state.installedModelIds.includes(model.id))
               }
-              onPress={() => perform("Download and install an offline voice pack", () => mobileSpeech.install(model.id))}
+              onPress={() =>
+                perform("Download and install an offline voice pack", () =>
+                  mobileSpeech.install(model.id),
+                )
+              }
             >
               {state.installedModelIds.includes(model.id)
                 ? Platform.OS === "web"
@@ -431,7 +516,9 @@ export function SpeechPanel({
                 <NativeButton
                   accessibilityLabel={`${model.name} voice licence`}
                   onPress={() => {
-                    perform("Open an offline voice licence", async () => { await Linking.openURL(model.licenseUrl); });
+                    perform("Open an offline voice licence", async () => {
+                      await Linking.openURL(model.licenseUrl);
+                    });
                   }}
                 >
                   Voice licence
@@ -441,7 +528,11 @@ export function SpeechPanel({
                     accessibilityLabel={`Remove ${model.name} speech model`}
                     textColor={theme.colors.error}
                     disabled={busy}
-                    onPress={() => perform("Remove an offline voice pack", () => mobileSpeech.remove(model.id))}
+                    onPress={() =>
+                      perform("Remove an offline voice pack", () =>
+                        mobileSpeech.remove(model.id),
+                      )
+                    }
                   >
                     Remove download
                   </NativeButton>
@@ -477,7 +568,9 @@ export function SpeechPanel({
                 }
               />
             ) : null}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <Switch
                 value={dictation.autosend}
                 onValueChange={dictation.onAutosendChange}
@@ -486,8 +579,8 @@ export function SpeechPanel({
               <Text variant="bodyMedium">Send after dictation</Text>
             </View>
             <Text variant="bodySmall">
-              Dictation uses the iPhone system speech recognizer. Sending
-              after dictation is off unless you turn it on here.
+              Dictation uses the iPhone system speech recognizer. Sending after
+              dictation is off unless you turn it on here.
             </Text>
           </NativeSurface>
         ) : null}
@@ -509,7 +602,11 @@ export function SpeechPanel({
                 <NativeButton
                   accessibilityLabel="Repair offline voices"
                   disabled={busy}
-                  onPress={() => perform("Repair offline voices", () => mobileSpeech.repairRuntime!())}
+                  onPress={() =>
+                    perform("Repair offline voices", () =>
+                      mobileSpeech.repairRuntime!(),
+                    )
+                  }
                 >
                   Repair offline voices
                 </NativeButton>
@@ -543,11 +640,21 @@ export function SpeechPanel({
       {hasError ? (
         <View style={{ gap: 8 }}>
           <ErrorNotice message={feedbackMessage} />
-          <NativeButton disabled={busy} accessibilityLabel="Reload offline voice packs" onPress={() => perform("Reload offline voice packs", async () => {
-            await mobileSpeech.stop();
-            await mobileSpeech.refresh();
-            setActionNotice("Voice packs checked. Download a pack or try Read aloud again.");
-          })}>Reload voice packs</NativeButton>
+          <NativeButton
+            disabled={busy}
+            accessibilityLabel="Reload offline voice packs"
+            onPress={() =>
+              perform("Reload offline voice packs", async () => {
+                await mobileSpeech.stop();
+                await mobileSpeech.refresh();
+                setActionNotice(
+                  "Voice packs checked. Download a pack or try Read aloud again.",
+                );
+              })
+            }
+          >
+            Reload voice packs
+          </NativeButton>
         </View>
       ) : null}
       <NativeDropdown
@@ -559,7 +666,9 @@ export function SpeechPanel({
           detail: `${item.description} · ${state.installedModelIds.includes(item.modelId) ? "Ready offline" : "Download voice pack to use"}`,
         }))}
         disabled={busy}
-        onChange={(id) => perform("Select an offline voice", () => mobileSpeech.selectVoice(id))}
+        onChange={(id) =>
+          perform("Select an offline voice", () => mobileSpeech.selectVoice(id))
+        }
       />
       <NativeDropdown
         label="Voice speed"
@@ -569,7 +678,11 @@ export function SpeechPanel({
           label: `${rate}×${rate === 1 ? " · Natural" : rate < 1 ? " · Unhurried" : " · Brisk"}`,
         }))}
         disabled={busy}
-        onChange={(rate) => perform("Save offline voice speed", () => mobileSpeech.setRate(Number(rate)))}
+        onChange={(rate) =>
+          perform("Save offline voice speed", () =>
+            mobileSpeech.setRate(Number(rate)),
+          )
+        }
       />
       <NativeInput
         label="Text to read aloud"
@@ -581,15 +694,30 @@ export function SpeechPanel({
       <View style={styles.row}>
         <NativeButton
           accessibilityLabel="Read aloud using selected offline voice"
-          disabled={busy || !installed || !text.trim()}
-          onPress={() => perform("Preview offline speech", () => mobileSpeech.speak(text))}
+          disabled={busy || !inventoryReady || !installed || !text.trim()}
+          onPress={() =>
+            perform("Preview offline speech", async () => {
+              await mobileSpeech.refresh();
+              if (
+                !mobileSpeech
+                  .snapshot()
+                  .installedModelIds.includes(voice.modelId)
+              )
+                throw new Error(
+                  "The selected voice pack is still unavailable. Reload voice packs, then try again.",
+                );
+              await mobileSpeech.speak(text);
+            })
+          }
         >
           Read aloud
         </NativeButton>
         <NativeButton
           accessibilityLabel="Stop offline speech"
           disabled={!busy && !state.audioUri}
-          onPress={() => perform("Stop offline speech", () => mobileSpeech.stop())}
+          onPress={() =>
+            perform("Stop offline speech", () => mobileSpeech.stop())
+          }
         >
           Stop
         </NativeButton>
@@ -612,7 +740,11 @@ export function SpeechPanel({
           <NativeButton
             accessibilityLabel="Download selected voice pack"
             disabled={busy}
-            onPress={() => perform("Download and install an offline voice pack", () => mobileSpeech.install(voice.modelId))}
+            onPress={() =>
+              perform("Download and install an offline voice pack", () =>
+                mobileSpeech.install(voice.modelId),
+              )
+            }
           >
             Get {voice.name}'s voice pack
           </NativeButton>
@@ -631,17 +763,18 @@ export function SpeechPanel({
           }
         />
       ) : null}
-      {!hasError ? <Text
-        style={{
-          color:
-            hasError
-              ? theme.colors.error
-              : theme.colors.onSurface,
-        }}
-      >
-        {feedbackMessage}
-        {state.progress === null ? "" : ` ${Math.round(state.progress * 100)}%`}
-      </Text> : null}
+      {!hasError ? (
+        <Text
+          style={{
+            color: hasError ? theme.colors.error : theme.colors.onSurface,
+          }}
+        >
+          {feedbackMessage}
+          {state.progress === null
+            ? ""
+            : ` ${Math.round(state.progress * 100)}%`}
+        </Text>
+      ) : null}
       <View style={styles.languageRow} testID="speech-language-filter">
         {[{ tag: "all", label: "All" }, ...speechLanguages].map((item) => (
           <Chip
@@ -673,7 +806,9 @@ export function SpeechPanel({
                   accessibilityLabel={`Select ${item.name} offline voice`}
                   disabled={busy}
                   onPress={() =>
-                    perform("Select an offline voice", () => mobileSpeech.selectVoice(item.id))
+                    perform("Select an offline voice", () =>
+                      mobileSpeech.selectVoice(item.id),
+                    )
                   }
                 >{`${state.selectedVoiceId === item.id ? "Selected: " : ""}${item.name}`}</NativeButton>
                 <Text>{item.description}</Text>
@@ -687,7 +822,11 @@ export function SpeechPanel({
                 (Platform.OS !== "web" &&
                   state.installedModelIds.includes(model.id))
               }
-              onPress={() => perform("Download and install an offline voice pack", () => mobileSpeech.install(model.id))}
+              onPress={() =>
+                perform("Download and install an offline voice pack", () =>
+                  mobileSpeech.install(model.id),
+                )
+              }
             >
               {state.installedModelIds.includes(model.id)
                 ? Platform.OS === "web"
@@ -699,7 +838,11 @@ export function SpeechPanel({
               <NativeButton
                 accessibilityLabel={`Remove ${model.name} speech model`}
                 disabled={busy}
-                onPress={() => perform("Remove an offline voice pack", () => mobileSpeech.remove(model.id))}
+                onPress={() =>
+                  perform("Remove an offline voice pack", () =>
+                    mobileSpeech.remove(model.id),
+                  )
+                }
               >
                 Remove download
               </NativeButton>
@@ -707,7 +850,9 @@ export function SpeechPanel({
             <NativeButton
               accessibilityLabel={`${model.name} voice licence`}
               onPress={() => {
-                perform("Open an offline voice licence", async () => { await Linking.openURL(model.licenseUrl); });
+                perform("Open an offline voice licence", async () => {
+                  await Linking.openURL(model.licenseUrl);
+                });
               }}
             >
               Voice licence
@@ -756,7 +901,11 @@ export function SpeechPanel({
         <NativeButton
           accessibilityLabel="Repair offline voices"
           disabled={busy}
-          onPress={() => perform("Repair offline voices", () => mobileSpeech.repairRuntime!())}
+          onPress={() =>
+            perform("Repair offline voices", () =>
+              mobileSpeech.repairRuntime!(),
+            )
+          }
         >
           Repair offline voices
         </NativeButton>

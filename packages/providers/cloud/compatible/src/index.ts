@@ -113,6 +113,9 @@ export function createCloudCompatibleProvider(
         ok: true,
         value: {
           streaming: "yes",
+          "parameter.temperature": "yes",
+          "parameter.top_p": "yes",
+          "parameter.max_output_tokens": "yes",
           tools: options.toolsEnabled === true ? "yes" : "unknown",
           reasoning: options.ninferThinkingControl === true ? "yes" : "unknown",
           vision: "unknown",

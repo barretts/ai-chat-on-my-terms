@@ -49,6 +49,7 @@ export interface ChatPanelsProps {
   personaEnabled?: boolean;
   capabilities: CapabilityMap;
   serverContextWindow?: number;
+  serverMaxOutputTokens?: number;
   serverContextStatus?: "checking" | "available" | "unavailable";
   createId: () => string;
   library?: LibraryFeatureProps["library"];
@@ -168,6 +169,9 @@ export function ChatPanels(props: ChatPanelsProps) {
           capabilities={settingsCapabilities}
           {...(props.serverContextWindow
             ? { serverContextWindow: props.serverContextWindow }
+            : {})}
+          {...(props.serverMaxOutputTokens
+            ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
             : {})}
           {...(props.serverContextStatus
             ? { serverContextStatus: props.serverContextStatus }

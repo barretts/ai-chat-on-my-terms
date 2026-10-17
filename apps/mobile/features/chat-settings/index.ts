@@ -201,16 +201,26 @@ export function resolveSettings(input: {
   capabilities: CapabilityMap;
   /** Active context reported by the selected server, below every explicit preset. */
   serverContextWindow?: number;
+  /** Active model output limit reported by the selected server. */
+  serverMaxOutputTokens?: number;
 }): SettingsSnapshot {
   const serverContextWindow =
     Number.isSafeInteger(input.serverContextWindow) &&
     input.serverContextWindow! > 0
       ? input.serverContextWindow
       : undefined;
+  const serverMaxOutputTokens =
+    Number.isSafeInteger(input.serverMaxOutputTokens) &&
+    input.serverMaxOutputTokens! > 0
+      ? input.serverMaxOutputTokens
+      : undefined;
   const stack: ParameterPresetStack = {
     global: {
       explicitlySet: {
         ...(serverContextWindow ? { contextWindow: serverContextWindow } : {}),
+        ...(serverMaxOutputTokens
+          ? { max_output_tokens: serverMaxOutputTokens }
+          : {}),
         ...input.presets.global.explicitlySet,
       },
     },
@@ -231,9 +241,10 @@ export function resolveSettings(input: {
       "unknown";
   }
   const resolved = resolveParameters(stack, parameterCapabilities);
-  const origins: Record<string, SettingsScope | "server"> = serverContextWindow
-    ? { contextWindow: "server" }
-    : {};
+  const origins: Record<string, SettingsScope | "server"> = {
+    ...(serverContextWindow ? { contextWindow: "server" as const } : {}),
+    ...(serverMaxOutputTokens ? { max_output_tokens: "server" as const } : {}),
+  };
   for (const [scope, values] of [
     ["global", input.presets.global.explicitlySet],
     ["model", input.presets.model.explicitlySet],

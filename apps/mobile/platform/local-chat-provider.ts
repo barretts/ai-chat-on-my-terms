@@ -66,6 +66,7 @@ export function createLocalChatPort(blobs: BlobStore): ProviderPort {
         ok: true as const,
         value: {
           streaming: "yes" as const,
+          tools: "yes" as const,
           "parameter.contextWindow": "yes" as const,
           "parameter.max_output_tokens": "yes" as const,
           "parameter.temperature": "yes" as const,

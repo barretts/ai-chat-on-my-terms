@@ -13,7 +13,15 @@ const compatibleKinds = new Set([
   "unsloth",
   "lmstudio",
   "cloud-compatible",
+  "openrouter",
 ]);
+
+export interface DiscoveredModelContext {
+  contextWindowTokens?: number;
+  maxOutputTokens?: number;
+  toolsSupported?: true;
+  source: string;
+}
 
 /** Context defaults belong to the exact connection and model, never a shared model-name preset. */
 export function modelContextKey(connection: ChatProviderRegistration): string {
@@ -41,7 +49,9 @@ export function supportsContextDiscovery(
       !url.password &&
       !url.search &&
       !url.hash &&
-      ["/", "/v1", "/v1/"].includes(url.pathname)
+      (connection.kind === "openrouter"
+        ? ["/api/v1", "/api/v1/"].includes(url.pathname)
+        : ["/", "/v1", "/v1/"].includes(url.pathname))
     );
   } catch {
     return false;
@@ -53,7 +63,50 @@ export async function discoverRegisteredModelContext(
   connection: ChatProviderRegistration,
   options: { fetch: FetchLike; secrets: SecretStore },
   signal?: AbortSignal,
-): Promise<CompatibleModelContext | undefined> {
+): Promise<DiscoveredModelContext | undefined> {
+  if (connection.kind === "openrouter" && connection.endpoint) {
+    const endpoint = new URL(connection.endpoint);
+    const transport = createHttpTransport({
+      fetch: options.fetch,
+      policy: { authorizedOrigins: [endpoint.origin] },
+    });
+    const headers = connection.credentialRef
+      ? await options.secrets.resolveHeaders(endpoint.origin, [
+          connection.credentialRef,
+        ])
+      : {};
+    const response = await transport.request(
+      new URL("models", endpoint.toString().replace(/\/?$/, "/")),
+      { headers, ...(signal ? { signal } : {}) },
+      signal ? { signal } : {},
+    );
+    const catalog = (await response.json()) as {
+      data?: readonly {
+        id?: unknown;
+        context_length?: unknown;
+        supported_parameters?: unknown;
+        top_provider?: { max_completion_tokens?: unknown };
+      }[];
+    };
+    const model = catalog.data?.find((item) => item.id === connection.modelId);
+    if (!model) return undefined;
+    const positive = (value: unknown) =>
+      Number.isSafeInteger(value) && (value as number) > 0
+        ? (value as number)
+        : undefined;
+    const contextWindowTokens = positive(model.context_length);
+    const maxOutputTokens = positive(model.top_provider?.max_completion_tokens);
+    if (!contextWindowTokens && !maxOutputTokens) return undefined;
+    return {
+      ...(contextWindowTokens ? { contextWindowTokens } : {}),
+      ...(maxOutputTokens ? { maxOutputTokens } : {}),
+      source: "models",
+      ...(Array.isArray(model.supported_parameters) &&
+      model.supported_parameters.includes("tools")
+        ? { toolsSupported: true as const }
+        : {}),
+    };
+  }
   if (!supportsContextDiscovery(connection)) return undefined;
   const endpoint = new URL(connection.endpoint!);
   const transport = createHttpTransport({

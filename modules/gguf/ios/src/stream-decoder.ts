@@ -5,6 +5,7 @@ export type LlamaOutput = {
   content?: string;
   reasoning_content?: string;
   accumulated_text?: string;
+  tool_calls?: unknown;
 };
 
 export type StreamDeltas = { reasoning: string; text: string };
@@ -57,7 +58,9 @@ function withoutPartialTag(value: string, tag: string): string {
  * `reasoning_content` are cumulative snapshots; only `token` is a delta.
  * This turns either shape into append-only reasoning/text deltas.
  */
-export function createLlamaStreamDecoder() {
+export function createLlamaStreamDecoder(
+  options: { toolsEnabled?: boolean } = {},
+) {
   let raw = "";
   let parsedSeen = false;
   let emitted: StreamDeltas = { reasoning: "", text: "" };
@@ -75,7 +78,17 @@ export function createLlamaStreamDecoder() {
   };
 
   const snapshot = (output: LlamaOutput, partial: boolean): StreamDeltas => {
-    const split = splitThinking(output.content ?? "", partial);
+    let content = output.content ?? "";
+    if (options.toolsEnabled) {
+      const start = content.indexOf("<tool_call>");
+      content =
+        start === -1
+          ? partial
+            ? withoutPartialTag(content, "<tool_call>")
+            : content
+          : content.slice(0, start);
+    }
+    const split = splitThinking(content, partial);
     return {
       reasoning: (output.reasoning_content ?? "").trimStart() + split.reasoning,
       text: split.text,
@@ -85,6 +98,7 @@ export function createLlamaStreamDecoder() {
   const hasParsed = (output: LlamaOutput) =>
     output.content !== undefined ||
     output.reasoning_content !== undefined ||
+    output.tool_calls !== undefined ||
     output.accumulated_text !== undefined;
 
   return {

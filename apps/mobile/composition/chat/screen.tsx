@@ -383,14 +383,12 @@ export default function CompleteChatScreen() {
   });
   useEffect(() => {
     if (panel !== "personas" || !runtime) return;
-    void runtime.identities.memory
-      .preferences()
-      .then((value) =>
-        setPersonaMemorySwitches({
-          extract: value.extractionEnabled,
-          inject: value.injectionEnabled,
-        }),
-      );
+    void runtime.identities.memory.preferences().then((value) =>
+      setPersonaMemorySwitches({
+        extract: value.extractionEnabled,
+        inject: value.injectionEnabled,
+      }),
+    );
   }, [panel, runtime]);
   const [personaConnections, setPersonaConnections] = useState<
     { id: string; label: string; modelId: string }[]
@@ -405,8 +403,7 @@ export default function CompleteChatScreen() {
           setPersonaConnections(
             registrations
               .filter(
-                (registration) =>
-                  registration.modelId !== "model-discovery",
+                (registration) => registration.modelId !== "model-discovery",
               )
               .map((registration) => ({
                 id: registration.id,
@@ -442,6 +439,7 @@ export default function CompleteChatScreen() {
     key: string;
     status: "checking" | "available" | "unavailable";
     tokens?: number;
+    maxOutputTokens?: number;
     toolsSupported?: true;
   } | null>(null);
   useEffect(() => {
@@ -518,27 +516,37 @@ export default function CompleteChatScreen() {
       ...(previous?.key === key && previous.tokens
         ? { tokens: previous.tokens }
         : {}),
+      ...(previous?.key === key && previous.maxOutputTokens
+        ? { maxOutputTokens: previous.maxOutputTokens }
+        : {}),
     }));
     void discoverRegisteredModelContext(
       registration,
       { fetch: providerFetch as FetchLike, secrets: runtime.secrets },
       controller.signal,
-    ).then((detected) => {
-      if (controller.signal.aborted || currentContextKey.current !== key)
-        return;
-      setServerContext({
-        key,
-        status: detected ? "available" : "unavailable",
-        ...(detected
-          ? {
-              tokens: detected.contextWindowTokens,
-              ...(detected.toolsSupported
-                ? { toolsSupported: true as const }
-                : {}),
-            }
-          : {}),
+    )
+      .then((detected) => {
+        if (controller.signal.aborted || currentContextKey.current !== key)
+          return;
+        setServerContext({
+          key,
+          status: detected ? "available" : "unavailable",
+          ...(detected?.contextWindowTokens
+            ? { tokens: detected.contextWindowTokens }
+            : {}),
+          ...(detected?.maxOutputTokens
+            ? { maxOutputTokens: detected.maxOutputTokens }
+            : {}),
+          ...(detected?.toolsSupported
+            ? { toolsSupported: true as const }
+            : {}),
+        });
+      })
+      .catch(() => {
+        if (controller.signal.aborted || currentContextKey.current !== key)
+          return;
+        setServerContext({ key, status: "unavailable" });
       });
-    });
     return () => controller.abort();
   }, [runtime, selectedContextKey]);
 
@@ -764,8 +772,9 @@ export default function CompleteChatScreen() {
     () => new DictationController(dictationInput, mobileSpeech),
     [],
   );
-  const [dictationPrefs, setDictationPrefs] =
-    useState<DictationPreferences>(DEFAULT_DICTATION_PREFERENCES);
+  const [dictationPrefs, setDictationPrefs] = useState<DictationPreferences>(
+    DEFAULT_DICTATION_PREFERENCES,
+  );
   const dictationPrefsRef = useRef(dictationPrefs);
   dictationPrefsRef.current = dictationPrefs;
   const [dictationAvailability, setDictationAvailability] = useState<
@@ -777,7 +786,8 @@ export default function CompleteChatScreen() {
     void dictationInput
       .getAvailability()
       .then((result) => {
-        if (active) setDictationAvailability(result.ok ? result.value : "unavailable");
+        if (active)
+          setDictationAvailability(result.ok ? result.value : "unavailable");
       })
       .catch((cause: unknown) => {
         if (active)
@@ -829,13 +839,12 @@ export default function CompleteChatScreen() {
     },
     [],
   );
-  const [voicePrefs, setVoicePrefs] =
-    useState<VoicePreferences>(DEFAULT_VOICE_PREFERENCES);
+  const [voicePrefs, setVoicePrefs] = useState<VoicePreferences>(
+    DEFAULT_VOICE_PREFERENCES,
+  );
   const voicePrefsRef = useRef(voicePrefs);
   voicePrefsRef.current = voicePrefs;
-  const [voiceImports, setVoiceImports] = useState<ImportedTranscription[]>(
-    [],
-  );
+  const [voiceImports, setVoiceImports] = useState<ImportedTranscription[]>([]);
   const [voiceImportBusy, setVoiceImportBusy] = useState(false);
   const [voicePlaybackId, setVoicePlaybackId] = useState<string | null>(null);
   const [voiceError, setVoiceError] = useState("");
@@ -881,8 +890,7 @@ export default function CompleteChatScreen() {
           connections
             .filter(
               (connection) =>
-                connection.kind === "elevenlabs" ||
-                connection.kind === "xai",
+                connection.kind === "elevenlabs" || connection.kind === "xai",
             )
             .map((connection) => ({
               id: connection.id,
@@ -896,24 +904,21 @@ export default function CompleteChatScreen() {
       active = false;
     };
   }, [runtime]);
-  const saveVoicePrefs = useCallback(
-    (update: Partial<VoicePreferences>) => {
-      const next = { ...voicePrefsRef.current, ...update };
-      setVoicePrefs(next);
-      const store = liveRuntime.current?.voice;
-      if (!store) return;
-      void store.save(next).catch((cause: unknown) =>
-        setVoiceError(
-          describeError(cause, {
-            operation: "Save voice preference",
-            recovery:
-              "Choose the option again to retry. It may reset after reopening the app.",
-          }),
-        ),
-      );
-    },
-    [],
-  );
+  const saveVoicePrefs = useCallback((update: Partial<VoicePreferences>) => {
+    const next = { ...voicePrefsRef.current, ...update };
+    setVoicePrefs(next);
+    const store = liveRuntime.current?.voice;
+    if (!store) return;
+    void store.save(next).catch((cause: unknown) =>
+      setVoiceError(
+        describeError(cause, {
+          operation: "Save voice preference",
+          recovery:
+            "Choose the option again to retry. It may reset after reopening the app.",
+        }),
+      ),
+    );
+  }, []);
   const bindPersonaVoice = useCallback(
     (personaId: string, patch: PersonaVoicePatchInput) => {
       const current = liveRuntime.current;
@@ -976,20 +981,19 @@ export default function CompleteChatScreen() {
           }),
         ),
       )
-      .finally(() =>
-        setVoicePlaybackId((id) => (id === item.id ? null : id)),
-      );
+      .finally(() => setVoicePlaybackId((id) => (id === item.id ? null : id)));
   }, []);
   const stopVoicePlayback = useCallback(() => {
-    void (liveRuntime.current?.voiceStudio.stopPlayback() ?? Promise.resolve())
-      .catch((cause: unknown) =>
-        setVoiceError(
-          describeError(cause, {
-            operation: "Stop audio playback",
-            recovery: "Play the file again, then stop it once more.",
-          }),
-        ),
-      );
+    void (
+      liveRuntime.current?.voiceStudio.stopPlayback() ?? Promise.resolve()
+    ).catch((cause: unknown) =>
+      setVoiceError(
+        describeError(cause, {
+          operation: "Stop audio playback",
+          recovery: "Play the file again, then stop it once more.",
+        }),
+      ),
+    );
   }, []);
   const removeVoiceImport = useCallback(
     (item: ImportedTranscription) => {
@@ -1266,6 +1270,11 @@ export default function CompleteChatScreen() {
           });
         providerCache.current.set(cacheKey, port);
         caps = await selectedCapabilities(port, registration.modelId);
+      } else if (mode === "local") {
+        caps = await selectedCapabilities(
+          createLocalChatPort(runtime.blobs),
+          `blob:${selectedModel ?? ""}`,
+        );
       } else if (mode === "openai") {
         const saved = await runtime.setup.get(runtime.connectionId);
         if (saved)
@@ -1432,7 +1441,12 @@ export default function CompleteChatScreen() {
             status: detectedContext ? "available" : "unavailable",
             ...(detectedContext
               ? {
-                  tokens: detectedContext.contextWindowTokens,
+                  ...(detectedContext.contextWindowTokens
+                    ? { tokens: detectedContext.contextWindowTokens }
+                    : {}),
+                  ...(detectedContext.maxOutputTokens
+                    ? { maxOutputTokens: detectedContext.maxOutputTokens }
+                    : {}),
                   ...(detectedContext.toolsSupported
                     ? { toolsSupported: true as const }
                     : {}),
@@ -1456,16 +1470,20 @@ export default function CompleteChatScreen() {
           );
         // Autonomous research needs the adapter built with tool support, so
         // the saved Auto policy must be consulted before the port is created.
+        const nativeToolsSupported =
+          selected?.kind === "local-gguf" || (!selected && mode === "local");
+        const modelToolsSupported =
+          nativeToolsSupported || detectedContext?.toolsSupported === true;
         const webAutoRequested =
-          detectedContext?.toolsSupported === true &&
+          modelToolsSupported &&
           resolveEffectiveWebResearchMode(
             savedWebSettings.mode ?? "auto",
             savedWebOverride,
           ) === "auto" &&
           !offlineInstructionRequested(text);
         const toolsEnabled =
-          detectedContext?.toolsSupported === true &&
-          (wantsFiles || webAutoRequested);
+          modelToolsSupported &&
+          (nativeToolsSupported || wantsFiles || webAutoRequested);
         const fileStore = workspaceFiles!;
         const existingFile = fileIntent
           ? await fileStore.read(validateWorkspacePath(fileIntent.path))
@@ -1750,20 +1768,17 @@ export default function CompleteChatScreen() {
           throw new ContextBudgetError(
             `Web research and file tools need more room than this ${budget}-token context allows. Increase Context window to match your model or turn these options off. Your draft is preserved.`,
           );
-        const reservation =
+        const configuredOutputTokens =
           typeof settings.outbound.max_output_tokens === "number"
-            ? Math.min(
-                chatBudget - 1,
-                Math.max(1, settings.outbound.max_output_tokens),
-              )
-            : Math.min(
-                settings.outbound.reasoning === true
-                  ? 4096
-                  : wantsFiles
-                    ? 2048
-                    : 512,
-                chatBudget - 1,
-              );
+            ? Math.max(1, settings.outbound.max_output_tokens)
+            : settings.outbound.reasoning === true
+              ? 4096
+              : 2048;
+        const reservation = Math.min(
+          chatBudget - 1,
+          configuredOutputTokens,
+          detectedContext?.maxOutputTokens ?? Number.MAX_SAFE_INTEGER,
+        );
         let documentPort = port;
         if (loopTools.length) {
           const registry = new ToolRegistry();
@@ -1804,12 +1819,13 @@ export default function CompleteChatScreen() {
             "This model has not reported support for reading or listing workspace files. Open Files to preview them, or select a model with file tool support. You can still ask this model to write a Markdown or text file.",
           );
         }
-        if (webTools.length) documentPort = withWebResearchToolSources(documentPort);
+        if (webTools.length)
+          documentPort = withWebResearchToolSources(documentPort);
         const generationPort = withWebResearch(documentPort, {
           client: researchClient,
           text,
-          search: webPlan.search,
-          fetchPages: webPlan.fetchPages,
+          search: webPlan.search && !webPolicy.automaticTools,
+          fetchPages: webPlan.fetchPages && !webPolicy.automaticTools,
           ...(webPlan.searchQuery !== undefined
             ? { searchQuery: webPlan.searchQuery }
             : {}),
@@ -2030,8 +2046,7 @@ export default function CompleteChatScreen() {
               },
             ).catch((cause: unknown) =>
               traceLog.event("Image request from reply", "failed", {
-                errorName:
-                  cause instanceof Error ? cause.name : "unknown",
+                errorName: cause instanceof Error ? cause.name : "unknown",
               }),
             );
           if (
@@ -3348,7 +3363,9 @@ export default function CompleteChatScreen() {
           {...(avatarPort ? { avatarPort } : {})}
           globalMemorySettings={personaMemorySwitches}
           onPersonaMemoryPolicy={async (personaId, share) => {
-            await runtime.identities.memoryScope.setPolicy(personaId, { share });
+            await runtime.identities.memoryScope.setPolicy(personaId, {
+              share,
+            });
           }}
           modelConnections={personaConnections}
           generatePersona={async (idea, signal) => {
@@ -3544,6 +3561,9 @@ export default function CompleteChatScreen() {
           capabilities={capabilities}
           {...(activeServerContext?.tokens
             ? { serverContextWindow: activeServerContext.tokens }
+            : {})}
+          {...(activeServerContext?.maxOutputTokens
+            ? { serverMaxOutputTokens: activeServerContext.maxOutputTokens }
             : {})}
           {...(activeServerContext
             ? { serverContextStatus: activeServerContext.status }
@@ -4107,7 +4127,7 @@ function formatBytes(bytes: number) {
 }
 
 function createStyles(colors: MD3Theme["colors"], dark = false) {
-  const bevelLight = dark ? "#756880" : "#ffffff";
+  const bevelLight = dark ? "#68737f" : "#ffffff";
   return StyleSheet.create({
     page: { flex: 1, backgroundColor: colors.background },
     center: {
@@ -4148,14 +4168,14 @@ function createStyles(colors: MD3Theme["colors"], dark = false) {
       borderWidth: 2,
       borderTopColor: bevelLight,
       borderLeftColor: bevelLight,
-      borderRightColor: "#6a6070",
-      borderBottomColor: "#6a6070",
+      borderRightColor: "#5c6672",
+      borderBottomColor: "#5c6672",
       backgroundColor: colors.surface,
     },
     headerButtonSelected: {
       backgroundColor: colors.secondaryContainer,
-      borderTopColor: "#6a6070",
-      borderLeftColor: "#6a6070",
+      borderTopColor: "#5c6672",
+      borderLeftColor: "#5c6672",
       borderRightColor: bevelLight,
       borderBottomColor: bevelLight,
     },
