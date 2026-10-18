@@ -17,4 +17,4 @@ The fake Responses endpoint emits SSE through the production OpenAI adapter. Tes
 
 **Current result:** controlled fixture tests only. Physical iPhone run and live vendor proof remain pending (T159A). The current Windows host cannot run Xcode or claim physical-device evidence.
 
-The first-run route bootstraps the immutable core schema using equivalent inline DDL because Expo does not yet expose the migration runner's registered SQL source URLs as readable assets. It initializes chat-history tables and one constrained app settings table but does not write the shared `schema_migrations` ledger or apply optional migrations. Production schema-runner wiring and upgrade-path validation remain pending.
+The first-run route now applies the real embedded migration runner (`migrateEmbeddedSQLite` from `@locallab/schema/embedded`, wired in `apps/mobile/composition/first-run-chat/`), which creates and writes the shared `schema_migrations` ledger from the checked-in embedded SQL. Regenerate the embedded data after adding a migration (`pnpm --filter @locallab/schema generate:embedded`). Device-side upgrade-path proof on a real installed app remains pending.

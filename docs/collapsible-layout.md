@@ -14,7 +14,7 @@ Phone typography uses the iOS system family on iOS, `system-ui` in the browser, 
 
 ## Desktop
 
-Use the square button at the right of the purple title bar to focus the conversation. It folds the desktop menu, status and task bars, chat settings, and composer tools together. Press it again to show all controls.
+Use the square button at the right of the cobalt title bar to focus the conversation. It folds the desktop menu, status and task bars, chat settings, and composer tools together. Press it again to show all controls.
 
 The arrow beside the conversation title toggles chat settings independently. The plus/minus button beside Message toggles writing tools independently. History, New, Message, Send, and Stop remain available in focus mode. A number beside the composer plus indicates selected web tools; collapsing them preserves their selection.
 

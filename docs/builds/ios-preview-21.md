@@ -22,7 +22,7 @@ As with builds 2-20, the uploaded source archive also included working-tree chan
 
 ## Evidence
 
-- Local receipts (gitignored): `tmp/iphone-build21/submission.log` (upload + fingerprint + build link), `tmp/iphone-build21/ipa-head.txt`, `tmp/iphone-build21/web-harbor-teal-light.png` (Harbor Teal light-variant screenshot).
+- Local receipts (gitignored): `tmp/iphone-build21/submission.log` (upload + fingerprint + build link), `tmp/iphone-build21/ipa-head.txt`.
 - Submission used `eas-cli@24.8.0` (pinned by `docs/iphone-installation.md`) via `pnpm dlx` from `apps/mobile`, profile `preview`, `--non-interactive --no-wait`.
 - No product test suite was run against the binary. Successful compilation does not establish physical installation or on-phone behavior.
 

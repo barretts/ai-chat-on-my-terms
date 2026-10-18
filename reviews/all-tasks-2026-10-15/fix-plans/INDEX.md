@@ -2,6 +2,8 @@
 
 28 separate task plans covering all 28 P1 findings in the [review CSV](../code-review-findings.csv). One Markdown file is one fix assignment. Original plan evidence is historical; see the [blocker fix follow-up](../blocker-fixes-follow-up.md) for current local implementation status and verification limits for R006–R008, R014, R018–R019 and R025–R026.
 
+**Status as of 2026-10-17 (HEAD `64ca4f6`):** a per-item code audit confirmed all 28 fixes R001–R028 are present in source at HEAD. Native and cross-language runtime checks (Swift/macOS, Docker relay, live pairing interop) remain bounded by the verification limits recorded in the follow-up document; only shipped-device or host-specific runs can close them.
+
 ## Baseline and scope
 
 The review was source-only at HEAD `49e9d85750184b0ce07d1d927211f73a3bdfb533` with uncommitted implementation changes; [source-audit.json](../source-audit.json) records reviewed file hashes. Re-read the current code before acting. Original task IDs are traceability, not dependencies or proof of native completion. The previous review's T100 in-progress language is historical; assess its current implementation. No product tests, builds or fixes were performed while writing these plans.

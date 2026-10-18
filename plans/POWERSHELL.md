@@ -46,10 +46,7 @@ Avoid unnecessary directory listings when the required files are already named.
 
 ## Local checks and exit codes
 
-The recorded environment has no `pnpm` on PATH. Existing local Node, Vitest and
-TypeScript binaries work. Retain the pinned package versions and lockfile.
-Use installed binaries until package-manager work actually requires restoring the pinned pnpm.
-Choose the card's focused test files; these examples do not replace its acceptance criteria.
+After the 2026-09-26 runner repair, workspace packages install through `& ./tools/run-pnpm.ps1 <arguments>` (PowerShell 5.1 handles duplicate `PATH`/`Path` entries through this wrapper; see the [runner repair evidence](../docs/implementation/evidence/runner-repair-2026-09-26.md)). Direct `pnpm` also works in terminals with a clean PATH. Retain the pinned package versions and lockfile. The direct-binary fallback below remains for environments where no package manager resolves at all. Choose the card's focused test files; these examples do not replace its acceptance criteria.
 
 ```powershell
 node .\node_modules\vitest\vitest.mjs run apps/mobile/composition/chat/web-research-settings.test.mts apps/mobile/composition/chat/web-research-intent.test.mts apps/mobile/composition/chat/web-research.test.mts
