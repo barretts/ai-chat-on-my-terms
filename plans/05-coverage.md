@@ -23,12 +23,12 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| OB-01 | Welcome wizard with Beginner and Power user paths. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-02 | RAM-aware Faster / Balanced / Best model choices. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-03 | Download a suggested model during onboarding. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-04 | Get Started recovery sheet when no model is configured. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-05 | Choose an initial theme. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-06 | Optional, skippable model race during setup. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-01 | Welcome wizard with Beginner and Power user paths. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-02 | RAM-aware Faster / Balanced / Best model choices. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-03 | Download a suggested model during onboarding. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-04 | Get Started recovery sheet when no model is configured. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-05 | Choose an initial theme. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
+| OB-06 | Optional, skippable model race during setup. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
 | OB-07 | Computer setup instructions and LAN IP guidance. | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
 | OB-08 | LM Studio discovery scan where available; authenticated servers remain discoverable. | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
 
@@ -36,7 +36,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| PR-01 | On-device GGUF | [T026](tasks/P03/T026.md), [T027](tasks/P03/T027.md) | iPhone T128 | T159A |
+| PR-01 | On-device GGUF | [T026](../archived/plans/tasks/P03/T026.md), [T027](tasks/P03/T027.md) | iPhone T128 | T159A |
 | PR-02 | On-device MLX | [T028](tasks/P03/T028.md), [T030](tasks/P03/T030.md) | iPhone T128 | T159A |
 | PR-03 | LM Studio | [T018](../archived/plans/tasks/P02/T018.md) | iPhone T128 | T159A |
 | PR-04 | Ollama | [T017](../archived/plans/tasks/P02/T017.md) | iPhone T128 | T159A |
@@ -53,36 +53,36 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
 | MO-01 | Searchable catalog; quantization labels. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
-| MO-02 | Model fit guidance using RAM, file size, format, and hardware. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
+| MO-02 | Model fit guidance using RAM, file size, format, and hardware. | [T035](../archived/plans/tasks/P03/T035.md) | iPhone T128 | T159A |
 | MO-03 | Background downloads with progress indicators. | [T031](tasks/P03/T031.md), [T032](tasks/P03/T032.md) | iPhone T128 | T159A |
 | MO-04 | Hugging Face model downloads. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
 | MO-05 | File/MLX-folder import. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
 | MO-06 | Downloaded/selected/loaded model management. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
-| MO-07 | Browse, download, load, and unload LM Studio models. | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
+| MO-07 | Browse, download, load, and unload LM Studio models. | [T034](../archived/plans/tasks/P03/T034.md) | iPhone T128 | T159A |
 | MO-08 | Ollama downloads. | [T019](../archived/plans/tasks/P02/T019.md) | iPhone T128 | T159A |
-| MO-09 | Loading progress. | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
+| MO-09 | Loading progress. | [T034](../archived/plans/tasks/P03/T034.md) | iPhone T128 | T159A |
 | MO-10 | Tool-capable model badge in supported browsers. | [T015](../archived/plans/tasks/P01/T015.md) | iPhone T128 | T159A |
 
 ## CH — Chat (17)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| CH-01 | Token streaming; stop and regenerate controls. | [T037A](tasks/P04/T037A.md) | first local/OpenAI chat T158; full iPhone T128 | T159F |
-| CH-02 | Markdown, code blocks, syntax highlighting, and LaTeX math. | [T039](tasks/P04/T039.md), [T040](tasks/P04/T040.md) | iPhone T128 | T159F |
-| CH-03 | Separate thinking/reasoning stream where supported. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-04 | Automatic conversation titles; short greetings may defer naming. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-05 | Conversation list, folders, and search. | [T042](tasks/P04/T042.md) | iPhone T128 | T159F |
-| CH-06 | Colored folders and image covers; move chats between folders. | [T042](tasks/P04/T042.md) | iPhone T128 | T159F |
-| CH-07 | Per-chat model/provider, sampling, system prompt, and reasoning overrides. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| CH-08 | Per-chat backgrounds and avatars. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| CH-09 | Context usage indicator. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-10 | Stop, Roll, and Cut middle context-overflow policies. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-11 | Compact older messages into a summary. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-12 | Modern Shine composer or legacy compact composer. | [T041](tasks/P04/T041.md) | iPhone T128 | T159F |
-| CH-13 | Starter suggestions on/off; Return sends or inserts newline. | [T041](tasks/P04/T041.md) | iPhone T128 | T159F |
-| CH-14 | Streaming auto-scroll and jump-to-bottom. | [T039](tasks/P04/T039.md) | iPhone T128 | T159F |
+| CH-01 | Token streaming; stop and regenerate controls. | [T037A](../archived/plans/tasks/P04/T037A.md) | first local/OpenAI chat T158; full iPhone T128 | T159F |
+| CH-02 | Markdown, code blocks, syntax highlighting, and LaTeX math. | [T039](../archived/plans/tasks/P04/T039.md), [T040](tasks/P04/T040.md) | iPhone T128 | T159F |
+| CH-03 | Separate thinking/reasoning stream where supported. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-04 | Automatic conversation titles; short greetings may defer naming. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-05 | Conversation list, folders, and search. | [T042](../archived/plans/tasks/P04/T042.md) | iPhone T128 | T159F |
+| CH-06 | Colored folders and image covers; move chats between folders. | [T042](../archived/plans/tasks/P04/T042.md) | iPhone T128 | T159F |
+| CH-07 | Per-chat model/provider, sampling, system prompt, and reasoning overrides. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| CH-08 | Per-chat backgrounds and avatars. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| CH-09 | Context usage indicator. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-10 | Stop, Roll, and Cut middle context-overflow policies. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-11 | Compact older messages into a summary. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-12 | Modern Shine composer or legacy compact composer. | [T041](../archived/plans/tasks/P04/T041.md) | iPhone T128 | T159F |
+| CH-13 | Starter suggestions on/off; Return sends or inserts newline. | [T041](../archived/plans/tasks/P04/T041.md) | iPhone T128 | T159F |
+| CH-14 | Streaming auto-scroll and jump-to-bottom. | [T039](../archived/plans/tasks/P04/T039.md) | iPhone T128 | T159F |
 | CH-15 | Background reply completion with optional progress notification. | [T047](tasks/P04/T047.md), [T048](tasks/P04/T048.md) | iPhone T128 | T159F |
-| CH-16 | Abrupt-ending auto-retry. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
+| CH-16 | Abrupt-ending auto-retry. | [T037](../archived/plans/tasks/P04/T037.md) | iPhone T128 | T159F |
 | CH-17 | Stateful LM Studio chat. | [T018](../archived/plans/tasks/P02/T018.md) | iPhone T128 | T159F |
 
 ## AT — Attachments and history (8)
@@ -92,150 +92,150 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | AT-01 | Attach images for vision-capable models | [T043](tasks/P04/T043.md) | iPhone T128 | T159F |
 | AT-02 | MD/XLSX attachments | [T043](tasks/P04/T043.md) | iPhone T128 | T159F |
 | AT-03 | Open attached photos | [T043](tasks/P04/T043.md) | iPhone T128 | T159F |
-| AT-04 | Copy preserving Markdown | [T039](tasks/P04/T039.md) | iPhone T128 | T159F |
-| AT-05 | Preserve regeneration variants | [T038](tasks/P04/T038.md) | iPhone T128 | T159F |
-| AT-06 | Conversation model/last-use metadata | [T038](tasks/P04/T038.md) | iPhone T128 | T159F |
-| AT-07 | Import LM Studio conversations | [T044](tasks/P04/T044.md) | iPhone T128 | T159F |
+| AT-04 | Copy preserving Markdown | [T039](../archived/plans/tasks/P04/T039.md) | iPhone T128 | T159F |
+| AT-05 | Preserve regeneration variants | [T038](../archived/plans/tasks/P04/T038.md) | iPhone T128 | T159F |
+| AT-06 | Conversation model/last-use metadata | [T038](../archived/plans/tasks/P04/T038.md) | iPhone T128 | T159F |
+| AT-07 | Import LM Studio conversations | [T044](../archived/plans/tasks/P04/T044.md) | iPhone T128 | T159F |
 | AT-08 | Semantic conversation search using local embeddings | [T045](tasks/P04/T045.md) | iPhone T128 | T159F |
 
 ## PA — Parameters (8)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| PA-01 | Temperature, top-p, top-k, min-p, repeat penalty. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-02 | Maximum output tokens and context-window controls. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-03 | Reasoning toggle, verbosity, and JSON/structured output where supported. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-04 | Flash attention and KV-cache offload where supported. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-05 | Global defaults and model-specific presets. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-06 | Persona-specific parameter presets. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-07 | Chat overrides take highest precedence. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
-| PA-08 | Reset model preset through Use Global params. | [T046](tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-01 | Temperature, top-p, top-k, min-p, repeat penalty. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-02 | Maximum output tokens and context-window controls. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-03 | Reasoning toggle, verbosity, and JSON/structured output where supported. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-04 | Flash attention and KV-cache offload where supported. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-05 | Global defaults and model-specific presets. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-06 | Persona-specific parameter presets. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-07 | Chat overrides take highest precedence. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
+| PA-08 | Reset model preset through Use Global params. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
 
 ## PE — Personas (10)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| PE-01 | Reusable named characters with avatar and system prompt. | [T050](tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-01 | Reusable named characters with avatar and system prompt. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
 | PE-02 | Preferred provider/model without changing global defaults. | [T054](tasks/P05/T054.md) | iPhone T128 | T159B |
-| PE-03 | Default profile plus built-in Mini assistant. | [T050](tasks/P05/T050.md) | iPhone T128 | T159B |
-| PE-04 | Mini is seeded once; deleting it keeps it deleted. | [T050](tasks/P05/T050.md) | iPhone T128 | T159B |
-| PE-05 | Persona profile pages and appearance editing. | [T050](tasks/P05/T050.md) | iPhone T128 | T159B |
-| PE-06 | AI Persona Generator creates an initial name, prompt, and avatar. | [T051](tasks/P05/T051.md) | iPhone T128 | T159B |
+| PE-03 | Default profile plus built-in Mini assistant. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-04 | Mini is seeded once; deleting it keeps it deleted. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-05 | Persona profile pages and appearance editing. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-06 | AI Persona Generator creates an initial name, prompt, and avatar. | [T051](../archived/plans/tasks/P05/T051.md) | iPhone T128 | T159B |
 | PE-07 | App-default, Kokoro, ElevenLabs, or Grok voice binding. | [T054](tasks/P05/T054.md) | iPhone T128 | T159B |
 | PE-08 | Kokoro voice speed and custom parameter binding. | [T054](tasks/P05/T054.md) | iPhone T128 | T159B |
-| PE-09 | Attach a ComfyUI workflow to a Persona. | [T054](tasks/P05/T054.md), [T091](tasks/P08/T091.md) | iPhone T128 | T159B |
-| PE-10 | Start individual chats or add Personas to groups. | [T050](tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-09 | Attach a ComfyUI workflow to a Persona. | [T054](tasks/P05/T054.md), [T091](../archived/plans/tasks/P08/T091.md) | iPhone T128 | T159B |
+| PE-10 | Start individual chats or add Personas to groups. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
 
 ## ME — Memory (7)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| ME-01 | Remember facts across conversations. | [T052](tasks/P05/T052.md) | iPhone T128 | T159B |
-| ME-02 | Background extraction and prompt injection. | [T052](tasks/P05/T052.md) | iPhone T128 | T159B |
-| ME-03 | Manage saved entries under Data → Memory. | [T052](tasks/P05/T052.md) | iPhone T128 | T159B |
-| ME-04 | Associate selected facts with specific Personas. | [T053](tasks/P05/T053.md) | iPhone T128 | T159B |
-| ME-05 | Isolate a Persona from the global memory pool. | [T053](tasks/P05/T053.md) | iPhone T128 | T159B |
-| ME-06 | Control Persona memory sharing/generation. | [T053](tasks/P05/T053.md) | iPhone T128 | T159B |
-| ME-07 | Switch Personas without discarding chat context. | [T053](tasks/P05/T053.md) | iPhone T128 | T159B |
+| ME-01 | Remember facts across conversations. | [T052](../archived/plans/tasks/P05/T052.md) | iPhone T128 | T159B |
+| ME-02 | Background extraction and prompt injection. | [T052](../archived/plans/tasks/P05/T052.md) | iPhone T128 | T159B |
+| ME-03 | Manage saved entries under Data → Memory. | [T052](../archived/plans/tasks/P05/T052.md) | iPhone T128 | T159B |
+| ME-04 | Associate selected facts with specific Personas. | [T053](../archived/plans/tasks/P05/T053.md) | iPhone T128 | T159B |
+| ME-05 | Isolate a Persona from the global memory pool. | [T053](../archived/plans/tasks/P05/T053.md) | iPhone T128 | T159B |
+| ME-06 | Control Persona memory sharing/generation. | [T053](../archived/plans/tasks/P05/T053.md) | iPhone T128 | T159B |
+| ME-07 | Switch Personas without discarding chat context. | [T053](../archived/plans/tasks/P05/T053.md) | iPhone T128 | T159B |
 
 ## GR — Group chat (13)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| GR-01 | Shared thread with several AI participants. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-02 | Same model with different roles, or mixed models/providers. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-03 | Add a saved Persona or a model directly. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-04 | Participant name, avatar, accent, prompt, model, tools, voice. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-05 | Ordered round-robin replies. | [T056](tasks/P05/T056.md) | iPhone T128 | T159B |
-| GR-06 | Autonomous/@mention participation. | [T056](tasks/P05/T056.md) | iPhone T128 | T159B |
-| GR-07 | Manual next-speaker selection through Ask chips. | [T056](tasks/P05/T056.md) | iPhone T128 | T159B |
-| GR-08 | Reply-to-user-only option. | [T056](tasks/P05/T056.md) | iPhone T128 | T159B |
-| GR-09 | Parallel streaming. | [T057](tasks/P05/T057.md) | iPhone T128 | T159B |
-| GR-10 | Automatic local model loading/unloading to save memory. | [T057](tasks/P05/T057.md) | iPhone T128 | T159B |
-| GR-11 | User display name and persistent room scenario. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-12 | Validate participant bindings before starting. | [T055](tasks/P05/T055.md) | iPhone T128 | T159B |
-| GR-13 | Group speech plays participant replies in order. | [T058](tasks/P05/T058.md), [T081](tasks/P07/T081.md) | iPhone T128 | T159B |
+| GR-01 | Shared thread with several AI participants. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-02 | Same model with different roles, or mixed models/providers. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-03 | Add a saved Persona or a model directly. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-04 | Participant name, avatar, accent, prompt, model, tools, voice. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-05 | Ordered round-robin replies. | [T056](../archived/plans/tasks/P05/T056.md) | iPhone T128 | T159B |
+| GR-06 | Autonomous/@mention participation. | [T056](../archived/plans/tasks/P05/T056.md) | iPhone T128 | T159B |
+| GR-07 | Manual next-speaker selection through Ask chips. | [T056](../archived/plans/tasks/P05/T056.md) | iPhone T128 | T159B |
+| GR-08 | Reply-to-user-only option. | [T056](../archived/plans/tasks/P05/T056.md) | iPhone T128 | T159B |
+| GR-09 | Parallel streaming. | [T057](../archived/plans/tasks/P05/T057.md) | iPhone T128 | T159B |
+| GR-10 | Automatic local model loading/unloading to save memory. | [T057](../archived/plans/tasks/P05/T057.md) | iPhone T128 | T159B |
+| GR-11 | User display name and persistent room scenario. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-12 | Validate participant bindings before starting. | [T055](../archived/plans/tasks/P05/T055.md) | iPhone T128 | T159B |
+| GR-13 | Group speech plays participant replies in order. | [T058](../archived/plans/tasks/P05/T058.md), [T081](tasks/P07/T081.md) | iPhone T128 | T159B |
 
 ## VO — Voice (16)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| VO-01 | System/native text-to-speech. | [T072](tasks/P07/T072.md), [T073](tasks/P07/T073.md), [T133](tasks/P11/T133.md) | iPhone T128 | T159C |
-| VO-02 | Local Kokoro neural TTS. | [T075](tasks/P07/T075.md) | iPhone T128 | T159C |
+| VO-01 | System/native text-to-speech. | [T072](../archived/plans/tasks/P07/T072.md), [T073](tasks/P07/T073.md), [T133](tasks/P11/T133.md) | iPhone T128 | T159C |
+| VO-02 | Local Kokoro neural TTS. | [T075](../archived/plans/tasks/P07/T075.md) | iPhone T128 | T159C |
 | VO-03 | Kokoro synthesized by Home/Connect and played on the phone. | [T076](tasks/P07/T076.md) | iPhone T128 | T159C |
-| VO-04 | ElevenLabs and Grok/xAI voices using API keys; Pro. | [T079](tasks/P07/T079.md) | iPhone T128 | T159C |
-| VO-05 | Rate/pitch controls where supported; voice test. | [T080](tasks/P07/T080.md) | iPhone T128 | T159C |
-| VO-06 | Automatically read assistant replies. | [T080](tasks/P07/T080.md) | iPhone T128 | T159C |
-| VO-07 | System speech-to-text with separate recognition language. | [T072](tasks/P07/T072.md), [T073](tasks/P07/T073.md) | iPhone T128 | T159C |
-| VO-08 | Whisper model sizes from tiny through large-v3 where offered. | [T077](tasks/P07/T077.md), [T078](tasks/P07/T078.md), [T130](tasks/P11/T130.md) | iPhone T128 | T159C |
+| VO-04 | ElevenLabs and Grok/xAI voices using API keys; Pro. | [T079](../archived/plans/tasks/P07/T079.md) | iPhone T128 | T159C |
+| VO-05 | Rate/pitch controls where supported; voice test. | [T080](../archived/plans/tasks/P07/T080.md) | iPhone T128 | T159C |
+| VO-06 | Automatically read assistant replies. | [T080](../archived/plans/tasks/P07/T080.md) | iPhone T128 | T159C |
+| VO-07 | System speech-to-text with separate recognition language. | [T072](../archived/plans/tasks/P07/T072.md), [T073](tasks/P07/T073.md) | iPhone T128 | T159C |
+| VO-08 | Whisper model sizes from tiny through large-v3 where offered. | [T077](../archived/plans/tasks/P07/T077.md), [T078](tasks/P07/T078.md), [T130](tasks/P11/T130.md) | iPhone T128 | T159C |
 | VO-09 | macOS system speech recognition. | [T074](tasks/P07/T074.md) | iPhone T128 | T159C |
-| VO-10 | Review dictated text or automatically send it. | [T072](tasks/P07/T072.md), [T073](tasks/P07/T073.md) | iPhone T128 | T159C |
+| VO-10 | Review dictated text or automatically send it. | [T072](../archived/plans/tasks/P07/T072.md), [T073](tasks/P07/T073.md) | iPhone T128 | T159C |
 | VO-11 | Continuous listen → send → speak → listen cycle. | [T081](tasks/P07/T081.md), [T082](tasks/P07/T082.md), [T131](tasks/P11/T131.md) | iPhone T128 | T159C |
 | VO-12 | iOS Call Mode: lock-screen continuation and earpiece routing. | [T081](tasks/P07/T081.md) | iPhone T128 | T159C |
-| VO-13 | Per-Persona/participant voices. | [T058](tasks/P05/T058.md), [T083](tasks/P07/T083.md) | iPhone T128 | T159C |
-| VO-14 | Download languages individually. | [T075](tasks/P07/T075.md) | iPhone T128 | T159C |
-| VO-15 | Pause detection and total listening-duration controls. | [T080](tasks/P07/T080.md) | iPhone T128 | T159C |
-| VO-16 | Transcription feature with audio playback. | [T080](tasks/P07/T080.md) | iPhone T128 | T159C |
+| VO-13 | Per-Persona/participant voices. | [T058](../archived/plans/tasks/P05/T058.md), [T083](tasks/P07/T083.md) | iPhone T128 | T159C |
+| VO-14 | Download languages individually. | [T075](../archived/plans/tasks/P07/T075.md) | iPhone T128 | T159C |
+| VO-15 | Pause detection and total listening-duration controls. | [T080](../archived/plans/tasks/P07/T080.md) | iPhone T128 | T159C |
+| VO-16 | Transcription feature with audio playback. | [T080](../archived/plans/tasks/P07/T080.md) | iPhone T128 | T159C |
 
 ## TL — Tools (12)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| TL-01 | Global tool-use switch with chat/participant overrides. | [T062](tasks/P06/T062.md) | iPhone T128 | T159G |
-| TL-02 | Built-in tools, including current time. | [T066](tasks/P06/T066.md) | iPhone T128 | T159G |
+| TL-01 | Global tool-use switch with chat/participant overrides. | [T062](../archived/plans/tasks/P06/T062.md) | iPhone T128 | T159G |
+| TL-02 | Built-in tools, including current time. | [T066](../archived/plans/tasks/P06/T066.md) | iPhone T128 | T159G |
 | TL-03 | Pro Search: hosted web search; Pro. | [T067](tasks/P06/T067.md) | iPhone T128 | T159G |
-| TL-04 | User-configured SearXNG search endpoint. | [T063](tasks/P06/T063.md) | iPhone T128 | T159G |
-| TL-05 | Ephemeral HTTP MCP servers with label, URL, Bearer/custom headers. | [T064](tasks/P06/T064.md) | iPhone T128 | T159G |
-| TL-06 | LM Studio integrated MCP names from its mcp.json. | [T065](tasks/P06/T065.md) | iPhone T128 | T159G |
-| TL-07 | Enable/disable individual integrated MCPs. | [T065](tasks/P06/T065.md) | iPhone T128 | T159G |
+| TL-04 | User-configured SearXNG search endpoint. | [T063](../archived/plans/tasks/P06/T063.md) | iPhone T128 | T159G |
+| TL-05 | Ephemeral HTTP MCP servers with label, URL, Bearer/custom headers. | [T064](../archived/plans/tasks/P06/T064.md) | iPhone T128 | T159G |
+| TL-06 | LM Studio integrated MCP names from its mcp.json. | [T065](../archived/plans/tasks/P06/T065.md) | iPhone T128 | T159G |
+| TL-07 | Enable/disable individual integrated MCPs. | [T065](../archived/plans/tasks/P06/T065.md) | iPhone T128 | T159G |
 | TL-08 | Python/JavaScript sandbox where offered. | [T068](tasks/P06/T068.md) | iPhone T128 | T159G |
-| TL-09 | Run the tool loop and continue the assistant response. | [T062](tasks/P06/T062.md) | iPhone T128 | T159G |
-| TL-10 | Transcript tool activity and tool errors. | [T069](tasks/P06/T069.md) | iPhone T128 | T159G |
-| TL-11 | Composer chips for per-turn search/tool toggles. | [T069](tasks/P06/T069.md) | iPhone T128 | T159G |
-| TL-12 | Integrated MCP renaming; unlimited-call toggle. | [T066](tasks/P06/T066.md) | iPhone T128 | T159G |
+| TL-09 | Run the tool loop and continue the assistant response. | [T062](../archived/plans/tasks/P06/T062.md) | iPhone T128 | T159G |
+| TL-10 | Transcript tool activity and tool errors. | [T069](../archived/plans/tasks/P06/T069.md) | iPhone T128 | T159G |
+| TL-11 | Composer chips for per-turn search/tool toggles. | [T069](../archived/plans/tasks/P06/T069.md) | iPhone T128 | T159G |
+| TL-12 | Integrated MCP renaming; unlimited-call toggle. | [T066](../archived/plans/tasks/P06/T066.md) | iPhone T128 | T159G |
 
 ## IM — Images and media (13)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| IM-01 | Master image-generation toggle. | [T084](tasks/P08/T084.md) | iPhone T128 | T159C |
-| IM-02 | Chat image button; optional prompt review and automatic generation. | [T084](tasks/P08/T084.md) | iPhone T128 | T159C |
-| IM-03 | AUTOMATIC1111 txt2img via reachable API. | [T085](tasks/P08/T085.md) | iPhone T128 | T159C |
-| IM-04 | Checkpoint, sampler, steps, CFG, dimensions, HR fix, face restoration. | [T085](tasks/P08/T085.md) | iPhone T128 | T159C |
-| IM-05 | ComfyUI server connection. | [T086](tasks/P08/T086.md) | iPhone T128 | T159C |
-| IM-06 | Default, pasted API-JSON, or server-saved workflow. | [T086](tasks/P08/T086.md) | iPhone T128 | T159C |
-| IM-07 | Workflow placeholders for generation settings. | [T086](tasks/P08/T086.md) | iPhone T128 | T159C |
-| IM-08 | LoRA name/weight placeholders. | [T086](tasks/P08/T086.md) | iPhone T128 | T159C |
-| IM-09 | Persona workflow binding. | [T091](tasks/P08/T091.md) | iPhone T128 | T159C |
+| IM-01 | Master image-generation toggle. | [T084](../archived/plans/tasks/P08/T084.md) | iPhone T128 | T159C |
+| IM-02 | Chat image button; optional prompt review and automatic generation. | [T084](../archived/plans/tasks/P08/T084.md) | iPhone T128 | T159C |
+| IM-03 | AUTOMATIC1111 txt2img via reachable API. | [T085](../archived/plans/tasks/P08/T085.md) | iPhone T128 | T159C |
+| IM-04 | Checkpoint, sampler, steps, CFG, dimensions, HR fix, face restoration. | [T085](../archived/plans/tasks/P08/T085.md) | iPhone T128 | T159C |
+| IM-05 | ComfyUI server connection. | [T086](../archived/plans/tasks/P08/T086.md) | iPhone T128 | T159C |
+| IM-06 | Default, pasted API-JSON, or server-saved workflow. | [T086](../archived/plans/tasks/P08/T086.md) | iPhone T128 | T159C |
+| IM-07 | Workflow placeholders for generation settings. | [T086](../archived/plans/tasks/P08/T086.md) | iPhone T128 | T159C |
+| IM-08 | LoRA name/weight placeholders. | [T086](../archived/plans/tasks/P08/T086.md) | iPhone T128 | T159C |
+| IM-09 | Persona workflow binding. | [T091](../archived/plans/tasks/P08/T091.md) | iPhone T128 | T159C |
 | IM-10 | Core ML Stable Diffusion on supported iOS builds. | [T088](tasks/P08/T088.md) | iPhone T128 | T159C |
 | IM-11 | Download/select on-device image checkpoints. | [T088](tasks/P08/T088.md) | iPhone T128 | T159C |
-| IM-12 | Mac Home proxies A1111/ComfyUI through phone sharing. | [T097](tasks/P09/T097.md) | iPhone T128 | T159C |
-| IM-13 | ComfyUI video generation is referenced in a fix. | [T087](tasks/P08/T087.md) | iPhone T128 | T159C |
+| IM-12 | Mac Home proxies A1111/ComfyUI through phone sharing. | [T097](../archived/plans/tasks/P09/T097.md) | iPhone T128 | T159C |
+| IM-13 | ComfyUI video generation is referenced in a fix. | [T087](../archived/plans/tasks/P08/T087.md) | iPhone T128 | T159C |
 
 ## AR — Arena (9)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| AR-01 | Race up to four models against one prompt. | [T059](tasks/P05/T059.md) | iPhone T128 | T159G |
-| AR-02 | Mix local-device, LM Studio, Ollama, oMLX, and cloud contestants. | [T059](tasks/P05/T059.md) | iPhone T128 | T159G |
-| AR-03 | Live output, tokens/sec, and time to first token. | [T059](tasks/P05/T059.md) | iPhone T128 | T159G |
-| AR-04 | Compare written answers side by side. | [T059](tasks/P05/T059.md) | iPhone T128 | T159G |
+| AR-01 | Race up to four models against one prompt. | [T059](../archived/plans/tasks/P05/T059.md) | iPhone T128 | T159G |
+| AR-02 | Mix local-device, LM Studio, Ollama, oMLX, and cloud contestants. | [T059](../archived/plans/tasks/P05/T059.md) | iPhone T128 | T159G |
+| AR-03 | Live output, tokens/sec, and time to first token. | [T059](../archived/plans/tasks/P05/T059.md) | iPhone T128 | T159G |
+| AR-04 | Compare written answers side by side. | [T059](../archived/plans/tasks/P05/T059.md) | iPhone T128 | T159G |
 | AR-05 | Built-in discovery prompts and suggested race lanes. | [T060](tasks/P05/T060.md) | iPhone T128 | T159G |
 | AR-06 | Race top two; Quick or Full suite. | [T060](tasks/P05/T060.md) | iPhone T128 | T159G |
 | AR-07 | Apply a result as the default model or Persona binding. | [T060](tasks/P05/T060.md) | iPhone T128 | T159G |
-| AR-08 | Pro custom prompts, cloud contestants, history where enabled. | [T060](tasks/P05/T060.md), [T107](tasks/P10/T107.md) | iPhone T128 | T159G |
-| AR-09 | Explicit opt-in anonymous benchmark sharing. | [T060](tasks/P05/T060.md), [T118](tasks/P10/T118.md) | iPhone T128 | T159G |
+| AR-08 | Pro custom prompts, cloud contestants, history where enabled. | [T060](tasks/P05/T060.md), [T107](../archived/plans/tasks/P10/T107.md) | iPhone T128 | T159G |
+| AR-09 | Explicit opt-in anonymous benchmark sharing. | [T060](tasks/P05/T060.md), [T118](../archived/plans/tasks/P10/T118.md) | iPhone T128 | T159G |
 
 ## RE — Remote companion (11)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| RE-01 | One-time QR pairing with a shared encryption key. | [T093](tasks/P09/T093.md) | iPhone T128 | T159D |
-| RE-02 | Relay access without port forwarding or VPN. | [T094](tasks/P09/T094.md) | iPhone T128 | T159D |
-| RE-03 | Remote LM Studio, Ollama, and oMLX routing. | [T095](tasks/P09/T095.md) | iPhone T128 | T159D |
-| RE-04 | Remote images and Kokoro audio. | [T097](tasks/P09/T097.md) | iPhone T128 | T159D |
-| RE-05 | Pairing/connection health and backend-specific setup errors. | [T095](tasks/P09/T095.md) | iPhone T128 | T159D |
-| RE-06 | Encryption-key viewing, editing, copying, regeneration. | [T093](tasks/P09/T093.md) | iPhone T128 | T159D |
+| RE-01 | One-time QR pairing with a shared encryption key. | [T093](../archived/plans/tasks/P09/T093.md) | iPhone T128 | T159D |
+| RE-02 | Relay access without port forwarding or VPN. | [T094](../archived/plans/tasks/P09/T094.md) | iPhone T128 | T159D |
+| RE-03 | Remote LM Studio, Ollama, and oMLX routing. | [T095](../archived/plans/tasks/P09/T095.md) | iPhone T128 | T159D |
+| RE-04 | Remote images and Kokoro audio. | [T097](../archived/plans/tasks/P09/T097.md) | iPhone T128 | T159D |
+| RE-05 | Pairing/connection health and backend-specific setup errors. | [T095](../archived/plans/tasks/P09/T095.md) | iPhone T128 | T159D |
+| RE-06 | Encryption-key viewing, editing, copying, regeneration. | [T093](../archived/plans/tasks/P09/T093.md) | iPhone T128 | T159D |
 | RE-07 | Tray integration and optional automatic startup. | [T102](tasks/P09/T102.md) | iPhone T128 | T159D |
 | RE-08 | Connect Kokoro packs: download/cancel/remove/test. | [T076](tasks/P07/T076.md) | iPhone T128 | T159D |
 | RE-09 | Link an existing voice folder/archive; unlink preserves external files. | [T076](tasks/P07/T076.md) | iPhone T128 | T159D |
@@ -249,9 +249,9 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | SY-01 | Optional real-time phone ↔ Home chat synchronization. | [T098](tasks/P09/T098.md), [T098C](tasks/P09/T098C.md) | iPhone T128 | T159D |
 | SY-02 | Pairing-time prompt or later Sync chats with Home switch. | [T098](tasks/P09/T098.md), [T098A](tasks/P09/T098A.md) | iPhone T128 | T159D |
 | SY-03 | Copy one side or merge both sides. | [T098](tasks/P09/T098.md), [T098A](tasks/P09/T098A.md) | iPhone T128 | T159D |
-| SY-04 | Sync messages and folders, including names/covers. | [T098](tasks/P09/T098.md), [T098B](tasks/P09/T098B.md) | iPhone T128 | T159D |
-| SY-05 | Propagate chat/folder deletes. | [T098](tasks/P09/T098.md), [T098B](tasks/P09/T098B.md) | iPhone T128 | T159D |
-| SY-06 | Newer edit wins for a shared conversation. | [T098](tasks/P09/T098.md), [T098B](tasks/P09/T098B.md) | iPhone T128 | T159D |
+| SY-04 | Sync messages and folders, including names/covers. | [T098](tasks/P09/T098.md), [T098B](../archived/plans/tasks/P09/T098B.md) | iPhone T128 | T159D |
+| SY-05 | Propagate chat/folder deletes. | [T098](tasks/P09/T098.md), [T098B](../archived/plans/tasks/P09/T098B.md) | iPhone T128 | T159D |
+| SY-06 | Newer edit wins for a shared conversation. | [T098](tasks/P09/T098.md), [T098B](../archived/plans/tasks/P09/T098B.md) | iPhone T128 | T159D |
 | SY-07 | Disable sync while retaining local copies. | [T098](tasks/P09/T098.md), [T098A](tasks/P09/T098A.md) | iPhone T128 | T159D |
 | SY-08 | Sync failure notification and retry by toggling. | [T098](tasks/P09/T098.md), [T098C](tasks/P09/T098C.md) | iPhone T128 | T159D |
 | SY-09 | Optional Apple iCloud synchronization. | [T100](tasks/P09/T100.md) | iPhone T128 | T159D |
@@ -261,14 +261,14 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| UI-01 | Light/dark, built-in/custom themes, live editor, fonts, bubbles, gradients. | [T104](tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
+| UI-01 | Light/dark, built-in/custom themes, live editor, fonts, bubbles, gradients. | [T104](../archived/plans/tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
 | UI-02 | Community theme sharing/downloads. | [T106](tasks/P10/T106.md) | iPhone T128 | T159E |
-| UI-03 | Background image/dimming and avatar choice/placement/visibility. | [T104](tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
-| UI-04 | Font family/size; avatar size. | [T104](tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
-| UI-05 | Glass effect toggle. | [T120](tasks/P10/T120.md) | iPhone T128 | T159H |
-| UI-06 | Low battery mode: reduced effects, plain streaming text, deferred sync. | [T120](tasks/P10/T120.md) | iPhone T128 | T159H |
-| UI-07 | Full-width assistant replies; later default. | [T120](tasks/P10/T120.md) | iPhone T128 | T159H |
-| UI-08 | iOS default/dark/glass app icons. | [T120](tasks/P10/T120.md) | iPhone T128 | T159H |
+| UI-03 | Background image/dimming and avatar choice/placement/visibility. | [T104](../archived/plans/tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
+| UI-04 | Font family/size; avatar size. | [T104](../archived/plans/tasks/P10/T104.md), [T105](tasks/P10/T105.md) | iPhone T128 | T159H |
+| UI-05 | Glass effect toggle. | [T120](../archived/plans/tasks/P10/T120.md) | iPhone T128 | T159H |
+| UI-06 | Low battery mode: reduced effects, plain streaming text, deferred sync. | [T120](../archived/plans/tasks/P10/T120.md) | iPhone T128 | T159H |
+| UI-07 | Full-width assistant replies; later default. | [T120](../archived/plans/tasks/P10/T120.md) | iPhone T128 | T159H |
+| UI-08 | iOS default/dark/glass app icons. | [T120](../archived/plans/tasks/P10/T120.md) | iPhone T128 | T159H |
 | UI-09 | Apple Pencil scroll/selection behavior. | [T119B](tasks/P10/T119B.md) | iPad T157 | T163 |
 | UI-10 | Landscape phone two-column layout; native iPad layout. | [T119](tasks/P10/T119.md), [T119B](tasks/P10/T119B.md) | iPhone T128; iPad T157 | T159H; T163 |
 | UI-11 | Desktop navigation rail, chat list beside conversation. | [T040](tasks/P04/T040.md) | desktop T134 | T164–T166 |
@@ -279,21 +279,21 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | UI-16 | Nerds: runtime, connection, analytics, services diagnostics. | [T155](tasks/P11/T155.md) | desktop T134 | T164–T166 |
 | UI-17 | Select UI language or follow system locale. | [T119](tasks/P10/T119.md) | iPhone T128 | T159H |
 | UI-18 | Declared accessibility: dark interface, non-color-only distinctions, contrast. | [T119](tasks/P10/T119.md) | iPhone T128 | T159H |
-| UI-19 | Analytics dashboard. | [T118](tasks/P10/T118.md) | iPhone T128 | T159E |
+| UI-19 | Analytics dashboard. | [T118](../archived/plans/tasks/P10/T118.md) | iPhone T128 | T159E |
 
 ## DA — Data, analytics and lock (9)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
 | DA-01 | Persistent local history, settings, Personas, server URLs | [T008](../archived/plans/tasks/P01/T008.md), [T008A](../archived/plans/tasks/P01/T008A.md), [T008B](../archived/plans/tasks/P01/T008B.md) | iPhone T128 | T159F |
-| DA-02 | Export one chat as PDF/TXT; all chats as ZIP | [T044](tasks/P04/T044.md) | iPhone T128 | T159F |
+| DA-02 | Export one chat as PDF/TXT; all chats as ZIP | [T044](../archived/plans/tasks/P04/T044.md) | iPhone T128 | T159F |
 | DA-03 | Optional encrypted cloud backup | [T110](tasks/P10/T110.md) | iPhone T128 | T159E |
-| DA-04 | Optional product analytics | [T118](tasks/P10/T118.md) | iPhone T128 | T159E |
-| DA-05 | App Lock PIN | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
-| DA-06 | Lock grace period | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
-| DA-07 | Device-local salted PIN hash | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
-| DA-08 | Biometric unlock and account-assisted PIN recovery | [T108](tasks/P10/T108.md), [T109](tasks/P10/T109.md) | iPhone T128 | T159E |
-| DA-09 | Cold-start PIN challenge; PIN required to disable lock | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
+| DA-04 | Optional product analytics | [T118](../archived/plans/tasks/P10/T118.md) | iPhone T128 | T159E |
+| DA-05 | App Lock PIN | [T108](../archived/plans/tasks/P10/T108.md) | iPhone T128 | T159E |
+| DA-06 | Lock grace period | [T108](../archived/plans/tasks/P10/T108.md) | iPhone T128 | T159E |
+| DA-07 | Device-local salted PIN hash | [T108](../archived/plans/tasks/P10/T108.md) | iPhone T128 | T159E |
+| DA-08 | Biometric unlock and account-assisted PIN recovery | [T108](../archived/plans/tasks/P10/T108.md), [T109](tasks/P10/T109.md) | iPhone T128 | T159E |
+| DA-09 | Cold-start PIN challenge; PIN required to disable lock | [T108](../archived/plans/tasks/P10/T108.md) | iPhone T128 | T159E |
 
 ## AC — Accounts, purchases and support (8)
 
@@ -327,10 +327,10 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 |---|---|---|---|---|
 | UP-01 | Free local Unsloth Desktop compatible provider | [T020](../archived/plans/tasks/P02/T020.md) | iPhone T128 | T159A |
 | UP-02 | Generated-image gallery, including chat menu access | [T089](tasks/P08/T089.md), [T090](tasks/P08/T090.md) | iPhone T128 | T159C |
-| UP-03 | ComfyUI generation queue | [T087](tasks/P08/T087.md) | iPhone T128 | T159C |
-| UP-04 | Cancel Hugging Face/LM Studio downloads | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
-| UP-05 | Reload prompt after changing context; linked image/chat server update prompts | [T034](tasks/P03/T034.md) | iPhone T128 | T159F, T159C |
-| UP-06 | Face ID/Touch ID/fingerprint unlock; emailed PIN recovery link | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
+| UP-03 | ComfyUI generation queue | [T087](../archived/plans/tasks/P08/T087.md) | iPhone T128 | T159C |
+| UP-04 | Cancel Hugging Face/LM Studio downloads | [T034](../archived/plans/tasks/P03/T034.md) | iPhone T128 | T159A |
+| UP-05 | Reload prompt after changing context; linked image/chat server update prompts | [T034](../archived/plans/tasks/P03/T034.md) | iPhone T128 | T159F, T159C |
+| UP-06 | Face ID/Touch ID/fingerprint unlock; emailed PIN recovery link | [T108](../archived/plans/tasks/P10/T108.md) | iPhone T128 | T159E |
 | UP-07 | Compress an oversized attached image and resend | [T043](tasks/P04/T043.md) | iPhone T128 | T159F |
 | UP-08 | Hide embedding models from chat-model selection | [T025](../archived/plans/tasks/P02/T025.md) | iPhone T128 | T159A |
 
@@ -345,7 +345,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | ER-05 | Report host termination and context/max-token causes. | [T049](tasks/P04/T049.md) | iPhone T128 | T159F, T159D |
 | ER-06 | Identify unavailable image servers, missing checkpoints/workflows, and MCP failures. | [T092](tasks/P08/T092.md) | iPhone T128 | T159C, T159G |
 | ER-07 | Recover sharing connection after host sleep. | [T103](tasks/P09/T103.md) | iPhone T128 | T159D |
-| ER-08 | Cancel stopped-reply memory extraction. | [T052](tasks/P05/T052.md) | iPhone T128 | T159B |
+| ER-08 | Cancel stopped-reply memory extraction. | [T052](../archived/plans/tasks/P05/T052.md) | iPhone T128 | T159B |
 
 ## Reconciliation rule
 

@@ -46,7 +46,7 @@ Avoid unnecessary directory listings when the required files are already named.
 
 ## Local checks and exit codes
 
-After the 2026-09-26 runner repair, workspace packages install through `& ./tools/run-pnpm.ps1 <arguments>` (PowerShell 5.1 handles duplicate `PATH`/`Path` entries through this wrapper; see the [runner repair evidence](../docs/implementation/evidence/runner-repair-2026-09-26.md)). Direct `pnpm` also works in terminals with a clean PATH. Retain the pinned package versions and lockfile. The direct-binary fallback below remains for environments where no package manager resolves at all. Choose the card's focused test files; these examples do not replace its acceptance criteria.
+After the 2026-09-26 runner repair, workspace packages install through `& ./tools/run-pnpm.ps1 <arguments>` (PowerShell 5.1 handles duplicate `PATH`/`Path` entries through this wrapper; see the [runner repair evidence](../archived/docs/implementation/evidence/runner-repair-2026-09-26.md)). Direct `pnpm` also works in terminals with a clean PATH. Retain the pinned package versions and lockfile. The direct-binary fallback below remains for environments where no package manager resolves at all. Choose the card's focused test files; these examples do not replace its acceptance criteria.
 
 ```powershell
 node .\node_modules\vitest\vitest.mjs run apps/mobile/composition/chat/web-research-settings.test.mts apps/mobile/composition/chat/web-research-intent.test.mts apps/mobile/composition/chat/web-research.test.mts
@@ -76,7 +76,7 @@ A local fixture or typecheck never stands in for native compilation or a phone e
 ## Resume and exploration
 
 The 2026-10-08 handoff session is closed; its [progress record](../archived/handoffs/qwen3.8-flash-next-2026-10-08/PROGRESS.md)
-and [queue](../archived/handoffs/qwen3.8-flash-next-2026-10-08/TASK_QUEUE.md) are archive history. Resume from current git history, the [build records](../docs/builds/) and the phase status ledgers rather than restarting bootstrap tasks.
+and [queue](../archived/handoffs/qwen3.8-flash-next-2026-10-08/TASK_QUEUE.md) are archive history. Resume from current git history, the [build records](../docs/builds/) and the [remaining work ledger](status/README.md) rather than restarting bootstrap tasks.
 Read one ready task card and the source it needs. Ignore `.opencode/` unless the active card owns it.
 Do not reread unchanged files or repeat an identical failed command without a changed input.
 If a test file is absent, use the nearest existing convention to create the test required by the card.

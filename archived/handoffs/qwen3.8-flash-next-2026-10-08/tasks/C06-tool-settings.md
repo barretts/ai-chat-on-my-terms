@@ -2,7 +2,7 @@
 
 > Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](../../../../plans/POWERSHELL.md).
 
-Dependency: C02. Original: [T066](../../../../plans/tasks/P06/T066.md), TL-01. Next: C07.
+Dependency: C02. Original: [T066](../../../plans/tasks/P06/T066.md), TL-01. Next: C07.
 
 ## Goal and owned areas
 

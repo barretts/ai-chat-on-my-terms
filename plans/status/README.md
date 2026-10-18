@@ -1,0 +1,170 @@
+# Remaining work and verification
+
+As of 2026-10-18, inspected at source commit `c559078`. There are **118 active cards** and **84 archived cards**, preserving all 202 original units. This is a document disposition audit, not a new product acceptance run.
+
+Integrated implementation cards are [archived](../../archived/plans/tasks/). Their native, live-service and release proof is still pending in the applicable T158/T128/T159A–H/T160–T169 gates. The old P03–P06 ledgers are [historical snapshots](../../archived/plans/status/), including stale pending/implemented labels. Use the source and rows below for the next action; do not restart completed units.
+
+## P03
+
+| Card | Remaining work |
+| --- | --- |
+| [T027](../../plans/tasks/P03/T027.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T028](../../plans/tasks/P03/T028.md) | Mount/certify the native MLX bridge; Swift and physical inference proof remain outstanding. |
+| [T029](../../plans/tasks/P03/T029.md) | Mac Metal sidecar packaging and real Mac inference remain outstanding; Windows packaging is recorded separately. |
+| [T030](../../plans/tasks/P03/T030.md) | Apple Silicon worker build, signed packaging and real inference remain outstanding. |
+| [T031](../../plans/tasks/P03/T031.md) | Mount the background URLSession downloader; the app currently uses foreground downloads. |
+| [T032](../../plans/tasks/P03/T032.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T033](../../plans/tasks/P03/T033.md) | Complete general imports/Hugging Face and device-backed model lifecycle integration. |
+| [T036](../../plans/tasks/P03/T036.md) | Complete MLX/worker/download wiring and real runtime lease/lifecycle integration. |
+
+## P04
+
+| Card | Remaining work |
+| --- | --- |
+| [T040](../../plans/tasks/P04/T040.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T043](../../plans/tasks/P04/T043.md) | Native PDF/XLSX extraction codecs and complete attachment/runtime integration remain outstanding. |
+| [T045](../../plans/tasks/P04/T045.md) | Mount a usable local embedding runtime and certify native FTS/vector indexing. |
+| [T047](../../plans/tasks/P04/T047.md) | Native background execution/notification bridge and device lifecycle proof remain outstanding. |
+| [T048](../../plans/tasks/P04/T048.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T049](../../plans/tasks/P04/T049.md) | Complete chat integration seams (MLX, embeddings, codecs, rich controls) and native persistence/lifecycle proof. |
+| [T158](../../plans/tasks/P04/T158.md) | Physical offline GGUF and live OpenAI first-chat acceptance remain outstanding; build/export alone is insufficient. |
+
+## P05
+
+| Card | Remaining work |
+| --- | --- |
+| [T054](../../plans/tasks/P05/T054.md) | Finish Persona workflow binding/edit controls; model and voice bindings are already present. |
+| [T060](../../plans/tasks/P05/T060.md) | Arena discovery/history/apply UI is held and has no owned implementation. |
+| [T061](../../plans/tasks/P05/T061.md) | Mount group transcript/dispatch and Arena UI; Persona/memory paths are already integrated. |
+
+## P06
+
+| Card | Remaining work |
+| --- | --- |
+| [T067](../../plans/tasks/P06/T067.md) | Register and compose hosted search in API startup; only the optional facade/route module exists. |
+| [T068](../../plans/tasks/P06/T068.md) | Register and compose sandbox service in API startup and verify isolated container execution. |
+| [T070](../../plans/tasks/P06/T070.md) | Complete tools integration including hosted search/sandbox; the old implemented ledger overstates this gate. |
+
+## P07
+
+| Card | Remaining work |
+| --- | --- |
+| [T073](../../plans/tasks/P07/T073.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T074](../../plans/tasks/P07/T074.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T076](../../plans/tasks/P07/T076.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T078](../../plans/tasks/P07/T078.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T081](../../plans/tasks/P07/T081.md) | Continuous/group voice and real CallKit lifecycle integration remain outstanding. |
+| [T082](../../plans/tasks/P07/T082.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T083](../../plans/tasks/P07/T083.md) | Complete native phone/Mac/group/continuous voice integration; adapters alone do not close this gate. |
+
+## P08
+
+| Card | Remaining work |
+| --- | --- |
+| [T088](../../plans/tasks/P08/T088.md) | Implement/link Core ML diffusion and eligible-device model execution. |
+| [T089](../../plans/tasks/P08/T089.md) | Replace gallery reference placeholders with playable managed image/video preview, save and share. |
+| [T090](../../plans/tasks/P08/T090.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T092](../../plans/tasks/P08/T092.md) | Complete Core ML/gallery/Persona image integration and the required working smoke paths. |
+
+## P09
+
+| Card | Remaining work |
+| --- | --- |
+| [T096](../../plans/tasks/P09/T096.md) | Mount real scanner/manual pairing and connect negotiated encrypted sessions in the phone UI. |
+| [T098](../../plans/tasks/P09/T098.md) | Complete two-device sync composition and copy/merge/live-edit convergence proof. |
+| [T098A](../../plans/tasks/P09/T098A.md) | Mount paired sync opt-in/initial-choice preferences; package state does not establish the UI. |
+| [T098C](../../plans/tasks/P09/T098C.md) | Complete live paired transport/retry/wake integration and visible failure recovery. |
+| [T099](../../plans/tasks/P09/T099.md) | Complete selected-Persona/photo/memory sync and unavailable-binding/conflict UI. |
+| [T100](../../plans/tasks/P09/T100.md) | Implement native CloudKit transport; shared adapter/queue abstractions are insufficient. |
+| [T101](../../plans/tasks/P09/T101.md) | Implement native USB multiplexing and prove Wi-Fi-disabled phone-to-Mac chat. |
+| [T102](../../plans/tasks/P09/T102.md) | Complete native tray/startup/sharing/voice-pack controls and host lifecycle wiring. |
+| [T103](../../plans/tasks/P09/T103.md) | Complete phone/Mac encrypted relay, tools/binary/sync smoke; USB/iCloud remain separate seams. |
+
+## P10
+
+| Card | Remaining work |
+| --- | --- |
+| [T105](../../plans/tasks/P10/T105.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T106](../../plans/tasks/P10/T106.md) | Register/authenticate community catalog routes and complete hosted catalog wiring. |
+| [T109](../../plans/tasks/P10/T109.md) | Register recovery service and complete device-bound email grant delivery/consumption. |
+| [T110](../../plans/tasks/P10/T110.md) | Complete authenticated backup object routes and real restore integration; API startup is health-only. |
+| [T111](../../plans/tasks/P10/T111.md) | Complete configured Better Auth, login/linking/reset mail and service startup wiring. |
+| [T112](../../plans/tasks/P10/T112.md) | Complete configured products, verified RevenueCat webhook/restore/family transaction integration. |
+| [T113](../../plans/tasks/P10/T113.md) | Complete support/update/account-delete backend routes and explicit upload integration. |
+| [T114](../../plans/tasks/P10/T114.md) | Complete native WidgetKit/Control Center/ActivityKit extension wiring. |
+| [T115](../../plans/tasks/P10/T115.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T116](../../plans/tasks/P10/T116.md) | Complete reachable App Intents/Share Sheet/CLI invocation; typed contracts alone are insufficient. |
+| [T117](../../plans/tasks/P10/T117.md) | Mount workflow entry routes and real OCR/clipboard/Contacts/search/news/voice ports; registry alone is insufficient. |
+| [T117A](../../plans/tasks/P10/T117A.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117B](../../plans/tasks/P10/T117B.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117C](../../plans/tasks/P10/T117C.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117D](../../plans/tasks/P10/T117D.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117E](../../plans/tasks/P10/T117E.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117F](../../plans/tasks/P10/T117F.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117G](../../plans/tasks/P10/T117G.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T117H](../../plans/tasks/P10/T117H.md) | Recipe package exists, but reachable workflow routes/native action ports remain outstanding under T117. |
+| [T119](../../plans/tasks/P10/T119.md) | Complete localization and native accessibility/layout audit; package catalogs do not prove device acceptance. |
+| [T119B](../../plans/tasks/P10/T119B.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+
+## P11
+
+| Card | Remaining work |
+| --- | --- |
+| [T121](../../plans/tasks/P11/T121.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T122](../../plans/tasks/P11/T122.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T123](../../plans/tasks/P11/T123.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T124](../../plans/tasks/P11/T124.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T125](../../plans/tasks/P11/T125.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T126](../../plans/tasks/P11/T126.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T127](../../plans/tasks/P11/T127.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T128](../../plans/tasks/P11/T128.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T129](../../plans/tasks/P11/T129.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T130](../../plans/tasks/P11/T130.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T131](../../plans/tasks/P11/T131.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T132](../../plans/tasks/P11/T132.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T133](../../plans/tasks/P11/T133.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T134](../../plans/tasks/P11/T134.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T135](../../plans/tasks/P11/T135.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T136](../../plans/tasks/P11/T136.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T137](../../plans/tasks/P11/T137.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T138](../../plans/tasks/P11/T138.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T139](../../plans/tasks/P11/T139.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T140](../../plans/tasks/P11/T140.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T141](../../plans/tasks/P11/T141.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T142](../../plans/tasks/P11/T142.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T143](../../plans/tasks/P11/T143.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T144](../../plans/tasks/P11/T144.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T145](../../plans/tasks/P11/T145.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T146](../../plans/tasks/P11/T146.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T147](../../plans/tasks/P11/T147.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T148](../../plans/tasks/P11/T148.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T149](../../plans/tasks/P11/T149.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T150](../../plans/tasks/P11/T150.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T151](../../plans/tasks/P11/T151.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T152](../../plans/tasks/P11/T152.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T153](../../plans/tasks/P11/T153.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T154](../../plans/tasks/P11/T154.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T155](../../plans/tasks/P11/T155.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T156](../../plans/tasks/P11/T156.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T157](../../plans/tasks/P11/T157.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159](../../plans/tasks/P11/T159.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159A](../../plans/tasks/P11/T159A.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159B](../../plans/tasks/P11/T159B.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159C](../../plans/tasks/P11/T159C.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159D](../../plans/tasks/P11/T159D.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159E](../../plans/tasks/P11/T159E.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159F](../../plans/tasks/P11/T159F.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159G](../../plans/tasks/P11/T159G.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T159H](../../plans/tasks/P11/T159H.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T160](../../plans/tasks/P11/T160.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T161](../../plans/tasks/P11/T161.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T162](../../plans/tasks/P11/T162.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T163](../../plans/tasks/P11/T163.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T164](../../plans/tasks/P11/T164.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T165](../../plans/tasks/P11/T165.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T166](../../plans/tasks/P11/T166.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T167](../../plans/tasks/P11/T167.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T168](../../plans/tasks/P11/T168.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T169](../../plans/tasks/P11/T169.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+
+Record new checks with the [evidence template](TEMPLATE.md). Full disposition and move hashes are in the [cleanup audit](../../archived/cleanup-2026-10-18.json).

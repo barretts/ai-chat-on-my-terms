@@ -70,4 +70,4 @@ Sources: [OpenRouter quickstart](https://openrouter.ai/docs/quickstart), [public
 
 The requested order is actual app walkthroughs first, followed by targeted automated checks. Evidence receipts are stored under `tmp/` and recorded separately from historical build 2 validation. A browser walkthrough establishes browser behavior; it does not establish physical iPhone installation, audio output, or native inference performance.
 
-The [current walkthrough evidence](implementation/evidence/phone-models-speech-openrouter-2026-09-27.md) records all three voices generating and completing playback with network disabled, both Stop paths, saved selection after a browser restart, actual local model generation, and OpenRouter's genuine public catalog and invalid-key rejection.
+The [September 27 walkthrough evidence](../archived/docs/implementation/evidence/phone-models-speech-openrouter-2026-09-27.md) records all three voices generating and completing playback with network disabled, both Stop paths, saved selection after a browser restart, actual local model generation, and OpenRouter's genuine public catalog and invalid-key rejection.

@@ -10,7 +10,7 @@ Providers now form a searchable saved address book with edit, favorite, remove a
 
 Large model SHA scans are skipped by request. Downloads retain size checks and a small GGUF header check. Native voice downloads use foreground sessions, a storage-space check and an explicit unpacking phase. These native fixes are an attempt pending an iPhone run. Browser voice repair updates its small runtime without reading or downloading the cached model weights.
 
-Current evidence: real OxCoder endpoint discovery and generation; saved-provider CRUD, favorites, model selection and reload; genuine OpenRouter catalog search; appearance and voice/Persona preferences after reload; all three voices generated real audio offline using existing packs; 1.3× shortened both Kokoro and Piper audio; 22 targeted provider/storage tests and 3 OpenRouter phone-sized browser fixture cases passed. The [messenger evidence](../../docs/implementation/evidence/messenger-ui-2026-09-28.md) records scope and receipts. These changes are newer than signed iPhone build 3. The [Mac/iPhone debugging guide](../../docs/iphone-local-debugging.md) describes the native verification path.
+Current evidence: real OxCoder endpoint discovery and generation; saved-provider CRUD, favorites, model selection and reload; genuine OpenRouter catalog search; appearance and voice/Persona preferences after reload; all three voices generated real audio offline using existing packs; 1.3× shortened both Kokoro and Piper audio; 22 targeted provider/storage tests and 3 OpenRouter phone-sized browser fixture cases passed. The [messenger evidence](implementation/evidence/messenger-ui-2026-09-28.md) records scope and receipts. These changes are newer than signed iPhone build 3. The [Mac/iPhone debugging guide](../../docs/iphone-local-debugging.md) describes the native verification path.
 
 ## Available in the current app
 
@@ -57,10 +57,10 @@ The voice walkthrough fixes include Windows ZIP entry normalization, verified ca
 
 ## Sources
 
-- [New features and exact walkthrough receipts](../../docs/implementation/evidence/phone-models-speech-openrouter-2026-09-27.md).
+- [New features and exact walkthrough receipts](implementation/evidence/phone-models-speech-openrouter-2026-09-27.md).
 - [Phone models, voices and OpenRouter usage guide](../../docs/phone-models-and-voices.md).
-- [Earlier mounted-app workflow audit and its limits](../../docs/implementation/evidence/app-workflow-audit-2026-09-27.md).
+- [Earlier mounted-app workflow audit and its limits](implementation/evidence/app-workflow-audit-2026-09-27.md).
 - [Current app routes](../../apps/mobile/app), [chat composition](../../apps/mobile/composition/chat/screen.tsx), and [provider registry](../../apps/mobile/composition/chat/providers.ts).
-- [Personas/groups/Arena status](../../plans/status/P05.md), [tools/search status](../../plans/status/P06.md), and [full roadmap](../../plans/README.md).
+- [Personas/groups/Arena status](../plans/status/P05.md), [tools/search status](../plans/status/P06.md), and [full roadmap](../../plans/README.md).
 
 **Recommended next milestone:** a dependable iPhone preview of the current chat/model/provider/voice workflows, followed by speech-to-text and continuous voice conversations.

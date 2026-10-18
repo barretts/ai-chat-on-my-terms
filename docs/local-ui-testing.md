@@ -1,4 +1,4 @@
-﻿# Test LocalLab locally
+# Test LocalLab locally
 
 The Expo app's shared screens run on Windows through React Native Web. This lets us exercise the rendered app, SQLite persistence, file handling and provider requests before making another iPhone build. [Expo web support](https://docs.expo.dev/workflow/web/)
 
@@ -62,7 +62,7 @@ Use one test runner at a time: the local model has one generation slot. `LOCALLA
 
 Coverage includes onboarding and live System themes, connection and model selection, linked connection edits/deletion, Library folders/search, Persona profiles and avatar cancellation/cleanup, Memory consent/manual facts/literal searches, settings scopes/reset/typing, attachment bytes and shortening notices, archive downloads/imports, composer keyboard modes and exact Markdown copying, real chat/Stop/retry/reload/new-chat, and interrupted generation recovery. Real context-policy checks compare Roll and Cut middle requests while preserving the original transcript. Live Memory checks edit a sourced fact and reopen its exact original message from another chat.
 
-The [expanded workflow audit](implementation/evidence/app-workflow-audit-2026-09-27.md) distinguishes current scoped evidence, the consolidated run, labeled provider fixtures, and physical-device checks. Native abort compatibility has a separate check against the actual installed React Native and Expo implementations; browser passes alone cannot establish those native semantics.
+The historical September 27 [expanded workflow audit](../archived/docs/implementation/evidence/app-workflow-audit-2026-09-27.md) distinguishes current scoped evidence, the consolidated run, labeled provider fixtures, and physical-device checks. Native abort compatibility has a separate check against the actual installed React Native and Expo implementations; browser passes alone cannot establish those native semantics.
 
 ## Platform limits
 

@@ -1,4 +1,4 @@
-﻿# Rules for 64k-context workers and parallel coordination
+# Rules for 64k-context workers and parallel coordination
 
 > Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
 
@@ -16,7 +16,7 @@ Every card states dependencies, owned paths, feature IDs, steps and the check le
 
 1. Select all ready cards whose direct dependencies are smoke-passed and owned paths are disjoint. Use separate branches/worktrees and assign as many as machines permit. The dependency-only maximum wave width is 48.
 2. Workers return task ID, commit, changed paths, exact commands/results, feature IDs and specific pending deep proof or blocker. The coordinator checks ownership, merges one branch at a time and reruns changed-package checks.
-3. Record task state in [status](status/TEMPLATE.md): queued, ready, running, review, implemented, blocked. Deep-verification cards separately mark their feature IDs verified. A failed deep test reopens the owning implementation card without halting unrelated lanes.
+3. Record task state in [current status](status/README.md) using the [evidence template](status/TEMPLATE.md): queued, ready, running, review, implemented, blocked. Deep-verification cards separately mark their feature IDs verified. A failed deep test reopens the owning implementation card without halting unrelated lanes.
 4. Hold only scarce Mac/iPhone/Android devices, signing or shared service staging in a reservation queue. Coding and fixture tests need no global semaphore. A failed card blocks only descendants.
 
 The coordinator owns `plans/status/`; workers provide evidence paths under `docs/implementation/evidence/`. No worker pastes credentials, PINs, user prompts or huge logs into Markdown. Contract/schema proposals are reviewed and merged before dependent work changes.
