@@ -51,4 +51,4 @@ The two updated first-run phone UI regression cases passed, including a durable 
 
 Signed iPhone build 3 predates this update. The redesigned source needs a new development/native build. Run the [Mac helper and device guide](../../iphone-local-debugging.md) to inspect physical iPhone layout, keyboard, model/voice installation completion, native synthesis and native inference. The locked-down Mac requires the user to run it physically; this Windows session cannot operate it remotely.
 
-Large roadmap items remain explicitly tracked in [feature status](../../feature-status-2026-09-27.md). This pass does not claim dictation, continuous voice, groups, tools/search, generated media, sync, or full roadmap parity.
+Large roadmap items remain explicitly tracked in [feature status](../../../archived/docs/feature-status-2026-09-27.md). This pass does not claim dictation, continuous voice, groups, tools/search, generated media, sync, or full roadmap parity.

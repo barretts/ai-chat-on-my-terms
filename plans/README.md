@@ -25,7 +25,7 @@ Read [architecture](01-architecture.md), [contracts](02-contracts.md), [executio
 | [P10](phases/P10.md) | Personalization, accounts and automation |
 | [P11](phases/P11.md) | Working builds, deep verification and distribution |
 
-Ledger status: per-phase status ledgers exist in [status/](status/TEMPLATE.md) for P00–P06 only. P07–P11 were executed directly against their task cards, so their current state lives in git history, the [build records](../docs/builds/) and the [2026-10-15 review](../reviews/all-tasks-2026-10-15/fix-plans/INDEX.md) rather than in `plans/status/`. Create P07–P11 ledgers from the template before scheduling further work in those phases.
+Ledger status: per-phase status ledgers exist in [status/](status/TEMPLATE.md) for P00–P06 only. P07–P11 were executed directly against their task cards, so their current state lives in git history, the [build records](../docs/builds/) and the archived [2026-10-15 review](../archived/reviews/all-tasks-2026-10-15/fix-plans/INDEX.md) rather than in `plans/status/`. Create P07–P11 ledgers from the template before scheduling further work in those phases.
 
 ## For a 64k-context implementing model
 

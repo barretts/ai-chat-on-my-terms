@@ -6,7 +6,7 @@ The first milestone is real offline GGUF chat and user-configured OpenAI remote 
 
 The [feature inventory](docs/lm-mini-features.md), [research notes](docs/research-notes.md), and [earlier Windows blueprint](docs/windows-blueprint.md) are source material. `plans/` is the execution authority. The workspace includes the Expo mobile app, shared packages, runtime bridges, and implementation evidence.
 
-The [September 27 feature status](docs/feature-status-2026-09-27.md) is a dated snapshot; for the newest installable app see the [iPhone installation guide](docs/iphone-installation.md) (latest build 21) and the [build records](docs/builds/). The [phone models, offline voices, and OpenRouter guide](docs/phone-models-and-voices.md) includes the current local preview and PC model connection.
+The [September 27 feature status](archived/docs/feature-status-2026-09-27.md) is a dated snapshot kept under `archived/`; for the newest installable app see the [iPhone installation guide](docs/iphone-installation.md) (latest build 21) and the [build records](docs/builds/). The [phone models, offline voices, and OpenRouter guide](docs/phone-models-and-voices.md) includes the current local preview and PC model connection.
 
 ## Development checks
 

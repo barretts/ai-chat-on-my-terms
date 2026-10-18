@@ -1,5 +1,6 @@
 plans/**
 docs/**
+archived/**
 apps/desktop/.next/**
 apps/desktop/out/**
 apps/desktop/next-env.d.ts

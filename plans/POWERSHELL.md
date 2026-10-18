@@ -75,8 +75,8 @@ A local fixture or typecheck never stands in for native compilation or a phone e
 
 ## Resume and exploration
 
-For the current continuation, use [the active progress record](../handoffs/qwen3.8-flash-next-2026-10-08/PROGRESS.md)
-and [queue](../handoffs/qwen3.8-flash-next-2026-10-08/TASK_QUEUE.md), rather than restarting bootstrap tasks.
+The 2026-10-08 handoff session is closed; its [progress record](../archived/handoffs/qwen3.8-flash-next-2026-10-08/PROGRESS.md)
+and [queue](../archived/handoffs/qwen3.8-flash-next-2026-10-08/TASK_QUEUE.md) are archive history. Resume from current git history, the [build records](../docs/builds/) and the phase status ledgers rather than restarting bootstrap tasks.
 Read one ready task card and the source it needs. Ignore `.opencode/` unless the active card owns it.
 Do not reread unchanged files or repeat an identical failed command without a changed input.
 If a test file is absent, use the nearest existing convention to create the test required by the card.
