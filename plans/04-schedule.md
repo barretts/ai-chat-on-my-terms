@@ -1,4 +1,4 @@
-﻿# Execution-first concurrency schedule
+# Execution-first concurrency schedule
 
 > Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
 
@@ -18,9 +18,9 @@ A phase groups related cards; it is not a barrier. Assign a ready card when its 
 
 | Gate | Outcome | Direct prerequisites |
 |---|---|---|
-| [T005](tasks/P00/T005.md) | Feasibility decision and pinned baseline | T005A, T005B, T005C, T005D |
+| [T005](../archived/plans/tasks/P00/T005.md) | Feasibility decision and pinned baseline | T005A, T005B, T005C, T005D |
 | [T158](tasks/P04/T158.md) | First working iPhone offline and OpenAI chat | T008, T026, T037A, T039A, T041A, T021A |
-| [T025](tasks/P02/T025.md) | Provider integration and conformance gate | T017, T018, T019, T020, T021, T021A, T022, T023, T024 |
+| [T025](../archived/plans/tasks/P02/T025.md) | Provider integration and conformance gate | T017, T018, T019, T020, T021, T021A, T022, T023, T024 |
 | [T036](tasks/P03/T036.md) | Inference and downloads integration gate | T026, T028, T029, T030, T031, T033, T034, T035 |
 | [T049](tasks/P04/T049.md) | Complete-chat vertical slice gate | T025, T036, T037, T038, T039, T041, T042, T043, T044, T045, T046, T047, T008B |
 | [T061](tasks/P05/T061.md) | Persona, memory, group and Arena integration gate | T049, T051, T052, T053, T054, T056, T057, T058, T060 |

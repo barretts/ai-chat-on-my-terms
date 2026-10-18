@@ -1,4 +1,4 @@
-﻿# Feature coverage and verification ledger
+# Feature coverage and verification ledger
 
 > Local workstation: Windows; run workspace commands in PowerShell. Follow the [PowerShell environment guide](POWERSHELL.md).
 
@@ -10,14 +10,14 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| PL-01 | iPhone and iPad app | [T001](tasks/P00/T001.md), [T128](tasks/P11/T128.md), [T157](tasks/P11/T157.md) | iPhone T128; iPad T157 | T159A; T163 |
-| PL-02 | Android app | [T129](tasks/P11/T129.md), [T135](tasks/P11/T135.md), [T001A](tasks/P00/T001A.md) | Android T129–T132 | T160–T162, T168–T169 |
-| PL-03 | Full Mac app: LM Mini Home | [T134](tasks/P11/T134.md), [T001A](tasks/P00/T001A.md) | desktop T134 | T164–T166 |
-| PL-04 | Windows/Linux Connect companion | [T134](tasks/P11/T134.md), [T001A](tasks/P00/T001A.md) | desktop T134 | T164–T166 |
+| PL-01 | iPhone and iPad app | [T001](../archived/plans/tasks/P00/T001.md), [T128](tasks/P11/T128.md), [T157](tasks/P11/T157.md) | iPhone T128; iPad T157 | T159A; T163 |
+| PL-02 | Android app | [T129](tasks/P11/T129.md), [T135](tasks/P11/T135.md), [T001A](../archived/plans/tasks/P00/T001A.md) | Android T129–T132 | T160–T162, T168–T169 |
+| PL-03 | Full Mac app: LM Mini Home | [T134](tasks/P11/T134.md), [T001A](../archived/plans/tasks/P00/T001A.md) | desktop T134 | T164–T166 |
+| PL-04 | Windows/Linux Connect companion | [T134](tasks/P11/T134.md), [T001A](../archived/plans/tasks/P00/T001A.md) | desktop T134 | T164–T166 |
 | PL-05 | Completely local chat | [T029](tasks/P03/T029.md), [T036](tasks/P03/T036.md), [T158](tasks/P04/T158.md) | first offline chat T158; full iPhone T128 | T159A |
-| PL-06 | LAN chat | [T025](tasks/P02/T025.md) | iPhone T128 | T159A |
+| PL-06 | LAN chat | [T025](../archived/plans/tasks/P02/T025.md) | iPhone T128 | T159A |
 | PL-07 | Remote chat | [T096](tasks/P09/T096.md) | iPhone T128 | T159D |
-| PL-08 | Optional hosted providers | [T021A](tasks/P02/T021A.md), [T023](tasks/P02/T023.md), [T158](tasks/P04/T158.md) | OpenAI text T158; broader providers T128 | T159A |
+| PL-08 | Optional hosted providers | [T021A](../archived/plans/tasks/P02/T021A.md), [T023](../archived/plans/tasks/P02/T023.md), [T158](tasks/P04/T158.md) | OpenAI text T158; broader providers T128 | T159A |
 
 ## OB — Onboarding (8)
 
@@ -29,8 +29,8 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | OB-04 | Get Started recovery sheet when no model is configured. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
 | OB-05 | Choose an initial theme. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
 | OB-06 | Optional, skippable model race during setup. | [T035](tasks/P03/T035.md) | iPhone T128 | T159A |
-| OB-07 | Computer setup instructions and LAN IP guidance. | [T024](tasks/P02/T024.md) | iPhone T128 | T159A |
-| OB-08 | LM Studio discovery scan where available; authenticated servers remain discoverable. | [T024](tasks/P02/T024.md) | iPhone T128 | T159A |
+| OB-07 | Computer setup instructions and LAN IP guidance. | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
+| OB-08 | LM Studio discovery scan where available; authenticated servers remain discoverable. | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
 
 ## PR — Providers (11)
 
@@ -38,15 +38,15 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 |---|---|---|---|---|
 | PR-01 | On-device GGUF | [T026](tasks/P03/T026.md), [T027](tasks/P03/T027.md) | iPhone T128 | T159A |
 | PR-02 | On-device MLX | [T028](tasks/P03/T028.md), [T030](tasks/P03/T030.md) | iPhone T128 | T159A |
-| PR-03 | LM Studio | [T018](tasks/P02/T018.md) | iPhone T128 | T159A |
-| PR-04 | Ollama | [T017](tasks/P02/T017.md) | iPhone T128 | T159A |
-| PR-05 | JAN AI | [T020](tasks/P02/T020.md) | iPhone T128 | T159A |
-| PR-06 | oMLX | [T020](tasks/P02/T020.md) | iPhone T128 | T159A |
-| PR-07 | Named cloud integrations | [T021A](tasks/P02/T021A.md), [T021](tasks/P02/T021.md), [T022](tasks/P02/T022.md), [T023](tasks/P02/T023.md), [T158](tasks/P04/T158.md) | OpenAI text T158; full named-cloud set T128 | T159A |
-| PR-08 | Custom compatible server | [T020](tasks/P02/T020.md) | iPhone T128 | T159A |
-| PR-09 | Multiple saved connections | [T024](tasks/P02/T024.md) | iPhone T128 | T159A |
-| PR-10 | Custom HTTP headers | [T024](tasks/P02/T024.md) | iPhone T128 | T159A |
-| PR-11 | Capability-aware interface | [T015](tasks/P01/T015.md) | iPhone T128 | T159A |
+| PR-03 | LM Studio | [T018](../archived/plans/tasks/P02/T018.md) | iPhone T128 | T159A |
+| PR-04 | Ollama | [T017](../archived/plans/tasks/P02/T017.md) | iPhone T128 | T159A |
+| PR-05 | JAN AI | [T020](../archived/plans/tasks/P02/T020.md) | iPhone T128 | T159A |
+| PR-06 | oMLX | [T020](../archived/plans/tasks/P02/T020.md) | iPhone T128 | T159A |
+| PR-07 | Named cloud integrations | [T021A](../archived/plans/tasks/P02/T021A.md), [T021](../archived/plans/tasks/P02/T021.md), [T022](../archived/plans/tasks/P02/T022.md), [T023](../archived/plans/tasks/P02/T023.md), [T158](tasks/P04/T158.md) | OpenAI text T158; full named-cloud set T128 | T159A |
+| PR-08 | Custom compatible server | [T020](../archived/plans/tasks/P02/T020.md) | iPhone T128 | T159A |
+| PR-09 | Multiple saved connections | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
+| PR-10 | Custom HTTP headers | [T024](../archived/plans/tasks/P02/T024.md) | iPhone T128 | T159A |
+| PR-11 | Capability-aware interface | [T015](../archived/plans/tasks/P01/T015.md) | iPhone T128 | T159A |
 
 ## MO — Model management (10)
 
@@ -59,9 +59,9 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | MO-05 | File/MLX-folder import. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
 | MO-06 | Downloaded/selected/loaded model management. | [T033](tasks/P03/T033.md) | iPhone T128 | T159A |
 | MO-07 | Browse, download, load, and unload LM Studio models. | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
-| MO-08 | Ollama downloads. | [T019](tasks/P02/T019.md) | iPhone T128 | T159A |
+| MO-08 | Ollama downloads. | [T019](../archived/plans/tasks/P02/T019.md) | iPhone T128 | T159A |
 | MO-09 | Loading progress. | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
-| MO-10 | Tool-capable model badge in supported browsers. | [T015](tasks/P01/T015.md) | iPhone T128 | T159A |
+| MO-10 | Tool-capable model badge in supported browsers. | [T015](../archived/plans/tasks/P01/T015.md) | iPhone T128 | T159A |
 
 ## CH — Chat (17)
 
@@ -83,7 +83,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | CH-14 | Streaming auto-scroll and jump-to-bottom. | [T039](tasks/P04/T039.md) | iPhone T128 | T159F |
 | CH-15 | Background reply completion with optional progress notification. | [T047](tasks/P04/T047.md), [T048](tasks/P04/T048.md) | iPhone T128 | T159F |
 | CH-16 | Abrupt-ending auto-retry. | [T037](tasks/P04/T037.md) | iPhone T128 | T159F |
-| CH-17 | Stateful LM Studio chat. | [T018](tasks/P02/T018.md) | iPhone T128 | T159F |
+| CH-17 | Stateful LM Studio chat. | [T018](../archived/plans/tasks/P02/T018.md) | iPhone T128 | T159F |
 
 ## AT — Attachments and history (8)
 
@@ -285,7 +285,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| DA-01 | Persistent local history, settings, Personas, server URLs | [T008](tasks/P01/T008.md), [T008A](tasks/P01/T008A.md), [T008B](tasks/P01/T008B.md) | iPhone T128 | T159F |
+| DA-01 | Persistent local history, settings, Personas, server URLs | [T008](../archived/plans/tasks/P01/T008.md), [T008A](../archived/plans/tasks/P01/T008A.md), [T008B](../archived/plans/tasks/P01/T008B.md) | iPhone T128 | T159F |
 | DA-02 | Export one chat as PDF/TXT; all chats as ZIP | [T044](tasks/P04/T044.md) | iPhone T128 | T159F |
 | DA-03 | Optional encrypted cloud backup | [T110](tasks/P10/T110.md) | iPhone T128 | T159E |
 | DA-04 | Optional product analytics | [T118](tasks/P10/T118.md) | iPhone T128 | T159E |
@@ -325,21 +325,21 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| UP-01 | Free local Unsloth Desktop compatible provider | [T020](tasks/P02/T020.md) | iPhone T128 | T159A |
+| UP-01 | Free local Unsloth Desktop compatible provider | [T020](../archived/plans/tasks/P02/T020.md) | iPhone T128 | T159A |
 | UP-02 | Generated-image gallery, including chat menu access | [T089](tasks/P08/T089.md), [T090](tasks/P08/T090.md) | iPhone T128 | T159C |
 | UP-03 | ComfyUI generation queue | [T087](tasks/P08/T087.md) | iPhone T128 | T159C |
 | UP-04 | Cancel Hugging Face/LM Studio downloads | [T034](tasks/P03/T034.md) | iPhone T128 | T159A |
 | UP-05 | Reload prompt after changing context; linked image/chat server update prompts | [T034](tasks/P03/T034.md) | iPhone T128 | T159F, T159C |
 | UP-06 | Face ID/Touch ID/fingerprint unlock; emailed PIN recovery link | [T108](tasks/P10/T108.md) | iPhone T128 | T159E |
 | UP-07 | Compress an oversized attached image and resend | [T043](tasks/P04/T043.md) | iPhone T128 | T159F |
-| UP-08 | Hide embedding models from chat-model selection | [T025](tasks/P02/T025.md) | iPhone T128 | T159A |
+| UP-08 | Hide embedding models from chat-model selection | [T025](../archived/plans/tasks/P02/T025.md) | iPhone T128 | T159A |
 
 ## ER — Errors and recovery (8)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
-| ER-01 | Provider-specific connection guidance. | [T025](tasks/P02/T025.md) | iPhone T128 | T159A |
-| ER-02 | Distinguish URL/token/network errors from model incompatibility. | [T025](tasks/P02/T025.md) | iPhone T128 | T159A |
+| ER-01 | Provider-specific connection guidance. | [T025](../archived/plans/tasks/P02/T025.md) | iPhone T128 | T159A |
+| ER-02 | Distinguish URL/token/network errors from model incompatibility. | [T025](../archived/plans/tasks/P02/T025.md) | iPhone T128 | T159A |
 | ER-03 | Show model/context/tool/voice/sync setup failures. | [T049](tasks/P04/T049.md) | iPhone T128 | T159A, T159C, T159D, T159G |
 | ER-04 | Missing model banner with selection recovery. | [T049](tasks/P04/T049.md) | iPhone T128 | T159A |
 | ER-05 | Report host termination and context/max-token causes. | [T049](tasks/P04/T049.md) | iPhone T128 | T159F, T159D |
