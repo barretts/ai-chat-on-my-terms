@@ -21,7 +21,7 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 
 | Card | Remaining work |
 | --- | --- |
-| [T040](../../plans/tasks/P04/T040.md) | Later Android/iPad/desktop platform implementation and its native acceptance remain outstanding. |
+| [T040](../../plans/tasks/P04/T040.md) | Desktop conversation UI ships as the shared Expo web mode inside the Tauri shell (2026-10-19 amendment): static export, streamed chat and native persistence verified in the desktop smoke (`c61292a`, `747c6eb`). Remaining: keyboard/selection spot checks at desktop width (card box 2). |
 | [T043](../../plans/tasks/P04/T043.md) | Native PDF/XLSX extraction codecs and complete attachment/runtime integration remain outstanding. |
 | [T045](../../plans/tasks/P04/T045.md) | Mount a usable local embedding runtime and certify native FTS/vector indexing. |
 | [T047](../../plans/tasks/P04/T047.md) | Native background execution/notification bridge and device lifecycle proof remain outstanding. |
@@ -113,7 +113,7 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 | [T121](../../plans/tasks/P11/T121.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T122](../../plans/tasks/P11/T122.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T123](../../plans/tasks/P11/T123.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
-| [T124](../../plans/tasks/P11/T124.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T124](../../plans/tasks/P11/T124.md) | Unsigned MSI + NSIS build locally and the CI build skeleton exists (`4a145e6`, `1c473e8`); release acceptance still needs signed/notarized artifacts with a named external credential owner. |
 | [T125](../../plans/tasks/P11/T125.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T126](../../plans/tasks/P11/T126.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T127](../../plans/tasks/P11/T127.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
@@ -123,7 +123,7 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 | [T131](../../plans/tasks/P11/T131.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T132](../../plans/tasks/P11/T132.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T133](../../plans/tasks/P11/T133.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
-| [T134](../../plans/tasks/P11/T134.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+| [T134](../../plans/tasks/P11/T134.md) | Windows milestone proven end-to-end 2026-10-19: full smoke passes against the release exe and the per-user silent-installed exe (`c61292a`, `4a145e6`); restart persistence proven via native SQLite rows + Windows Credential Manager (`747c6eb`). Remaining: macOS/Linux shells (T164/T166) and the QR/iPhone-companion box. |
 | [T135](../../plans/tasks/P11/T135.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T136](../../plans/tasks/P11/T136.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T137](../../plans/tasks/P11/T137.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
@@ -166,5 +166,7 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 | [T167](../../plans/tasks/P11/T167.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T168](../../plans/tasks/P11/T168.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T169](../../plans/tasks/P11/T169.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
+
+> 2026-10-19 desktop note: the T134 feature dependencies T136–T156 are served to the desktop client by the shared Expo web set inside the Tauri shell (T040/T134 amendments, `plans/07`); the desktop smoke exercises onboarding, providers, composer, streaming, diagnostics routing and restart persistence at desktop width, but per-feature desktop-width evidence is still owed by the deep-verification shards. The voice/audio path (T133) is not bridged on desktop and unexercised.
 
 Record new checks with the [evidence template](TEMPLATE.md). Full disposition and move hashes are in the [cleanup audit](../../archived/cleanup-2026-10-18.json).
