@@ -1,0 +1,91 @@
+name: Desktop release build
+
+# T124 packaging pipeline. Builds unsigned installers for the Tauri desktop
+# shell with pinned native sidecars committed under apps/desktop/src-tauri/
+# binaries (see BUILD-RECORD.md). Unsigned artifacts only: code signing and
+# notarization remain a release gate owned by the release-manager role until
+# external credentials are provisioned (Windows EV cert, Apple notary profile).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-rust-checks:
+    name: Desktop Rust command-layer tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - uses: actions/cache@v4
+        with:
+          path: apps/desktop/src-tauri/target
+          key: desktop-cargo-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+      - name: Tauri command-layer tests (SQLite bridge, wire shapes)
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+  desktop-windows-installer:
+    name: Windows installer (unsigned)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install stable --profile minimal
+      - uses: actions/cache@v4
+        with:
+          path: apps/desktop/src-tauri/target
+          key: desktop-cargo-release-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+      - name: Build MSI/NSIS installers (static web bundle inlined)
+        run: pnpm desktop:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-unsigned
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+  # macOS and Linux installers are blocked on their native sidecar binaries
+  # (companion + gguf-worker for those targets), owned by T164 (macOS) and
+  # T166 (Linux). These jobs will fail fast with a pointer until those cards
+  # land; the release gate then adds signing/notarization.
+  desktop-macos-installer:
+    name: macOS installer (blocked: T164 sidecars)
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail fast until T164 lands macOS sidecar binaries
+        run: |
+          if ls apps/desktop/src-tauri/binaries/*apple-darwin* >/dev/null 2>&1; then
+            echo "macOS sidecars present; extend this job to run pnpm desktop:build" >&2
+            exit 1
+          fi
+          echo "::error::macOS desktop sidecars missing (T164). Unsigned installer cannot be produced yet." >&2
+          exit 1
+
+  desktop-linux-installer:
+    name: Linux installer (blocked: T166 sidecars)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail fast until T166 lands Linux sidecar binaries
+        run: |
+          if ls apps/desktop/src-tauri/binaries/*unknown-linux-gnu* >/dev/null 2>&1; then
+            echo "Linux sidecars present; extend this job with webkit deps + pnpm desktop:build" >&2
+            exit 1
+          fi
+          echo "::error::Linux desktop sidecars missing (T166). Unsigned installer cannot be produced yet." >&2
+          exit 1
