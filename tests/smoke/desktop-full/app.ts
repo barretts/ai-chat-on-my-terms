@@ -6,14 +6,23 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { DatabaseSync } from "node:sqlite";
 
 export const CDP_PORT = Number(process.env.LOCALLAB_DESKTOP_CDP_PORT ?? 9222);
 export const FIXTURE_PORT = Number(
   process.env.LOCALLAB_DESKTOP_FIXTURE_PORT ?? 4599,
 );
+
+// Where the fixture dumps the request bodies it sees; the smoke config's
+// output dir default is tmp/desktop-smoke-results.
+export const REQUEST_LOG_DIR =
+  process.env.LOCALLAB_DESKTOP_SMOKE_RESULTS ??
+  path.resolve(__dirname, "../../../tmp/desktop-smoke-results");
+fs.mkdirSync(REQUEST_LOG_DIR, { recursive: true });
+fs.rmSync(path.join(REQUEST_LOG_DIR, "fixture-requests.log"), { force: true });
 export const EXE_BASENAME = "locallab-desktop";
 const RELEASE_DIR = path.resolve(
-  import.meta.dirname,
+  __dirname,
   "../../../apps/desktop/src-tauri/target/release",
 );
 
@@ -52,6 +61,31 @@ export function resetAppData() {
     fs.rmSync(dir, { recursive: true, force: true });
   }
   return roots;
+}
+
+// The roaming SQLite file the Rust shell opens at startup. If the app ever
+// fell back to browser OPFS storage instead of the Tauri bridge, this file
+// would exist (Rust creates it at launch) but hold no app rows.
+export const NATIVE_DB_PATH = process.env.APPDATA
+  ? path.join(process.env.APPDATA, "app.locallab.desktop", "locallab.sqlite")
+  : "";
+
+// Count persisted assistant transcript rows in the bridge-owned database.
+// Returns -1 when the file is absent; readers never block on the app's WAL
+// write lock.
+export function countNativeAssistantRows(like) {
+  if (!NATIVE_DB_PATH || !fs.existsSync(NATIVE_DB_PATH)) return -1;
+  const db = new DatabaseSync(NATIVE_DB_PATH, { readOnly: true });
+  try {
+    const row = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM messages WHERE role = 'assistant' AND parts_json LIKE ?",
+      )
+      .get(`%${like}%`);
+    return Number(row.n);
+  } finally {
+    db.close();
+  }
 }
 
 // Spawn the built app with a WebView2 remote-debugging port so Playwright can
@@ -152,6 +186,10 @@ export function startFixtureServer() {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", () => {
+        fs.appendFileSync(
+          path.join(REQUEST_LOG_DIR, "fixture-requests.log"),
+          `${req.method} ${req.url} :: ${body.slice(0, 4000)}\n`,
+        );
         let promptText = body;
         try {
           promptText = JSON.stringify(JSON.parse(body));

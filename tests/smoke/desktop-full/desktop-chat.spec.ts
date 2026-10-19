@@ -1,13 +1,15 @@
+import { setTimeout as sleep } from "node:timers/promises";
 import { chromium, expect, test } from "@playwright/test";
 import {
   CDP_PORT,
+  countNativeAssistantRows,
   killApp,
   launchApp,
   resetAppData,
   startFixtureServer,
   stopFixtureServer,
   waitForCdp,
-} from "./app.mjs";
+} from "./app.ts";
 
 // One sequential test drives the built WebView2 app end-to-end: fresh
 // onboarding, a saved OpenAI-compatible provider pointed at a local fixture,
@@ -54,7 +56,12 @@ async function openConnectionsPanel(page) {
 
 async function backToChat(page) {
   if (await page.getByRole("button", { name: "Add provider" }).count()) {
-    await page.getByRole("button", { name: "Back to chat" }).click();
+    const back = page.getByRole("button", { name: "Back to chat" });
+    if (await back.count()) {
+      // Selecting a saved provider can close the panel mid-click; a detached
+      // button means the chat is already coming back.
+      await back.click().catch(() => {});
+    }
   }
   await expect(
     page.getByRole("button", { name: "Add provider" }).first(),
@@ -88,7 +95,7 @@ async function sendMessage(page, text) {
   await page.getByTestId("advanced-composer-send").click();
 }
 
-test("onboard, chat through a fixture provider, and survive an app restart", async (_fixtures, testInfo) => {
+test("onboard, chat through a fixture provider, and survive an app restart", async ({}, testInfo) => {
   test.setTimeout(300_000);
   const pageErrors = [];
   const fixture = startFixtureServer();
@@ -135,6 +142,14 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
     await page
       .getByRole("textbox", { name: "Provider API key", exact: true })
       .fill("smoke-desk-key");
+    // The http:// endpoint needs the in-app cleartext authorization toggle
+    // (off by default at desktop width).
+    const cleartext = page.getByRole("switch", {
+      name: "Authorize local HTTP origin",
+    });
+    if ((await cleartext.getAttribute("aria-checked")) !== "true") {
+      await cleartext.click();
+    }
     const exactModel = page.getByRole("textbox", {
       name: "Exact chat model ID",
       exact: true,
@@ -166,7 +181,7 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
 
     // 6. Restart without clearing app data: the provider, its keyring-held
     // key, and the transcript must all survive.
-    page.off("pageerror");
+    page.removeAllListeners("pageerror");
     await browser.close({ reason: "restarting app" });
     await killApp(child);
     child = launchApp();
@@ -176,8 +191,36 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
       page.getByTestId("assistant-response-text").first(),
     ).toContainText("Desktop fixture reply.");
 
+    // The bridge, not the browser OPFS fallback, must own persistence: the
+    // Rust-side roaming SQLite file has to hold the first reply's row.
+    let nativeRows = -1;
+    for (let attempt = 0; attempt < 20 && nativeRows < 1; attempt += 1) {
+      nativeRows = countNativeAssistantRows("Desktop fixture reply.");
+      if (nativeRows < 1) await sleep(500);
+    }
+    expect(nativeRows).toBeGreaterThanOrEqual(1);
+
     // No re-entered key: this only works if the saved credential persisted.
     await sendMessage(page, "second after restart");
+    // Diagnostic split: if the second user bubble never renders the composer
+    // send is at fault; if it renders but no reply follows, the run failed.
+    await expect(page.getByText("second after restart").first()).toBeVisible({
+      timeout: 15_000,
+    });
+    if (pageErrors.length) {
+      await testInfo.attach("pageerrors-before-second-reply", {
+        body: JSON.stringify(pageErrors, null, 2),
+        contentType: "application/json",
+      });
+    }
+    await page.screenshot({
+      path: testInfo.outputPath("before-second-reply.png"),
+      fullPage: true,
+    });
+    await testInfo.attach("aria-before-second-reply", {
+      body: await page.locator("body").ariaSnapshot(),
+      contentType: "text/plain",
+    });
     await expect(
       page.getByTestId("assistant-response-text").last(),
     ).toContainText("Second desktop fixture reply.");

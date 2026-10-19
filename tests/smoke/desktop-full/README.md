@@ -13,7 +13,7 @@ JSON report: `tmp/desktop-smoke-results/report.json` (override dir with `LOCALLA
 
 ## What this is
 
-This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.mjs` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security, installers, or cross-platform shells.
+This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.ts` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security, installers, or cross-platform shells.
 
 ## Deferred proof
 
