@@ -1,6 +1,7 @@
 # Desktop full-app smoke harness
 
 Run the built Windows desktop app end-to-end against the local fixture:
+Tests run against the **built release exe** (`apps/desktop/src-tauri/target/release/locallab-desktop.exe`) through WebView2's remote-debugging CDP endpoint. Playwright attaches to the real app; there is no browser stand-in for the native bridge.
 
 ```powershell
 pnpm desktop:build   # apps/desktop/src-tauri/target/release/locallab-desktop.exe
@@ -13,12 +14,12 @@ JSON report: `tmp/desktop-smoke-results/report.json` (override dir with `LOCALLA
 
 ## What this is
 
-This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.ts` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security, native save/open dialogs, or cross-platform shells.
+This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.ts` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security or cross-platform shells.
 
 ## Deferred proof
 
 - macOS/Linux desktop builds (`pnpm desktop:build` is Windows-only here); no Mac/Linux hosts on this machine.
-- Native file dialogs: archive export goes through the rfd dialog, which CDP cannot drive; the command plumbing itself is covered by the `files_save` cargo tests. Import/export end-to-end through the UI is unautomated.
+- The export write itself: the UI provably raises the native Win32 save dialog (class #32770, detected and dismissed by `save-dialog.ps1`), but CDP cannot drive that dialog; the write path is covered by the `files_save` cargo tests instead. Import is fully automated end-to-end (file chooser fed a ZIP built by the app's own exporter, verified in bridge-owned SQLite).
 - Live vendor backends (OpenAI-compatible cloud endpoints, keys) — the fixture only proves the app's request/credential/streaming plumbing reaches a spec-compliant endpoint.
 
-**Current result:** 2026-10-19: `1 passed (47.6s)` against the release build, and `1 passed (47.4s)` against the per-user silent-installed exe via `LOCALLAB_DESKTOP_EXE`. Cross-checked from outside the harness after the green run: the Windows Credential Manager holds `locallab:mobile-provider-headers:secret:sec_*` entries under `com.locallab.provider-secrets`, and the roaming SQLite file contains both chat exchanges with two `completed` runs.
+**Current result:** 2026-10-19: `1 passed (35.2s)` covering import/export against the release build; the same flow earlier passed (`47.6s`/`47.4s`) against the release and per-user silent-installed exes. Cross-checked from outside the harness after the green run: the Windows Credential Manager holds `locallab:mobile-provider-headers:secret:sec_*` entries under `com.locallab.provider-secrets`; the roaming SQLite file holds both chat exchanges with two `completed` runs plus the imported `Imported smoke transcript` conversation.

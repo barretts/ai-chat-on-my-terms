@@ -1,10 +1,12 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { chromium, expect, test } from "@playwright/test";
 import {
+  buildImportFixtureZip,
   CDP_PORT,
   countNativeAssistantRows,
   killApp,
   launchApp,
+  nativeDialogAction,
   resetAppData,
   startFixtureServer,
   stopFixtureServer,
@@ -13,10 +15,11 @@ import {
 
 // One sequential test drives the built WebView2 app end-to-end: fresh
 // onboarding, a saved OpenAI-compatible provider pointed at a local fixture,
-// a streamed chat reply, then a restart that must show the history and let a
-// second message through using the credential that survived in the keyring.
-// A single test is deliberate: two live apps sharing the WebView2 data dir
-// race each other.
+// a streamed chat reply, a restart that must show the history and let a
+// second message through using the credential that survived in the keyring,
+// then archive import (real exporter bytes in) and the native save dialog
+// for export. A single test is deliberate: two live apps sharing the
+// WebView2 data dir race each other.
 
 // Copied (non-phone paths) from tests/ui/library-connections.spec.ts.
 async function expandSetupPreferences(page) {
@@ -224,6 +227,47 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
     await expect(
       page.getByTestId("assistant-response-text").last(),
     ).toContainText("Second desktop fixture reply.");
+
+    // 7. Archive import/export through the shared web-mode archive port.
+    // The ZIP comes from the app's own exporter; import goes through the
+    // browser file chooser and must land in bridge-owned SQLite. Export
+    // raises the native rfd save dialog (Win32 class #32770): prove it
+    // opens, then cancel it — the write itself is covered by cargo's
+    // files_save test, which CDP cannot drive.
+    // Desktop modes row shows raw capitalized panel names ("Archives"),
+    // not the friendly label; the screen itself is headed "Import & export".
+    await page.getByRole("button", { name: "Archives", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Import ZIP archive" }),
+    ).toBeVisible();
+    const zipPath = buildImportFixtureZip();
+    const fileChooser = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Import ZIP archive" }).click();
+    (await fileChooser).setFiles(zipPath);
+    await expect(
+      page.getByText("Imported 1 conversations", { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+    let importedRows = -1;
+    for (let attempt = 0; attempt < 20 && importedRows < 1; attempt += 1) {
+      importedRows = countNativeAssistantRows("Desktop import fixture line.");
+      if (importedRows < 1) await sleep(500);
+    }
+    expect(importedRows).toBeGreaterThanOrEqual(1);
+
+    await page.getByRole("button", { name: "Export all chats as ZIP" }).click();
+    let sawSaveDialog = false;
+    for (let attempt = 0; attempt < 12 && !sawSaveDialog; attempt += 1) {
+      sawSaveDialog = nativeDialogAction("probe");
+      if (!sawSaveDialog) await sleep(500);
+    }
+    expect(sawSaveDialog, "native save dialog never surfaced").toBe(true);
+    expect(nativeDialogAction("close"), "save dialog refused to close").toBe(
+      true,
+    );
+    // Canceled export must leave the app alive and responsive.
+    await expect(
+      page.getByRole("button", { name: "Import ZIP archive" }),
+    ).toBeVisible();
 
     await page.screenshot({
       path: testInfo.outputPath("desktop-chat-final.png"),

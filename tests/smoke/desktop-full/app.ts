@@ -1,7 +1,7 @@
 // Launch/kill/clean helpers for the built Tauri Windows desktop app, plus a
 // loopback OpenAI-compatible fixture server. Used by desktop-chat.spec.ts;
 // nothing here contacts a real vendor backend.
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
@@ -13,11 +13,13 @@ export const FIXTURE_PORT = Number(
   process.env.LOCALLAB_DESKTOP_FIXTURE_PORT ?? 4599,
 );
 
+const ROOT_DIR = path.resolve(__dirname, "../../..");
+
 // Where the fixture dumps the request bodies it sees; the smoke config's
 // output dir default is tmp/desktop-smoke-results.
 export const REQUEST_LOG_DIR =
   process.env.LOCALLAB_DESKTOP_SMOKE_RESULTS ??
-  path.resolve(__dirname, "../../../tmp/desktop-smoke-results");
+  path.join(ROOT_DIR, "tmp/desktop-smoke-results");
 fs.mkdirSync(REQUEST_LOG_DIR, { recursive: true });
 fs.rmSync(path.join(REQUEST_LOG_DIR, "fixture-requests.log"), { force: true });
 export const EXE_BASENAME = "locallab-desktop";
@@ -86,6 +88,44 @@ export function countNativeAssistantRows(like) {
   } finally {
     db.close();
   }
+}
+
+// Serialize the import fixture ZIP with the app's own exporter (tsx script
+// in this folder), so the bytes are exactly what a real backup produces.
+export function buildImportFixtureZip(fileName = "import-fixture.zip") {
+  const out = path.join(REQUEST_LOG_DIR, fileName);
+  execFileSync(
+    "cmd",
+    [
+      "/d",
+      "/c",
+      path.join(ROOT_DIR, "node_modules", ".bin", "tsx"),
+      path.join(__dirname, "make-import-fixture.ts"),
+      out,
+    ],
+    { stdio: "pipe" },
+  );
+  if (!fs.existsSync(out)) throw new Error(`fixture zip missing: ${out}`);
+  return out;
+}
+
+// Detect ("probe") or dismiss ("close") the native Win32 common dialog that
+// the Rust rfd save dialog creates, via save-dialog.ps1.
+export function nativeDialogAction(action) {
+  const out = execFileSync(
+    "powershell.exe",
+    [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      path.join(__dirname, "save-dialog.ps1"),
+      action,
+    ],
+    { encoding: "utf8" },
+  );
+  const match = /FOUND=(\d+)/.exec(out);
+  return match !== null && Number(match[1]) > 0;
 }
 
 // Spawn the built app with a WebView2 remote-debugging port so Playwright can
