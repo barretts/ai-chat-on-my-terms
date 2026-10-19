@@ -1,4 +1,4 @@
-# PowerShell environment for LocalLab plans
+# PowerShell environment for AI Chat on My Terms plans
 
 > Local workstation: Windows; run every local workspace command in PowerShell.
 

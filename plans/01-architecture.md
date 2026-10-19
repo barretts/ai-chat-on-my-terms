@@ -4,7 +4,7 @@
 
 ## Product and platforms
 
-Project name: **LocalLab**. First target: iPhone on iOS 17+. The required macOS 14+ companion hosts remote models/voice, encrypted relay routes, USB and sync. A native iPad layout and Pencil workstream starts after the working iPhone milestone, as do Android API 29+ and full Mac/Windows/Linux desktop clients. Own LocalLab pairing works between the project's clients/companion; interoperability with the original app is not assumed.
+Project name: **AI Chat on My Terms** (renamed from LocalLab; the `locallab` bundle ID, EAS slug, package/crate names and protocol constants stay as technical identifiers — see the README naming note). First target: iPhone on iOS 17+. The required macOS 14+ companion hosts remote models/voice, encrypted relay routes, USB and sync. A native iPad layout and Pencil workstream starts after the working iPhone milestone, as do Android API 29+ and full Mac/Windows/Linux desktop clients. Own pairing between this project's clients and companion works; interoperability with the original app is not assumed.
 
 The app is local-first: install, load/download a model and chat without an account or hosted app service. The first iPhone build also lets the user configure an OpenAI Responses endpoint, API key and model ID, then chat directly with that endpoint. LAN servers are direct; cloud model requests go only to the selected provider. Remote access, backup, account, support/community, hosted search and purchases are explicit optional paths. Working milestones may use deterministic fixtures for optional external services; later verification shards prove the live routes before release.
 

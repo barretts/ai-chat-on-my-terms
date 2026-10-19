@@ -1,8 +1,8 @@
-# Install LocalLab on an iPhone
+# Install AI Chat on My Terms on an iPhone
 
 ## Latest internal build: 21 (October 17, 2026)
 
-[Install LocalLab build 21](https://expo.dev/accounts/barrett/projects/locallab/builds/1e7b4d3f-c5f8-4903-a8c4-3dd1a1820db1) from Safari on the registered iPhone.
+[Install build 21](https://expo.dev/accounts/barrett/projects/locallab/builds/1e7b4d3f-c5f8-4903-a8c4-3dd1a1820db1) from Safari on the registered iPhone. The app installs under the display name "AI Chat on My Terms"; the EAS project stays `barrett/locallab`.
 
 - EAS reports `finished` at 10/17/2026 05:40:38 local time (cloud run ~6.5 minutes), app version `0.1.0`, build `21`, internal `preview` distribution.
 - Source commit `c2a72e8` (built-in theme sets with light+dark palettes, the theme-set dropdown and deep cobalt navy darks) plus working-tree changes; iOS build number bumped from 20 to 21 for this build.

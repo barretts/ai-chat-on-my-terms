@@ -1,4 +1,4 @@
-# LocalLab: current implementation and verification work
+# AI Chat on My Terms: current implementation and verification work
 
 Start with the [remaining work ledger](status/README.md). As of the 2026-10-18 cleanup, **118 unfinished task cards** remain here; **84 integrated implementation records** are in [archived/plans/tasks/](../archived/plans/tasks/). All **202 original task IDs** and the [231-record feature inventory](../docs/lm-mini-features.md) are preserved. Archiving an implementation unit does not certify its device, service or release behavior.
 

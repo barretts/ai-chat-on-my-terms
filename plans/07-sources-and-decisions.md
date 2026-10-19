@@ -4,7 +4,7 @@
 
 ## Scope authority
 
-The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, based on public LM Mini pages/release notes with source links in that file. [Research notes](../archived/docs/research-notes.md) record ambiguity; the [earlier Windows blueprint](../archived/docs/windows-blueprint.md) is technical context. LocalLab is an independent implementation. Public descriptions do not establish original-app pairing compatibility or permit use of original branding/artwork.
+The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, based on public LM Mini pages/release notes with source links in that file. [Research notes](../archived/docs/research-notes.md) record ambiguity; the [earlier Windows blueprint](../archived/docs/windows-blueprint.md) is technical context. AI Chat on My Terms is an independent implementation. Public descriptions do not establish original-app pairing compatibility or permit use of original branding/artwork.
 
 ## SDK and UI sources
 
@@ -12,7 +12,7 @@ The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, b
 - [AI SDK Expo guide](https://ai-sdk.dev/docs/getting-started/expo) informs a streaming/message bridge. T005A tests the pinned Expo transport and `expo/fetch`; direct HTTP-to-RunEvent is the fallback.
 - [OpenAI Responses text generation](https://developers.openai.com/api/docs/guides/text) documents the official `/v1/responses` request and bearer-key flow; [OpenAI streaming Responses](https://developers.openai.com/api/docs/guides/streaming-responses) documents SSE output deltas, completion and error events. T021A uses this protocol for the first iPhone remote run.
 - [Expo Modules](https://docs.expo.dev/modules/overview/) is the native extension route; [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) is the phone database option. These need development/native builds for the planned capabilities.
-- [React Native Paper](https://oss.callstack.com/react-native-paper/) provides native UI primitives with LocalLab semantic tokens.
+- [React Native Paper](https://oss.callstack.com/react-native-paper/) provides native UI primitives with this project's semantic tokens.
 - [Tauri sidecars](https://v2.tauri.app/develop/sidecar/) and [Next static export in Tauri](https://v2.tauri.app/start/frontend/nextjs/) inform the Mac companion and later desktop UI.
 - [llama.rn](https://github.com/mybigday/llama.rn), [MLX Swift](https://github.com/ml-explore/mlx-swift-lm) and [Apple Core ML Stable Diffusion](https://github.com/apple-aiml-research/ml-stable-diffusion) are candidate native engines. T005B–D prove actual hardware/architecture/version compatibility before dependent runtime work.
 - [Better Auth Expo integration](https://better-auth.com/docs/integrations/expo) informs optional accounts; [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo) informs purchase wiring. T159E verifies real Apple sandbox/Family Sharing; T125 verifies Google.

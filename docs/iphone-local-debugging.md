@@ -1,4 +1,4 @@
-# Debug LocalLab on your Mac and iPhone
+# Debug AI Chat on My Terms on your Mac and iPhone
 
 Keep editing on Windows. Transfer the current source checkout to your Mac to build and examine native behavior. The Mac needs Node 22.13 or newer, pnpm 8.15.9, Xcode and CocoaPods. The source bundle includes the workspace packages and native compatibility patches; copying only `apps/mobile` is insufficient.
 

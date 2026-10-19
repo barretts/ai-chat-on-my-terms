@@ -1,4 +1,4 @@
-# Test LocalLab locally
+# Test AI Chat on My Terms locally
 
 The Expo app's shared screens run on Windows through React Native Web. This lets us exercise the rendered app, SQLite persistence, file handling and provider requests before making another iPhone build. [Expo web support](https://docs.expo.dev/workflow/web/)
 
@@ -31,7 +31,7 @@ The loaded OxCoder template defaults to thinking and sometimes spends its whole 
 You are a helpful coding assistant. Give clear, concise answers and working code when asked.
 ```
 
-This flag is specific to the currently loaded template. Remove it if you want its thinking mode. LocalLab now reports an exhausted output budget separately from a finished answer. Reloading during generation preserves saved partial output and restores a usable chat.
+This flag is specific to the currently loaded template. Remove it if you want its thinking mode. The app now reports an exhausted output budget separately from a finished answer. Reloading during generation preserves saved partial output and restores a usable chat.
 
 The dedicated preview profile is already configured for this server with a 16384-token context, 2048-token output limit and the coding prompt above. An actual Python response survived reload. To reopen that Chrome app window:
 
@@ -66,7 +66,7 @@ The historical September 27 [expanded workflow audit](../archived/docs/implement
 
 ## Platform limits
 
-Browser SQLite uses Expo's WebAssembly/OPFS implementation. It currently permits one open LocalLab tab per browser profile; a second tab explains that the first must close before retrying. Another live owner's generation is never canceled by startup recovery. Expo describes SQLite web support as alpha. [SQLite web setup](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/#web-setup)
+Browser SQLite uses Expo's WebAssembly/OPFS implementation. It currently permits one open app tab per browser profile; a second tab explains that the first must close before retrying. Another live owner's generation is never canceled by startup recovery. Expo describes SQLite web support as alpha. [SQLite web setup](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/#web-setup)
 
 Managed browser files use IndexedDB. Provider keys stay in tab memory and need re-entry after reload; the native app uses private files and SecureStore. Original attachment bytes survive archive export/import. UTF-8 text extraction works; PDF/XLSX text extraction is explicitly unavailable, with a retained-original message and working removal action.
 
