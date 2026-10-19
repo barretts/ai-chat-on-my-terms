@@ -48,3 +48,5 @@ The mobile app uses the [embedded migration runner](packages/schema/migrations/R
 For a standalone installation on a registered iPhone, use the [iPhone installation guide](docs/iphone-installation.md) and the mobile EAS `preview` profile.
 
 For local browser preview and rendered onboarding/chat interaction checks on Windows, use the [local UI testing guide](docs/local-ui-testing.md).
+
+For the Windows desktop client (Tauri shell over the same web build, installers, smoke test and data locations), see the [desktop app guide](docs/desktop-app.md).

@@ -21,4 +21,4 @@ This is **fixture** evidence. The chat answers come from the loopback SSE fixtur
 - MSI/installer-path proof: this harness launches the bare release exe, not an installed package.
 - Live vendor backends (OpenAI-compatible cloud endpoints, keys) — the fixture only proves the app's request/credential/streaming plumbing reaches a spec-compliant endpoint.
 
-**Current result:** the launch/CDP attach path is verified against the real exe on this host; the full scenario runs only once a release build exists, and end-to-end desktop proof is pending that run.
+**Current result:** 2026-10-19: `1 passed (47.6s)` against the release build on this host. Cross-checked from outside the harness after the green run: the Windows Credential Manager holds `locallab:mobile-provider-headers:secret:sec_*` entries under `com.locallab.provider-secrets`, and the roaming SQLite file contains both chat exchanges with two `completed` runs.
