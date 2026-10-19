@@ -629,7 +629,7 @@ export default function CompleteChatScreen() {
               describeError(cause, {
                 operation: "Clean up unused chat files",
                 recovery:
-                  "Your saved chats remain available. Reopen LocalLab to retry cleaning unused files.",
+                  "Your saved chats remain available. Reopen the app to retry cleaning unused files.",
               }),
             );
         });
@@ -2334,7 +2334,7 @@ export default function CompleteChatScreen() {
         describeError(cause, {
           operation: "Clean up deleted chat files",
           recovery:
-            "The chat was removed. Reopen LocalLab to retry cleaning its unused files.",
+            "The chat was removed. Reopen the app to retry cleaning its unused files.",
         }),
       ),
     );
@@ -2431,7 +2431,7 @@ export default function CompleteChatScreen() {
     : historyDisplayTitle({ title: conversationTitle });
   const phoneTitle =
     !panel && ["Offline chat", "OpenAI chat"].includes(chatTitle)
-      ? "LocalLab"
+      ? "AI Chat"
       : chatTitle;
   return (
     <View
@@ -3912,7 +3912,7 @@ export default function CompleteChatScreen() {
                   describeError(cause, {
                     operation: "Add attachment",
                     recovery:
-                      "Choose the file again. Check that LocalLab can read the file and has enough storage.",
+                      "Choose the file again. Check that the app can read the file and has enough storage.",
                   }),
                 );
                 return null;
@@ -3997,7 +3997,7 @@ function ChatControlsShell({
               accessibilityRole="header"
               style={{ flex: 1, fontWeight: "600" }}
             >
-              LocalLab
+              AI Chat on My Terms
             </Text>
             <IconButton
               icon="close"

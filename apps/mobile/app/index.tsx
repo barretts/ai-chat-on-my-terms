@@ -28,7 +28,7 @@ export default function IndexRoute() {
         if (mounted)
           setError(
             describeError(cause, {
-              operation: "Open LocalLab storage",
+              operation: "Open app storage",
               recovery: chatStartupError(cause, Platform.OS),
             }),
           );
@@ -53,7 +53,7 @@ export default function IndexRoute() {
         <>
           <ErrorNotice message={error} />
           <NativeButton
-            accessibilityLabel="Retry opening LocalLab"
+            accessibilityLabel="Retry opening the app"
             onPress={() =>
               retryMobileDatabaseOpen(() => setAttempt((value) => value + 1))
             }
@@ -64,7 +64,7 @@ export default function IndexRoute() {
       ) : (
         <>
           <ActivityIndicator />
-          <Text>Preparing LocalLab…</Text>
+          <Text>Preparing your chat…</Text>
         </>
       )}
     </ScrollView>

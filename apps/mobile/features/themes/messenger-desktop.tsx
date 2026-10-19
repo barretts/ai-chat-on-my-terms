@@ -118,7 +118,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text numberOfLines={1} style={styles.title}>
-              LocalLab Messenger
+              AI Chat Messenger
             </Text>
             {!layout.compact && !collapsed ? (
               <Text style={styles.subtitle}>

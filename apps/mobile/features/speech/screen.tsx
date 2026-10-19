@@ -184,7 +184,7 @@ export function SpeechPanel({
             variant="bodySmall"
             style={{ color: theme.colors.onSurfaceVariant }}
           >
-            Keep LocalLab open while downloading or reading aloud.
+            Keep the app open while downloading or reading aloud.
           </Text>
         </View>
 
@@ -596,7 +596,7 @@ export function SpeechPanel({
           >
             <View style={styles.phoneDetails}>
               <Text variant="bodyMedium">
-                Keep LocalLab open while downloading or reading aloud.
+                Keep the app open while downloading or reading aloud.
               </Text>
               {mobileSpeech.repairRuntime ? (
                 <NativeButton

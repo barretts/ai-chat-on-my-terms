@@ -61,14 +61,14 @@ function hostOf(url: string): string {
 export function parsePairingScanNote(text: string): ScanNote {
   const trimmed = text.trim();
   if (trimmed === "")
-    return { kind: "invalid", message: "Scan the QR from LocalLab desktop, or paste its pairing text." };
+    return { kind: "invalid", message: "Scan the QR from the desktop app, or paste its pairing text." };
   let decoded: unknown;
   try {
     decoded = JSON.parse(trimmed);
   } catch {
     return {
       kind: "invalid",
-      message: "That is not a LocalLab pairing code. Codes start on LocalLab desktop under Connect.",
+      message: "That is not our pairing code. Codes start in the desktop app under Connect.",
     };
   }
   const payload = PairingQrV1Schema.safeParse(decoded);
@@ -76,7 +76,7 @@ export function parsePairingScanNote(text: string): ScanNote {
     return {
       kind: "invalid",
       message:
-        "That pairing code is not supported. Only LocalLab pairing v1 codes work here; official LM Mini codes cannot pair with this app.",
+        "That pairing code is not supported. Only our pairing v1 codes work here; official LM Mini codes cannot pair with this app.",
     };
   }
   return {
@@ -141,24 +141,24 @@ export function revokeStoredPairing(
 
 /**
  * User-facing connection state text. Terminal help always points at a
- * fresh QR from LocalLab desktop — the only pairing source this app has.
+ * fresh QR from the desktop app — the only pairing source this app has.
  */
 export function connectionNote(state: string, note: string): string {
   switch (state) {
     case "idle":
-      return "Not connected. Scan a QR from LocalLab desktop under Connect.";
+      return "Not connected. Scan a QR from the desktop app under Connect.";
     case "connecting":
       return "Reaching the relay…";
     case "awaiting-peer":
-      return "Waiting for the desktop to answer. Leave LocalLab desktop open.";
+      return "Waiting for the desktop to answer. Leave the desktop app open.";
     case "ready":
       return "Paired and connected.";
     case "closed":
       return note === "" ? "Disconnected." : note;
     case "re-pair-required":
-      return "This pairing is no longer valid. Show a fresh QR from LocalLab desktop and scan it again. (Rotated or revoked pairings cannot reconnect; official LM Mini codes were never valid here.)";
+      return "This pairing is no longer valid. Show a fresh QR from the desktop app and scan it again. (Rotated or revoked pairings cannot reconnect; official LM Mini codes were never valid here.)";
     case "version-mismatch":
-      return "The desktop speaks a newer pairing protocol. Update LocalLab desktop, then scan its fresh QR.";
+      return "The desktop speaks a newer pairing protocol. Update the desktop app, then scan its fresh QR.";
     default:
       return note;
   }

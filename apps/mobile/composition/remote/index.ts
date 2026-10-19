@@ -242,7 +242,7 @@ export function remoteConnectionGuarded(
   routeId: string,
 ): { ok: true } | { ok: false; note: string } {
   const pairing = pairings.find((record) => record.qr.companionRouteId === routeId);
-  if (!pairing) return { ok: false, note: "This device is not paired. Scan a fresh QR from LocalLab desktop." };
-  if (pairing.revokedAt !== null) return { ok: false, note: `Pairing “${pairing.label}” was revoked. Re-pair from LocalLab desktop to use it again.` };
+  if (!pairing) return { ok: false, note: "This device is not paired. Scan a fresh QR from the desktop app." };
+  if (pairing.revokedAt !== null) return { ok: false, note: `Pairing “${pairing.label}” was revoked. Re-pair from the desktop app to use it again.` };
   return { ok: true };
 }

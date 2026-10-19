@@ -50,7 +50,7 @@ export function ArchivesScreen(props: {
       </Text>
       <Text>
         Save a copy of the open chat, back up your conversations, or bring chats
-        into LocalLab. To find chats you archived, open Recent chats.
+        into this app. To find chats you archived, open Recent chats.
       </Text>
       {failed && status ? <ErrorNotice message={status} /> : status ? (
         <Text
@@ -109,7 +109,7 @@ export function ArchivesScreen(props: {
         style={{ padding: 16, gap: 12 }}
       >
         <Text variant="titleMedium">Back up your chats</Text>
-        <Text>Save a ZIP you can import into LocalLab later.</Text>
+        <Text>Save a ZIP you can import back into this app later.</Text>
         <NativeButton
           accessibilityLabel="Export all chats as ZIP"
           mode="contained"
@@ -131,7 +131,7 @@ export function ArchivesScreen(props: {
         <Text variant="titleMedium">Import chats</Text>
         <Text>
           {props.ports.importAll
-            ? "Choose a LocalLab ZIP backup or a JSON file exported by LM Studio."
+            ? "Choose a chat ZIP backup or a JSON file exported by LM Studio."
             : "Choose a JSON file exported by LM Studio."}
         </Text>
         <NativeButton
@@ -154,7 +154,7 @@ export function ArchivesScreen(props: {
             accessibilityLabel="Import ZIP archive"
             disabled={busy}
             onPress={() =>
-              void run("Import a LocalLab ZIP backup", "Choose a ZIP exported by LocalLab and try the import again.", async () => {
+              void run("Import a chat ZIP backup", "Choose a ZIP exported by this app's backup and try the import again.", async () => {
                 const count = await props.ports.importAll!();
                 setImportedCount(count);
                 setStatus(

@@ -257,7 +257,7 @@ function LockGate(options: {
       style={styles.gate}
       accessibilityRole="summary"
     >
-      <Text style={styles.title}>LocalLab is locked</Text>
+      <Text style={styles.title}>AI Chat is locked</Text>
       <Text style={styles.subtitle}>
         {reason === "cold-start"
           ? "Enter your PIN to start this session."

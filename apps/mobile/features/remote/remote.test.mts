@@ -59,7 +59,7 @@ describe("pairing consent gate", () => {
 
   it("surfaces scan errors ahead of consent", () => {
     const invalid = parsePairingScanNote("nope");
-    expect(pairingBlockedReason(true, invalid)).toMatch(/not a LocalLab|not supported/i);
+    expect(pairingBlockedReason(true, invalid)).toMatch(/not our pairing code|not supported/i);
   });
 });
 
@@ -100,11 +100,11 @@ describe("connectionNote", () => {
     expect(connectionNote("closed", "Relay closed: bye.")).toBe("Relay closed: bye.");
   });
 
-  it("terminal failures always demand a fresh LocalLab QR and never promise LM Mini interop", () => {
+  it("terminal failures always demand a fresh desktop QR and never promise LM Mini interop", () => {
     for (const state of ["re-pair-required", "version-mismatch"]) {
       const note = connectionNote(state, "");
       expect(note).toMatch(/QR/i);
-      expect(note).toMatch(/LocalLab/i);
+      expect(note).toMatch(/desktop app/i);
       expect(note).not.toMatch(/works with LM Mini/i);
     }
   });

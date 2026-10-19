@@ -146,5 +146,5 @@ export function workspaceDocumentInstruction(
 ): string {
   return nativeTools
     ? `The user asked for a file at ${JSON.stringify(intent.path)} in this chat's workspace. Use workspace_write_file to create it. Read an existing file first and supply its expectedRevision when replacing it. When your tool format uses XML parameters, encode content as a quoted JSON string with escaped newlines and quotes, and encode every less-than character inside that string as \\u003c. This preserves whitespace and literal XML or tool closing tags. Confirm that the tool succeeded before saying the file was saved. Files can be exported by the user from Files.`
-    : `The user asked for a file at ${JSON.stringify(intent.path)} in this chat's workspace. Return the complete document contents as your response. LocalLab will save the completed response to that file. Omit conversational introductions, claims that you already saved it, and an outer code fence. Keep Markdown, internal code fences, and Unicode intact.`;
+    : `The user asked for a file at ${JSON.stringify(intent.path)} in this chat's workspace. Return the complete document contents as your response. The app will save the completed response to that file. Omit conversational introductions, claims that you already saved it, and an outer code fence. Keep Markdown, internal code fences, and Unicode intact.`;
 }

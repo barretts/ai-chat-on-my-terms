@@ -231,7 +231,7 @@ export function OnboardingScreen(props: {
             variant="headlineLarge"
             style={styles.phoneHeading}
           >
-            Welcome to LocalLab
+            Welcome to AI Chat
           </Text>
           <Text
             variant="bodyLarge"
@@ -421,7 +421,7 @@ export function OnboardingScreen(props: {
     >
       {error ? <ErrorNotice message={error} /> : null}
       <Text accessibilityRole="header" variant="headlineMedium">
-        Welcome to LocalLab
+        Welcome to AI Chat
       </Text>
       <Text>
         Choose a setup style. Cloud providers are optional, and local model

@@ -1,7 +1,7 @@
 /** Device side of optional accounts (AC-01/AC-02). The session token is
  * held in device-secure storage (Keychain/Keystore), never in sqlite, so
  * sync and backups never carry it. Local-only users never call this —
- * nothing in LocalLab requires an account, and sign-out here deletes the
+ * nothing here requires an account, and sign-out here deletes the
  * token only; local chats live in the app database and are untouched. */
 
 export interface SecureTokenPort {

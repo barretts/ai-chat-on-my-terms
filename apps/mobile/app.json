@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "LocalLab",
+    "name": "AI Chat on My Terms",
     "slug": "locallab",
     "scheme": "locallab",
     "version": "0.1.0",
@@ -18,9 +18,9 @@
       "deploymentTarget": "17.0",
       "bundleIdentifier": "app.locallab.mobile",
       "infoPlist": {
-        "NSLocalNetworkUsageDescription": "LocalLab connects to model servers on your local network when you choose a host.",
-        "NSMicrophoneUsageDescription": "LocalLab listens for dictation only while you start a recognition action.",
-        "NSSpeechRecognitionUsageDescription": "LocalLab converts your dictated speech into text, on-device whenever the language supports it.",
+        "NSLocalNetworkUsageDescription": "AI Chat on My Terms connects to model servers on your local network when you choose a host.",
+        "NSMicrophoneUsageDescription": "AI Chat on My Terms listens for dictation only while you start a recognition action.",
+        "NSSpeechRecognitionUsageDescription": "AI Chat on My Terms converts your dictated speech into text, on-device whenever the language supports it.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }

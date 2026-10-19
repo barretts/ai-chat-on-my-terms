@@ -7,6 +7,6 @@ export function chatStartupError(cause: unknown, platform: string): string {
       message,
     )
   )
-    return "Another LocalLab tab has this browser's chat database open. Close that tab, then try opening chat again.";
+    return "Another app tab has this browser's chat database open. Close that tab, then try opening chat again.";
   return "Chat storage could not be opened. Try again, or return to setup.";
 }

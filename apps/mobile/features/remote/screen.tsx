@@ -101,10 +101,10 @@ export function RemotePanel(props: RemotePanelProps) {
     <ScrollView accessibilityLabel="Remote pairing panel">
       <View style={{ padding: phone ? 12 : 18, gap: 14 }}>
         <NativeSurface accessibilityLabel="Pair a desktop">
-          <Text variant="titleMedium">Pair with LocalLab desktop</Text>
+          <Text variant="titleMedium">Pair with the desktop app</Text>
           <NativeText accessibilityLabel="Pairing help">
-            Open LocalLab desktop, choose Connect, and scan its QR (or paste the pairing text).
-            This app pairs only with LocalLab desktop; official LM Mini codes are not supported.
+            Open the desktop app, choose Connect, and scan its QR (or paste the pairing text).
+            This app pairs only with its own desktop app; official LM Mini codes are not supported.
           </NativeText>
           <NativeInput
             accessibilityLabel="Pairing text input"
