@@ -13,12 +13,12 @@ JSON report: `tmp/desktop-smoke-results/report.json` (override dir with `LOCALLA
 
 ## What this is
 
-This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.ts` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security, installers, or cross-platform shells.
+This is **fixture** evidence. The chat answers come from the loopback SSE fixture in `app.ts` (port 4599, CORS + OPTIONS, 401 without an `Authorization` header); it does not contact any vendor backend, and the harness does not exercise WebView2 navigation security, native save/open dialogs, or cross-platform shells.
 
 ## Deferred proof
 
 - macOS/Linux desktop builds (`pnpm desktop:build` is Windows-only here); no Mac/Linux hosts on this machine.
-- MSI/installer-path proof: this harness launches the bare release exe, not an installed package.
+- Native file dialogs: archive export goes through the rfd dialog, which CDP cannot drive; the command plumbing itself is covered by the `files_save` cargo tests. Import/export end-to-end through the UI is unautomated.
 - Live vendor backends (OpenAI-compatible cloud endpoints, keys) — the fixture only proves the app's request/credential/streaming plumbing reaches a spec-compliant endpoint.
 
-**Current result:** 2026-10-19: `1 passed (47.6s)` against the release build on this host. Cross-checked from outside the harness after the green run: the Windows Credential Manager holds `locallab:mobile-provider-headers:secret:sec_*` entries under `com.locallab.provider-secrets`, and the roaming SQLite file contains both chat exchanges with two `completed` runs.
+**Current result:** 2026-10-19: `1 passed (47.6s)` against the release build, and `1 passed (47.4s)` against the per-user silent-installed exe via `LOCALLAB_DESKTOP_EXE`. Cross-checked from outside the harness after the green run: the Windows Credential Manager holds `locallab:mobile-provider-headers:secret:sec_*` entries under `com.locallab.provider-secrets`, and the roaming SQLite file contains both chat exchanges with two `completed` runs.
