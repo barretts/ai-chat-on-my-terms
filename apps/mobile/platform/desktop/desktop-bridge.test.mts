@@ -7,6 +7,7 @@ import { isDesktopBridge } from "./bridge";
 import { openDesktopDatabase } from "./database";
 import { base64ToBytes, bytesToBase64 } from "./encoding";
 import { createDesktopSecretStore } from "./secrets";
+import { createNativeMobileSecretStore as webSecretEntry } from "../secrets/index.web";
 import { sanitizeDiagnosticText } from "../../features/diagnostics/sanitization";
 
 interface FakeBackend {
@@ -283,6 +284,36 @@ test("the keyring store puts, resolves, scope-guards and deletes over secret_* c
   assert.equal(backend.keyring.size, 0);
   await assert.rejects(
     writer.resolveHeaders("https://api.fixture.invalid", [descriptor.ref]),
+    { code: "missing" },
+  );
+});
+
+test("the web secret entry keeps keys in the OS keyring inside the desktop webview", async () => {
+  const backend = createFakeBackend();
+  installBridge(backend);
+  const secret = "Bearer web-entry-bridge-9b2d11";
+  const writer = webSecretEntry();
+  const descriptor = await writer.put(
+    "https://api.fixture.invalid",
+    "Authorization",
+    secret,
+  );
+  // The value reached the host keyring, not just a module Map.
+  assert.equal(backend.keyring.size, 2);
+  const reopened = webSecretEntry();
+  assert.deepEqual(
+    {
+      ...(await reopened.resolveHeaders("https://api.fixture.invalid", [
+        descriptor.ref,
+      ])),
+    },
+    { authorization: secret },
+  );
+  // Without the bridge injected, the same entry degrades to tab memory.
+  vi.unstubAllGlobals();
+  const tabOnly = webSecretEntry();
+  await assert.rejects(
+    tabOnly.resolveHeaders("https://api.fixture.invalid", [descriptor.ref]),
     { code: "missing" },
   );
 });

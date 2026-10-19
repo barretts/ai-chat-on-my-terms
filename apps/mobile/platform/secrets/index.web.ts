@@ -3,6 +3,8 @@ import {
   type SecureValuePort,
 } from "@locallab/security-secrets";
 import { registerDiagnosticSecret } from "../../features/diagnostics/sanitization";
+import { isDesktopBridge } from "../desktop/bridge";
+import { createDesktopSecretStore } from "../desktop/secrets";
 
 // Browser keys exist only in this tab's memory, never in browser persistence.
 const tabSecrets = new Map<string, string>();
@@ -30,6 +32,10 @@ export function createMobileSecretStore(store: ExpoSecureStoreModule) {
 }
 
 export function createNativeMobileSecretStore() {
+  // Inside the Tauri desktop webview this file shadows index.ts, so the
+  // bridge check MUST live here: without it the desktop shell would keep
+  // provider keys in a per-tab Map and silently lose them on restart.
+  if (isDesktopBridge()) return createDesktopSecretStore();
   return createMobileSecretStore({
     getItemAsync: async (key) => tabSecrets.get(key) ?? null,
     setItemAsync: async (key, value) => {
