@@ -1,5 +1,5 @@
 /**
- * T101 (RE-11): iPhone-side port of the LocalLab USB route (modules/usb/ios).
+ * T101 (RE-11): iPhone-side port of the companion USB route (modules/usb/ios).
  *
  * The cable carries THREE layers, all byte-compatible with the companion
  * Rust implementation in `apps/companion/usb` (golden vectors:
@@ -265,7 +265,7 @@ export class UsbDeviceTracker {
       case "untrusted":
         return "Cable connected — tap Trust on this iPhone to allow this Mac.";
       case "trusted":
-        return "iPhone trusted this Mac — the LocalLab USB session can start.";
+        return "iPhone trusted this Mac — the USB session can start.";
       case "active":
         return "USB session live — chat and sync run over the cable; Wi-Fi remote mode is off.";
     }

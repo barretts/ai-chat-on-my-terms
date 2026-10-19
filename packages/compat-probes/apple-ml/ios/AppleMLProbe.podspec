@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name           = 'AppleMLProbe'
   s.version        = '0.1.0'
-  s.summary        = 'LocalLab Apple ML compatibility probe bridge'
+  s.summary        = 'AI Chat on My Terms Apple ML compatibility probe bridge'
   s.description    = 'Expo native module scaffold for typed Apple ML capability and inference probe results.'
   s.license        = { :type => 'MIT' }
-  s.author         = 'LocalLab'
+  s.author         = 'AI Chat on My Terms'
   s.homepage       = 'https://docs.expo.dev/modules/'
   s.platforms      = { :ios => '17.0' }
   s.swift_version  = '5.9'

@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name           = 'SpeechSystem'
   s.version        = '0.1.0'
-  s.summary        = 'LocalLab iOS system speech recognition bridge'
+  s.summary        = 'AI Chat on My Terms iOS system speech recognition bridge'
   s.description    = 'Expo native module scaffold bridging Apple Speech recognition to the shared SpeechInputPort.'
   s.license        = { :type => 'MIT' }
-  s.author         = 'LocalLab'
+  s.author         = 'AI Chat on My Terms'
   s.homepage       = 'https://docs.expo.dev/modules/'
   s.platforms      = { :ios => '17.0' }
   s.swift_version  = '5.9'

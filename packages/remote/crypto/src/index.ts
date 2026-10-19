@@ -447,7 +447,7 @@ export function parsePairingQrPayload(text: string): PairingQrV1 {
   }
   const payload = PairingQrV1Schema.safeParse(decoded);
   if (!payload.success)
-    throw new PairingCryptoError("malformed", "Pairing QR payload is not a LocalLab pairing v1");
+    throw new PairingCryptoError("malformed", "Pairing QR payload is not an AI Chat pairing v1");
   return payload.data;
 }
 

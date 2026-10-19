@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: LocalLab Optional Services API
+  title: AI Chat Optional Services API
   version: 1.0.0
   description: >-
     Opt-in service contracts. Chat history, provider credentials, pairing

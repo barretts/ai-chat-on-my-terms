@@ -220,7 +220,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
         const failure = error instanceof PairingCryptoError ? error : undefined;
         if (failure !== undefined && failure.message.includes("protocol")) {
           state = "version-mismatch";
-          setNote("The desktop is speaking a different pairing protocol. Show a fresh QR code from an updated LocalLab desktop.");
+          setNote("The desktop is speaking a different pairing protocol. Show a fresh QR code from an updated desktop app.");
         } else {
           state = "re-pair-required";
           setNote("The desktop sent something this pairing cannot read. Show a fresh QR code.");
@@ -255,7 +255,7 @@ export function createPairingClient(options: PairingClientOptions): PairingClien
         );
       } catch {
         state = "version-mismatch";
-        setNote("The desktop uses a pairing protocol this app does not support. Update LocalLab and scan a fresh QR code.");
+        setNote("The desktop uses a pairing protocol this app does not support. Update the desktop app and scan a fresh QR code.");
         settled.reject(new PairingCryptoError("unauthorized", note));
         return;
       }

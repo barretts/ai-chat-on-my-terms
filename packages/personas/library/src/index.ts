@@ -238,10 +238,10 @@ export class SQLitePersonaLibrary implements PersonaLibraryPort {
             db,
             STARTER_PERSONA_ID,
             {
-              name: "LocalLab assistant",
+              name: "AI Chat assistant",
               description: "A friendly starting point you can edit or delete",
               prompt:
-                "You are the LocalLab assistant. Give clear, practical answers. Ask for missing information when needed and acknowledge uncertainty.",
+                "You are a helpful assistant for private, on-your-own-terms chat. Give clear, practical answers. Ask for missing information when needed and acknowledge uncertainty.",
             },
             false,
           );

@@ -20,7 +20,7 @@ import type { AuthStore } from "../auth/index.js";
 const DEVICE_ID_HASH = /^[0-9a-f]{64}$/;
 
 export const NO_RECOVERY_GUIDANCE =
-  "This device has no recovery enrollment on that account. LocalLab cannot " +
+  "This device has no recovery enrollment on that account. We cannot " +
   "remove the lock for you; uninstall and reinstall the app to start " +
   "fresh, and restore chats only from an encrypted cloud backup you made.";
 
@@ -100,7 +100,7 @@ export function registerLockRecoveryRoutes(
     );
     await options.mail.send(
       enrollment.email,
-      "LocalLab lock recovery code",
+      "AI Chat lock recovery code",
       `Enter this code on the locked device to remove your PIN: ${grant}`,
     );
     return reply.code(200).send({ sent: true });

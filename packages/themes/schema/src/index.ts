@@ -101,7 +101,7 @@ export const BUILTIN_THEMES: readonly ThemeV1[] = [
   {
     version: THEMES_SCHEMA_VERSION,
     id: "builtin",
-    name: "Locallab Default",
+    name: "AI Chat Default",
     kind: "builtin",
     scheme: "light",
     palette: {

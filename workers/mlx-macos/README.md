@@ -1,4 +1,4 @@
-# LocalLab MLX macOS worker
+# AI Chat on My Terms MLX macOS worker
 
 This Swift package builds `locallab-mlx-worker` for macOS 14 or later and links the same pinned `mlx-swift-lm` 2.30.6 release as the iOS adapter. Package the signed executable inside the companion app and launch it by its bundled absolute path; end users do not need Terminal, Homebrew, or a separate install.
 

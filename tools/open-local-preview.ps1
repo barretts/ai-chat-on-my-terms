@@ -5,7 +5,7 @@ $previewRepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $previewProfile = Join-Path $previewRepoRoot 'tmp/locallab-preview-profile'
 $previewChrome = Join-Path $env:ProgramFiles 'Google/Chrome/Application/chrome.exe'
 if (-not (Test-Path -LiteralPath $previewChrome)) {
-    throw 'Google Chrome is required for the configured LocalLab preview profile.'
+    throw 'Google Chrome is required for the configured local preview profile.'
 }
 # This is the interactive app window the user will operate, with its own local data profile.
 Start-Process -FilePath $previewChrome -ArgumentList @(

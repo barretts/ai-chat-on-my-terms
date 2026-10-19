@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 $taskRepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $taskOutput = Join-Path $taskRepoRoot 'tmp/messenger-redesign'
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
-$taskZipPath = Join-Path $taskOutput ('LocalLab-Mac-source-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
+$taskZipPath = Join-Path $taskOutput ('AIChat-Mac-source-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
 Push-Location -LiteralPath $taskRepoRoot
 try {
     $taskFiles = @(rg --files --hidden -g '!**/node_modules/**' -g '!.git/**' -g '!tmp/**' -g '!.codex/**' -g '!.agents/**' -g '!**/.next/**' -g '!**/out/**' -g '!**/.env*' |
@@ -17,7 +17,7 @@ try {
         foreach ($taskFile in $taskFiles) {
             $taskFullPath = [IO.Path]::GetFullPath((Join-Path $taskRepoRoot $taskFile))
             if (-not $taskFullPath.StartsWith($taskRepoRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Source path escaped the checkout.' }
-            $taskEntryPath = 'LocalLab/' + $taskFile.Replace('\', '/')
+            $taskEntryPath = 'AIChat/' + $taskFile.Replace('\', '/')
             [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($taskArchive, $taskFullPath, $taskEntryPath, [IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }
     } finally { $taskArchive.Dispose() }

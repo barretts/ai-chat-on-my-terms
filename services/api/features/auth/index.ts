@@ -320,7 +320,7 @@ export function registerAuthRoutes(
     });
     await options.mail.send(
       email,
-      "Verify your LocalLab email",
+      "Verify your AI Chat email",
       `Confirm with this code: ${token}`,
     );
     return reply.code(201).send({ sent: true });
@@ -451,7 +451,7 @@ export function registerAuthRoutes(
     });
     await options.mail.send(
       email,
-      "Verify your LocalLab email",
+      "Verify your AI Chat email",
       `Confirm with this code: ${token}`,
     );
     return reply.code(200).send({ linked: true });
@@ -494,7 +494,7 @@ export function registerAuthRoutes(
       });
       await options.mail.send(
         body.email,
-        "Reset your LocalLab password",
+        "Reset your AI Chat password",
         `Use this code to choose a new password: ${token}`,
       );
     }

@@ -80,7 +80,7 @@ export function defaultGraph(params: ComfyGenerationParams): ComfyGraph {
       class_type: "VAEDecode",
       inputs: { samples: ["5", 0], vae: ["1", 2] },
     },
-    "7": { class_type: "SaveImage", inputs: { images: ["6", 0], filename_prefix: "LocalLab" } },
+    "7": { class_type: "SaveImage", inputs: { images: ["6", 0], filename_prefix: "ai-chat" } },
   };
   return graph;
 }

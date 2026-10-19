@@ -28,7 +28,7 @@ try {
         return
     }
 
-    Write-Host 'Register your iPhone for the LocalLab preview build.'
+    Write-Host 'Register your iPhone for the AI Chat preview build.'
     Write-Host 'Enter your Apple ID, password and two-factor verification code directly in this terminal.'
     Write-Host 'Select your Apple Developer team, then choose Website.'
     Write-Host 'Open the registration URL on your iPhone and complete the profile registration instructions.'

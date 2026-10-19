@@ -17,7 +17,7 @@ node --version
 pnpm --version
 xcodebuild -version
 pod --version
-node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 13)) { console.error("LocalLab needs Node 22.13 or newer."); process.exit(1); }'
+node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 13)) { console.error("This project needs Node 22.13 or newer."); process.exit(1); }'
 if [[ "${1:-}" == "--check" ]]; then
   printf '%s\n' 'Prerequisites found. No dependencies installed and no build started.'
   exit 0

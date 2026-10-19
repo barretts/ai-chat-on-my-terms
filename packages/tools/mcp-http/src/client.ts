@@ -140,7 +140,7 @@ export class McpHttpClient {
           params: {
             protocolVersion: MCP_PROTOCOL_VERSION,
             capabilities: {},
-            clientInfo: { name: "LocalLab", version: "0.1.0" },
+            clientInfo: { name: "ai-chat-on-my-terms", version: "0.1.0" },
           },
         },
         signal,
@@ -711,7 +711,7 @@ export class McpHttpClient {
           params: {
             protocolVersion: MCP_PROTOCOL_VERSION,
             capabilities: {},
-            clientInfo: { name: "LocalLab", version: "0.1.0" },
+            clientInfo: { name: "ai-chat-on-my-terms", version: "0.1.0" },
           },
         },
         pair.signal,
