@@ -56,11 +56,13 @@ pnpm test:desktop-ui # tests/smoke/desktop-full — see its README
 The harness launches the exe (release build, or an installed copy via
 `LOCALLAB_DESKTOP_EXE`) with WebView2 remote debugging (port 9222), drives
 onboarding → a local OpenAI-compatible fixture provider (port 4599) → a
-streamed chat reply, then restarts the app and verifies history reopening,
-the transcript rows in the roaming SQLite file (bridge, not browser
-storage), and that the stored key still works without re-entry. It is
-fixture evidence, not live-vendor proof. One app instance at a time: the
-WebView2 profile locks the data directory.
+streamed chat reply, restarts the app to verify history reopening, the
+transcript rows in the roaming SQLite file (bridge, not browser storage)
+and that the stored key still works without re-entry, then imports a chat
+archive through the file chooser (ZIP serialized by the app's own
+exporter) and proves the export button raises the native Win32 save
+dialog. It is fixture evidence, not live-vendor proof. One app instance
+at a time: the WebView2 profile locks the data directory.
 
 ## Install/uninstall lifecycle (verified 2026-10-19)
 
