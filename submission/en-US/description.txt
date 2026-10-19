@@ -1,0 +1,5 @@
+Choose the model and connection that fit your conversation.
+
+Download a supported model for on-device chat, connect to your own model server, or configure a supported cloud provider with your own API key. Keep conversations together and switch connections when your needs change.
+
+On-device chat requires a compatible model download and enough device memory and storage. Remote connections require access to your server or provider. Cloud providers may charge separately for API use. AI responses can be inaccurate; check important information.

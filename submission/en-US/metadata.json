@@ -1,0 +1,15 @@
+{
+  "name": "AI Chat on My Terms",
+  "subtitle": "Your phone. Your models.",
+  "primaryLanguage": "en-US",
+  "primaryCategorySuggestion": "Productivity",
+  "bundleIdentifier": "app.locallab.mobile",
+  "marketingUrl": "https://aichat.sosuke.com/",
+  "supportUrl": "https://aichat.sosuke.com/support/",
+  "privacyPolicyUrl": "https://aichat.sosuke.com/privacy/",
+  "supportEmail": "barrett@sosuke.com",
+  "keywords": "chat,offline,local,models,assistant,privacy,ollama,lmstudio",
+  "promotionalText": "Choose where your AI runs: on your iPhone, on your own model server, or with a provider you configure.",
+  "status": "Draft. Canonical host approved: aichat.sosuke.com. Live URL availability and listing claims require release-candidate acceptance.",
+  "appleAppId": "6824682448"
+}

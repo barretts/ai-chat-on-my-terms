@@ -1,5 +1,8 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
     "preview": {
       "node": "24.13.1",
@@ -11,16 +14,49 @@
       },
       "developmentClient": false,
       "distribution": "internal",
-      "ios": { "simulator": false, "buildConfiguration": "Release" }
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
+      }
     },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": false }
+      "ios": {
+        "simulator": false
+      }
     },
     "development-simulator": {
       "extends": "development",
-      "ios": { "simulator": true }
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "node": "24.13.1",
+      "pnpm": "8.15.9",
+      "environment": "production",
+      "distribution": "store",
+      "developmentClient": false,
+      "autoIncrement": true,
+      "env": {
+        "APP_STORE_BUILD": "1"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "bsonntag@gmail.com",
+        "appleTeamId": "KQJWD7GN74",
+        "ascAppId": "6824682448",
+        "appName": "AI Chat on My Terms",
+        "language": "en-US"
+      }
     }
   }
 }

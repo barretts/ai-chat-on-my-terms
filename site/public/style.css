@@ -1,0 +1,60 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #0b1422;
+  color: #edf3fa;
+  font:
+    18px/1.65 system-ui,
+    sans-serif;
+}
+main {
+  max-width: 840px;
+  margin: auto;
+  padding: 64px 24px;
+}
+a {
+  color: #87d8d4;
+}
+nav {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+h1 {
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  line-height: 1.12;
+}
+h2 {
+  margin-top: 2.4rem;
+  font-size: 1.4rem;
+}
+p,
+li {
+  color: #d3dfec;
+}
+.eyebrow {
+  color: #87d8d4;
+}
+footer {
+  border-top: 1px solid #344153;
+  margin-top: 48px;
+  padding-top: 20px;
+  font-size: 0.9rem;
+}
+a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+}
+.marketing-poster {
+  margin: 32px 0;
+}
+.marketing-poster img {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin-inline: auto;
+  border-radius: 12px;
+}

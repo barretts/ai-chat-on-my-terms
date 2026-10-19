@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "21",
+      "buildNumber": "23",
       "deploymentTarget": "17.0",
       "bundleIdentifier": "app.locallab.mobile",
       "infoPlist": {
@@ -23,7 +23,13 @@
         "NSSpeechRecognitionUsageDescription": "AI Chat on My Terms converts your dictated speech into text, on-device whenever the language supports it.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "NSCameraUsageDescription": "AI Chat on My Terms uses the camera when you choose to take a photo to attach to a chat.",
+        "NSPhotoLibraryUsageDescription": "AI Chat on My Terms accesses photos you choose to attach to a chat."
+      },
+      "entitlements": {
+        "com.apple.developer.kernel.extended-virtual-addressing": true,
+        "com.apple.developer.kernel.increased-memory-limit": true
       }
     },
     "plugins": [

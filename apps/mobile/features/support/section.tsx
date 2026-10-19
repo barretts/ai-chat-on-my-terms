@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSupport } from "./provider";
+import { PublicSupportLinks } from "./public-links";
 
 export function SupportSection() {
   const support = useSupport();
@@ -13,6 +14,7 @@ export function SupportSection() {
   if (!support.available)
     return (
       <View style={styles.row} testID="support-unavailable">
+        <PublicSupportLinks />
         <Text style={styles.title}>Support</Text>
         <Text style={styles.muted}>
           No support service is configured; feature requests stay on this
@@ -48,6 +50,7 @@ export function SupportSection() {
 
   return (
     <View style={styles.row} testID="support-section">
+      <PublicSupportLinks />
       <Text style={styles.title}>Support board</Text>
       {support.update !== null && !support.update.upToDate ? (
         <Text testID="support-update-available">
@@ -57,8 +60,7 @@ export function SupportSection() {
       {support.requests.map((request) => (
         <View key={request.id} style={styles.product}>
           <Text testID={`support-request-${request.id}`}>
-            {request.unreadReplies !== undefined &&
-            request.unreadReplies > 0
+            {request.unreadReplies !== undefined && request.unreadReplies > 0
               ? "● "
               : ""}
             {request.title} — {request.votes} vote
