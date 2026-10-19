@@ -130,7 +130,7 @@ async function startChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }
@@ -308,7 +308,7 @@ test("real browser file intake and archive downloads round trip persistent bytes
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: /^(Archives|Import & export)$/ })

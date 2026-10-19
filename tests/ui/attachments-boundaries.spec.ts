@@ -35,7 +35,7 @@ async function startChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }
@@ -431,7 +431,7 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
   await expect(page.getByText(shortenedNotice, { exact: true })).toHaveCount(0);
   await page.reload();
   // After reload the app restores the existing chat, whose app-bar heading
-  // is the conversation title (not "LocalLab"); the new-chat header button
+  // is the conversation title (not the app name); the new-chat header button
   // is the stable shipped anchor on both platforms (the connection picker
   // only exists in the phone header).
   await expect(

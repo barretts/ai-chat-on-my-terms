@@ -59,7 +59,7 @@ async function openConnectionsFromChat(page: Page) {
 async function openProviders(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const welcome = page.getByRole("heading", {
-    name: "Welcome to LocalLab",
+    name: "Welcome to AI Chat",
   });
   try {
     await welcome.first().waitFor({ state: "visible", timeout: 5000 });
@@ -68,7 +68,7 @@ async function openProviders(page: Page) {
     await expect(
       page
         .getByRole("heading", {
-          name: /^(LocalLab|Offline chat)$/,
+          name: /^(AI Chat|Offline chat)$/,
           exact: true,
         })
         .first(),
@@ -93,7 +93,7 @@ async function openProviders(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
   await openConnectionsFromChat(page);

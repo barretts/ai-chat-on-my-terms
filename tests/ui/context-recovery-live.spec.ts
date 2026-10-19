@@ -64,7 +64,7 @@ test("real context compaction changes only the request projection and retries th
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Archives", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");

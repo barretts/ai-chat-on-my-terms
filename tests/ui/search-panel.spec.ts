@@ -31,7 +31,7 @@ async function startChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }

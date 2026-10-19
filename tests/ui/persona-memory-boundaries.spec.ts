@@ -26,7 +26,7 @@ async function expandSetupPreferences(page: Page) {
 async function openChat(page: Page) {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to LocalLab" }),
+    page.getByRole("heading", { name: "Welcome to AI Chat" }),
   ).toBeVisible();
   await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
@@ -36,7 +36,7 @@ async function openChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }
@@ -676,7 +676,7 @@ test("Real extracted Memory remains editable and opens its exact source from a d
   await expect(page.getByText(sourceText, { exact: true })).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await expect(page.getByText(sourceText, { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Memory", exact: true }).click();

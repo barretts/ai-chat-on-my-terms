@@ -68,7 +68,7 @@ test("hydrated transcript follows the latest reply and preserves manual reading 
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
   const importExport = page.getByRole("button", {

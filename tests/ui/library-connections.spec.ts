@@ -29,7 +29,7 @@ async function expandSetupPreferences(page: Page) {
 async function openChat(page: Page) {
   await page.goto("/");
   const welcome = page.getByRole("heading", {
-    name: "Welcome to LocalLab",
+    name: "Welcome to AI Chat",
   });
   try {
     await welcome.first().waitFor({ state: "visible", timeout: 5000 });
@@ -38,7 +38,7 @@ async function openChat(page: Page) {
     await expect(
       page
         .getByRole("heading", {
-          name: /^(LocalLab|Offline chat)$/,
+          name: /^(AI Chat|Offline chat)$/,
           exact: true,
         })
         .first(),
@@ -52,7 +52,7 @@ async function openChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }
@@ -581,7 +581,7 @@ test("library folders, saved message search, reopening and delete confirmation p
   await page.getByRole("button", { name: "Save and use provider" }).click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
   await page.getByRole("textbox", { name: "Message", exact: true }).fill(title);

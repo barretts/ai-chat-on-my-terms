@@ -25,7 +25,7 @@ test("real local server setup, streamed reply, stop, reload and new chat", async
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to LocalLab" }),
+    page.getByRole("heading", { name: "Welcome to AI Chat" }),
   ).toBeVisible();
   await page.getByRole("button", { name: /Choose power user setup/ }).click();
   await page.getByRole("button", { name: /Choose dark theme/ }).click();
@@ -33,7 +33,7 @@ test("real local server setup, streamed reply, stop, reload and new chat", async
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Providers", exact: true }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();

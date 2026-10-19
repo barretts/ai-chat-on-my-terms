@@ -25,7 +25,7 @@ async function expandSetupPreferences(page: Page) {
 async function openChat(page: Page) {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to LocalLab" }),
+    page.getByRole("heading", { name: "Welcome to AI Chat" }),
   ).toBeVisible();
   await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose power user setup/ }).click();
@@ -35,7 +35,7 @@ async function openChat(page: Page) {
     .click();
   await expect(
     page
-      .getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true })
+      .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
       .first(),
   ).toBeVisible();
 }
@@ -416,13 +416,13 @@ test("Persona profiles can be created, edited, selected, launched and deleted", 
     page.getByRole("button", { name: "Create Persona", exact: true }),
   );
   await page
-    .getByRole("button", { name: "Delete LocalLab assistant", exact: true })
+    .getByRole("button", { name: "Delete AI Chat assistant", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Confirm Persona deletion", exact: true })
     .click();
   await expect(
-    page.getByLabel("Persona profile LocalLab assistant", { exact: true }),
+    page.getByLabel("Persona profile AI Chat assistant", { exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await openPanel(
@@ -431,7 +431,7 @@ test("Persona profiles can be created, edited, selected, launched and deleted", 
     page.getByRole("button", { name: "Create Persona", exact: true }),
   );
   await expect(
-    page.getByLabel("Persona profile LocalLab assistant", { exact: true }),
+    page.getByLabel("Persona profile AI Chat assistant", { exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByLabel("Persona profile Default", { exact: true }),

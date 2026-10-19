@@ -28,7 +28,7 @@ async function setup(page: Page) {
     .getByRole("button", { name: "Continue without a model", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Providers", exact: true }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
@@ -98,7 +98,7 @@ test("reload during a real streamed response preserves partial text and recovers
   });
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Generating response", { exact: true }),
@@ -196,7 +196,7 @@ test("another tab leaves a live generation untouched and recovers it after the o
   const viewer = await page.context().newPage();
   await viewer.goto("/chat");
   await expect(viewer.getByRole("alert")).toContainText(
-    /Another LocalLab tab.*database open/i,
+    /Another app tab.*database open/i,
   );
   await expect(
     page.getByText("Generating response", { exact: true }).first(),
@@ -237,7 +237,7 @@ test("another tab leaves a live generation untouched and recovers it after the o
     .getByRole("button", { name: "Try opening chat again", exact: true })
     .click();
   await expect(
-    viewer.getByRole("heading", { name: "LocalLab Chat", exact: true }),
+    viewer.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
   await expect(
     viewer.getByText("Generating response", { exact: true }),

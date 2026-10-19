@@ -81,7 +81,7 @@ for (const size of [
     await button("Save and use provider").click();
     await expect(page.getByText("Barrett's PC", { exact: true })).toBeVisible();
     await expect(
-      page.getByText("LocalLab Messenger", { exact: true }),
+      page.getByText("AI Chat Messenger", { exact: true }),
     ).toHaveCount(0);
     const transcript = page.getByTestId("chat-transcript-scroll");
     const area = await transcript.boundingBox();

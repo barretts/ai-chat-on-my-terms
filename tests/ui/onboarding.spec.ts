@@ -20,7 +20,7 @@ async function expandSetupPreferences(page: Page) {
 
 async function expectChatOpen(page: Page) {
   await expect(
-    page.getByRole("heading", { name: /^(LocalLab|Offline chat)$/, exact: true }).first(),
+    page.getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true }).first(),
   ).toBeVisible();
 }
 
@@ -72,7 +72,7 @@ test("theme and setup choices visibly change, persist, and open chat", async ({
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to LocalLab" }),
+    page.getByRole("heading", { name: "Welcome to AI Chat" }),
   ).toBeVisible();
   await expandSetupPreferences(page);
 
@@ -89,7 +89,7 @@ test("theme and setup choices visibly change, persist, and open chat", async ({
   );
   const background = () =>
     page
-      .getByText("Welcome to LocalLab", { exact: true })
+      .getByText("Welcome to AI Chat", { exact: true })
       .evaluate((element) => {
         let current: Element | null = element;
         while (current) {
@@ -148,7 +148,7 @@ test("theme and setup choices visibly change, persist, and open chat", async ({
   if (phone) {
     await page.goto("/onboarding");
     await expect(
-      page.getByRole("heading", { name: "Welcome to LocalLab" }),
+      page.getByRole("heading", { name: "Welcome to AI Chat" }),
     ).toBeVisible();
     await expandSetupPreferences(page);
     await expect(power).toHaveAttribute(
@@ -235,7 +235,7 @@ test("beginner setup opens a simpler chat and sends a durable test response", as
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Welcome to LocalLab" }),
+    page.getByRole("heading", { name: "Welcome to AI Chat" }),
   ).toBeVisible();
   await expandSetupPreferences(page);
   await page.getByRole("button", { name: /^Choose dark theme/ }).click();
