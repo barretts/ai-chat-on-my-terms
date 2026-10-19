@@ -53,7 +53,7 @@ async function openConnectionsPanel(page) {
   } catch {
     // The panel starts closed; open it via the rail/appbar trigger.
   }
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: "Connections", exact: true }).click();
   await expect(heading.first()).toBeVisible();
 }
 
@@ -128,6 +128,11 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
         .getByRole("heading", { name: /^(AI Chat|Offline chat)$/, exact: true })
         .first(),
     ).toBeVisible();
+
+    // The webview is the Tauri shell, not a browser tab: the banner must
+    // speak desktop truth (the credential store), never "this tab".
+    await expect(page.getByText(/credential store/).first()).toBeVisible();
+    await expect(page.getByText("Browser preview")).toHaveCount(0);
 
     // 3. Save an OpenAI-compatible provider aimed at the loopback fixture.
     await openConnectionsPanel(page);
@@ -234,9 +239,11 @@ test("onboard, chat through a fixture provider, and survive an app restart", asy
     // raises the native rfd save dialog (Win32 class #32770): prove it
     // opens, then cancel it — the write itself is covered by cargo's
     // files_save test, which CDP cannot drive.
-    // Desktop modes row shows raw capitalized panel names ("Archives"),
-    // not the friendly label; the screen itself is headed "Import & export".
-    await page.getByRole("button", { name: "Archives", exact: true }).click();
+    // The desktop rail carries the same friendly labels as the panels
+    // themselves ("Import & export"), from chatPageLabels.
+    await page
+      .getByRole("button", { name: "Import & export", exact: true })
+      .click();
     await expect(
       page.getByRole("button", { name: "Import ZIP archive" }),
     ).toBeVisible();

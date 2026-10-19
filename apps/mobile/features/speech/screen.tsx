@@ -159,7 +159,7 @@ export function SpeechPanel({
         <View style={styles.phoneIntro}>
           <Text
             accessibilityRole="header"
-            accessibilityLabel="Voice studio"
+            accessibilityLabel="Voices"
             variant="headlineMedium"
             style={styles.phoneHeading}
           >
@@ -632,7 +632,7 @@ export function SpeechPanel({
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.content}
     >
-      <Text variant="headlineSmall">Voice studio</Text>
+      <Text variant="headlineSmall">Voices</Text>
       <Text>
         Neural speech runs on this device. Download a model once; your text is
         never sent to a speech service.

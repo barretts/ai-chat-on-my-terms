@@ -89,7 +89,7 @@ export function ProviderSetupPanel(props: {
   >([]);
   const [loadingSaved, setLoadingSaved] = useState(true);
   const [kind, setKind] = useState<ChatProviderKind>("compatible");
-  const [label, setLabel] = useState(phone ? "Barrett's PC" : "");
+  const [label, setLabel] = useState(phone ? "This PC" : "");
   const [endpoint, setEndpoint] = useState(phone ? thisPcEndpoint : "");
   const [model, setModel] = useState("");
   const [key, setKey] = useState("");
@@ -229,7 +229,7 @@ export function ProviderSetupPanel(props: {
     }
     if (value === "this-pc") {
       setKind("compatible");
-      setLabel("Barrett's PC");
+      setLabel("This PC");
       setEndpoint(thisPcEndpoint);
       setCleartext(true);
       return;
@@ -905,7 +905,7 @@ export function ProviderSetupPanel(props: {
                   : kind
               }
               options={[
-                { value: "this-pc", label: "Barrett's PC · local coder" },
+                { value: "this-pc", label: "This PC · local coder" },
                 ...CHAT_PROVIDER_KINDS.filter(
                   (value) => !nativeKinds.includes(value),
                 ).map((value) => ({ value, label: kindLabel(value) })),

@@ -36,7 +36,7 @@ export function createWhisperInputPort(
         ? { ok: true, value: "ready" as const }
         : audioFailure(
             "unavailable",
-            "Download a Whisper model in Voice Studio first.",
+            "Download a Whisper model in Voice settings first.",
             true,
           );
     },

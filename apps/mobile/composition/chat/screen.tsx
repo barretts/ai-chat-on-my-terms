@@ -36,6 +36,7 @@ import {
   readChatPage,
   type ChatPage,
 } from "./navigation";
+import { isDesktopBridge } from "../../platform/desktop/bridge";
 import { openConnectionCatalog } from "./connection-catalog";
 import { seedDefaultChatConnection } from "./default-chat-connection";
 import {
@@ -2739,7 +2740,7 @@ export default function CompleteChatScreen() {
                 description={
                   registration
                     ? `${registration.label} · ${registration.modelId}`
-                    : "Your PC, OpenRouter, and hosted models"
+                    : "Your PC, LM Studio, Ollama, and cloud providers"
                 }
                 descriptionNumberOfLines={2}
                 left={(props) => <List.Icon {...props} icon="lan-connect" />}
@@ -2790,6 +2791,7 @@ export default function CompleteChatScreen() {
                   "groups",
                   "media",
                   "memory",
+                  "voice",
                 ] as const
               )
                 .filter(
@@ -2820,6 +2822,7 @@ export default function CompleteChatScreen() {
                               media: "image-outline",
                               tools: "wrench-outline",
                               memory: "bookmark-outline",
+                              voice: "microphone-outline",
                             } as const
                           )[value]
                         }
@@ -2903,8 +2906,9 @@ export default function CompleteChatScreen() {
                   ) : null}
                   {Platform.OS === "web" ? (
                     <Text variant="bodySmall">
-                      Browser keys last for this tab. On-device models run in
-                      the iPhone app.
+                      {isDesktopBridge()
+                        ? "Provider keys stay in your PC's credential store. PC model servers and cloud providers work here; on-device models need the phone app."
+                        : "Browser keys last for this tab. On-device models run in the iPhone app."}
                     </Text>
                   ) : null}
                   {!registration ? (
@@ -2971,9 +2975,13 @@ export default function CompleteChatScreen() {
             >
               {Platform.OS === "web" ? (
                 <Text variant="bodySmall">
-                  {layout.compact
-                    ? "Browser preview · Keys stay in this tab"
-                    : "Browser preview: provider keys last for this tab. On-device models require the iPhone app."}
+                  {isDesktopBridge()
+                    ? layout.compact
+                      ? "Desktop · keys stay in the credential store"
+                      : "Desktop app: provider keys stay in your credential store. Connect a PC model server or a cloud provider."
+                    : layout.compact
+                      ? "Browser preview · Keys stay in this tab"
+                      : "Browser preview: provider keys last for this tab. On-device models require the iPhone app."}
                 </Text>
               ) : null}
               <ScrollView
@@ -2988,6 +2996,7 @@ export default function CompleteChatScreen() {
                 {(
                   [
                     "library",
+                    "files",
                     "settings",
                     "search",
                     "research",
@@ -2999,6 +3008,7 @@ export default function CompleteChatScreen() {
                     "voice",
                     "personas",
                     "groups",
+                    "media",
                     "memory",
                   ] as const
                 )
@@ -3028,7 +3038,7 @@ export default function CompleteChatScreen() {
                           setPhoneMenuOpen(false);
                         }}
                       >
-                        {value[0]!.toUpperCase() + value.slice(1)}
+                        {chatPageLabels[value]}
                       </Button>
                     ) : (
                       <Pressable
@@ -3037,9 +3047,7 @@ export default function CompleteChatScreen() {
                         disabled={working}
                         onPress={() => setPanel(panel === value ? null : value)}
                       >
-                        <Text style={styles.link}>
-                          {value[0]!.toUpperCase() + value.slice(1)}
-                        </Text>
+                        <Text style={styles.link}>{chatPageLabels[value]}</Text>
                       </Pressable>
                     ),
                   )}
