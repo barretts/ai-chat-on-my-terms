@@ -24,7 +24,7 @@ fn main() -> ExitCode {
         }
     };
 
-    println!("LocalLab companion health server listening at http://{address}/health");
+    println!("AI Chat Connect health server listening at http://{address}/health");
     for incoming in listener.incoming() {
         match incoming {
             Ok(stream) => handle_connection(stream),

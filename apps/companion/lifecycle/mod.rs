@@ -116,19 +116,19 @@ pub fn version_verdict(local: ProtocolVersion, peer: ProtocolVersion) -> Version
     if local.major != peer.major {
         let prompt = if peer.major > local.major {
             format!(
-                "The iPhone requires LocalLab Connect {peer_major}.x. Update LocalLab Connect on this Mac to keep pairing.",
+                "The iPhone requires AI Chat Connect {peer_major}.x. Update AI Chat Connect on this Mac to keep pairing.",
                 peer_major = peer.major
             )
         } else {
             format!(
-                "This iPhone is too old for this Mac's LocalLab Connect. Update the iPhone app to keep pairing."
+                "This iPhone is too old for this Mac's AI Chat Connect. Update the iPhone app to keep pairing."
             )
         };
         return VersionVerdict::MajorMismatch { peer_newer: peer.major > local.major, prompt };
     }
     if peer.minor > local.minor {
         return VersionVerdict::MacNeedsUpdate(format!(
-            "The iPhone uses a newer LocalLab protocol (1.{peer_minor}). Update LocalLab Connect on this Mac to keep pairing.",
+            "The iPhone uses a newer AI Chat Connect protocol (1.{peer_minor}). Update AI Chat Connect on this Mac to keep pairing.",
             peer_minor = peer.minor
         ));
     }
@@ -309,7 +309,7 @@ mod tests {
         let [LifecycleEffect::ShowUpgradePrompt(prompt)] = effects.as_slice() else {
             panic!("minor-ahead peer must prompt: {effects:?}");
         };
-        assert!(prompt.contains("Update LocalLab Connect on this Mac"), "{prompt}");
+        assert!(prompt.contains("Update AI Chat Connect on this Mac"), "{prompt}");
         assert_eq!(machine.incompatible_prompt("route-a"), Some(prompt.as_str()));
         // The phone being far behind names the phone's side instead.
         let effects = machine.handle(
@@ -319,7 +319,7 @@ mod tests {
         let [LifecycleEffect::ShowUpgradePrompt(prompt)] = effects.as_slice() else {
             panic!("major mismatch must prompt");
         };
-        assert!(prompt.contains("Update LocalLab Connect on this Mac"), "{prompt}");
+        assert!(prompt.contains("Update AI Chat Connect on this Mac"), "{prompt}");
         let effects = machine.handle(
             LifecycleEvent::PeerProtocol { route_id: "route-c".into(), peer: ProtocolVersion { major: 0, minor: 9 } },
             local(),

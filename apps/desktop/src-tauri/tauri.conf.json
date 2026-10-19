@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "LocalLab",
+  "productName": "AI Chat on My Terms",
   "version": "0.1.0",
   "identifier": "app.locallab.desktop",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "LocalLab",
+        "title": "AI Chat on My Terms",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

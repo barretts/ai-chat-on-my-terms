@@ -135,7 +135,7 @@ impl UsbDeviceTracker {
     pub fn ui_note(&self) -> &'static str {
         match self.state {
             UsbDeviceState::Unattached => "No iPhone connected over USB.",
-            UsbDeviceState::Untrusted => "iPhone detected — unlock it and choose Trust to allow LocalLab.",
+            UsbDeviceState::Untrusted => "iPhone detected — unlock it and choose Trust to allow the connection.",
             UsbDeviceState::Trusted => "iPhone trusted on this Mac — ready to start a USB session.",
             UsbDeviceState::Active => "iPhone connected over USB — chat and sync use the cable; remote mode is off.",
         }

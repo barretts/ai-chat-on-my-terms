@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "LocalLab",
-  description: "Your private AI workspace",
+  title: "AI Chat on My Terms",
+  description: "My phone, my PC, my cloud — private AI on your own terms",
 };
 
 export default function RootLayout({

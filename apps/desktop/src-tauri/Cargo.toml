@@ -1,12 +1,12 @@
 [package]
 name = "locallab-desktop"
 version = "0.1.0"
-description = "LocalLab desktop shell (Tauri v2) hosting the static web export and local sidecar processes"
-author = "LocalLab"
+description = "AI Chat on My Terms desktop shell (Tauri v2) hosting the static web export and local sidecar processes"
+author = "AI Chat on My Terms"
 license = "UNLICENSED"
 edition = "2021"
 
-# The shipped executable is renamed to `productName` (LocalLab) by tauri-build.
+# The shipped executable is renamed to `productName` (AI Chat on My Terms) by tauri-build.
 [lib]
 name = "locallab_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]

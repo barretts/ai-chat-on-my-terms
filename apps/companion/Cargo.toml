@@ -2,7 +2,7 @@
 name = "locallab-companion"
 version = "0.1.0"
 edition = "2021"
-description = "Local companion process for the LocalLab desktop application"
+description = "Local companion process for the AI Chat on My Terms desktop application"
 license = "UNLICENSED"
 
 [[bin]]

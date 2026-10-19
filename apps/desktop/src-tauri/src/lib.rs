@@ -1,4 +1,4 @@
-//! Minimal Tauri v2 shell for LocalLab.
+//! Minimal Tauri v2 shell for AI Chat on My Terms.
 //!
 //! The window and its configuration come from `tauri.conf.json`; the frontend
 //! is the static Next export in `../out`. Platform adapters (keyring, blob
@@ -10,5 +10,5 @@
 pub fn run() {
     tauri::Builder::default()
         .run(tauri::generate_context!())
-        .expect("error while running LocalLab desktop shell");
+        .expect("error while running the AI Chat on My Terms desktop shell");
 }

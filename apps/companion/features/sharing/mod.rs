@@ -183,7 +183,7 @@ impl TrayCommand {
 
     pub fn title(self) -> &'static str {
         match self {
-            TrayCommand::OpenLocalLab => "Open LocalLab",
+            TrayCommand::OpenLocalLab => "Open AI Chat",
             TrayCommand::StartSharing => "Start Sharing",
             TrayCommand::StopSharing => "Stop Sharing",
             TrayCommand::ShowPairingQr => "Show Pairing QR",
@@ -191,7 +191,7 @@ impl TrayCommand {
             TrayCommand::ManageKeys => "Manage Paired Devices",
             TrayCommand::ManageRoutes => "Model Routes",
             TrayCommand::ManageVoicePacks => "Voice Packs",
-            TrayCommand::QuitSharing => "Quit LocalLab Connect",
+            TrayCommand::QuitSharing => "Quit AI Chat Connect",
         }
     }
 }
