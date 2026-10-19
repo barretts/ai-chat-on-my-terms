@@ -74,3 +74,7 @@ Verified iOS draft version: changed the newly created default `1.0` draft to mat
 ## Successful store candidate
 
 Use **0.1.0 (23)**, Expo build `9bd18bf0-3b54-4af5-8221-643bec7f8145`; build 22 failed and must not be used. [Download IPA](https://expo.dev/artifacts/eas/6zUZ85Ne_e-ptGd6ChFemTihUQKcgUQKR6Kqqb_qtKk.ipa?download=1). Local copy: `.logs/app-store-production-23/AI-Chat-on-My-Terms-0.1.0-23.ipa` from repository root. SHA-256 `a2c8d599f9d40afc4d342512bfeb5bb4c3e101110f766c6ab41b7d81ba4c9d6f`. App identity, iOS 26.5 SDK and required memory entitlements were inspected in the downloaded artifact. Upload to the existing Apple app `6824682448`, wait for processing, and qualify this exact candidate through TestFlight before review submission. No binary upload has occurred in this preparation.
+
+## Listing content now saved in Apple
+
+As of October 19, 2026 at 5:43 PM America/Chicago, App Store Connect has the English description, keywords, promotional text, subtitle, marketing/support/privacy URLs, Productivity category, copyright, and reviewer contact (including the owner's existing review phone) plus draft review notes. Fresh readback verified each text field and reviewer detail. No phone number is stored in this handoff. The version remains Prepare for Submission with manual release. Earlier references above to locally prepared-only listing text are superseded by this saved state. Build upload, screenshots and final declarations remain open.

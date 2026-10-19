@@ -130,3 +130,15 @@ Verified App Store Connect iOS draft setup: the app's automatically created `1.0
 ## Build 23 successful and artifact checked
 
 Production build `9bd18bf0-3b54-4af5-8221-643bec7f8145` finished successfully. Downloaded and inspected the 41,994,760-byte IPA; verified app identity/version/build, iOS 26.5 SDK, and embedded App Store profile with both memory entitlements. See [build 23 record](builds/ios-production-23.md) for artifact URL, SHA-256 and verification boundaries. This supersedes pending build statements above. App Store Connect record `6824682448` is prepared with a matching `0.1.0` draft and manual release; binary upload, TestFlight/device acceptance, final privacy/export declarations and screenshots remain outstanding. No review submission occurred.
+
+## Live App Store listing populated and read back
+
+October 19, 2026, 5:43 PM America/Chicago: saved the following directly in App Store Connect app `6824682448`, iOS version `0.1.0`, and fetched fresh Apple objects to verify the values persisted:
+
+- Description, keywords, promotional text, marketing URL and support URL from `submission/en-US/`.
+- App name, subtitle, privacy-policy URL, and primary category Productivity.
+- Copyright `2026 Barrett Sonntag`; manual release retained.
+- Reviewer first/last name and support email; reused the owner's existing Capture iOS reviewer phone without placing it in repository files.
+- Draft review notes explaining on-device setup, optional remote provider requirements, and outstanding candidate acceptance. Notes explicitly mark this as a draft, not submitted.
+
+Apple returned `PREPARE_FOR_SUBMISSION`. Verification receipt is local-only `.logs/app-store-listing-readback.json`. This supersedes earlier statements that listing content existed only locally. Saving these URLs does not verify the live site. Binary upload/selection, candidate screenshots, privacy/age-rating/export declarations, pricing/availability, and final device acceptance remain incomplete. No App Review submission or public release occurred.
