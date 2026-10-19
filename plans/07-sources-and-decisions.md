@@ -8,12 +8,12 @@ The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, b
 
 ## SDK and UI sources
 
-- [AI Elements setup](https://elements.ai-sdk.dev/docs/setup) describes React/shadcn/Tailwind web components. They belong in the later Next/Tauri desktop webview; the iPhone uses native React Native UI.
+- [AI Elements setup](https://elements.ai-sdk.dev/docs/setup) describes React/shadcn/Tailwind web components. Superseded for desktop by the 2026-10-19 amendment below (desktop webview hosts the Expo web export); the iPhone uses native React Native UI.
 - [AI SDK Expo guide](https://ai-sdk.dev/docs/getting-started/expo) informs a streaming/message bridge. T005A tests the pinned Expo transport and `expo/fetch`; direct HTTP-to-RunEvent is the fallback.
 - [OpenAI Responses text generation](https://developers.openai.com/api/docs/guides/text) documents the official `/v1/responses` request and bearer-key flow; [OpenAI streaming Responses](https://developers.openai.com/api/docs/guides/streaming-responses) documents SSE output deltas, completion and error events. T021A uses this protocol for the first iPhone remote run.
 - [Expo Modules](https://docs.expo.dev/modules/overview/) is the native extension route; [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) is the phone database option. These need development/native builds for the planned capabilities.
 - [React Native Paper](https://oss.callstack.com/react-native-paper/) provides native UI primitives with this project's semantic tokens.
-- [Tauri sidecars](https://v2.tauri.app/develop/sidecar/) and [Next static export in Tauri](https://v2.tauri.app/start/frontend/nextjs/) inform the Mac companion and later desktop UI.
+- [Tauri sidecars](https://v2.tauri.app/develop/sidecar/) and [static frontends in Tauri](https://v2.tauri.app/start/frontend/) inform the Mac companion and the desktop shell.
 - [llama.rn](https://github.com/mybigday/llama.rn), [MLX Swift](https://github.com/ml-explore/mlx-swift-lm) and [Apple Core ML Stable Diffusion](https://github.com/apple-aiml-research/ml-stable-diffusion) are candidate native engines. T005B–D prove actual hardware/architecture/version compatibility before dependent runtime work.
 - [Better Auth Expo integration](https://better-auth.com/docs/integrations/expo) informs optional accounts; [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo) informs purchase wiring. T159E verifies real Apple sandbox/Family Sharing; T125 verifies Google.
 
@@ -23,6 +23,7 @@ The [231-row inventory](../docs/lm-mini-features.md) is the feature checklist, b
 |---|---|---|
 | Order | Working offline GGUF and OpenAI iPhone T158, working full-feature iPhone T128, then deep iPhone T159 while iPad/Android/full desktop are built; final T135/T127 | Coordinator |
 | Minimum targets | iOS 17+ iPhone first; iPadOS 17+, Android API 29+ and macOS 14+ host/later full desktop. T001 pins exact working toolchains. | T001/T005 |
+| Desktop UI (2026-10-19 amendment) | Desktop = Tauri 2 shell hosting the iPhone app's Expo web static export (desktop-width layout of `docs/collapsible-layout.md`), plus a Rust bridge (rusqlite SQLite commands behind `SQLiteDatabasePort`, OS keyring for provider keys, native save dialog). No separate Next.js/shadcn desktop UI; parity must not fork screens or business rules. | T040/T134 |
 | Local/online boundary | No account for offline chat. Cloud, relay, backup, community, analytics and purchases require explicit choices. | T123 |
 | First-run OpenAI endpoint | Default to `https://api.openai.com/v1/responses`; accept a user-entered HTTPS Responses endpoint URL only for a compatible server. Require user-supplied key and model ID, never bundle a project key, store the user key through SecretStore, stream text/cancel via RunEvent, and keep generic Chat Completions-compatible servers in T020. A controlled remote fixture is bounded first-run evidence when no paid key exists; T159A requires live OpenAI proof. | T021A/T158/T159A |
 | Identity/sync | UUIDv7 + hybrid logical clock, copy-phone/copy-Mac/merge, tombstones, opt-in entity scopes. | T003/T098 |
