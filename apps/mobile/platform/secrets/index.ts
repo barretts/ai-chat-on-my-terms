@@ -6,6 +6,8 @@ import * as SecureStore from "expo-secure-store";
 import { randomUUID } from "../crypto";
 import { expoSecureStoreKey } from "./secure-store-key";
 import { registerDiagnosticSecret } from "../../features/diagnostics/sanitization";
+import { isDesktopBridge } from "../desktop/bridge";
+import { createDesktopSecretStore } from "../desktop/secrets";
 
 /** Adapter boundary for expo-secure-store. Inject SecureStore's getItemAsync/setItemAsync/deleteItemAsync. */
 export interface ExpoSecureStoreModule {
@@ -34,7 +36,11 @@ export function createMobileSecretStore(
   return new HostScopedSecretStore(port, "mobile-provider-headers", randomUUID);
 }
 
-/** Production adapter backed by iOS Keychain / Android Keystore via Expo SecureStore. */
+/**
+ * Production adapter. Inside the desktop Tauri webview the OS keyring (Rust
+ * `keyring` crate) replaces Expo SecureStore; phones keep Keychain/Keystore.
+ */
 export function createNativeMobileSecretStore() {
+  if (isDesktopBridge()) return createDesktopSecretStore();
   return createMobileSecretStore(SecureStore);
 }

@@ -7,6 +7,11 @@ import type {
   MobileArchiveOptions,
   MobileArchivePorts,
 } from "./types";
+import {
+  desktopInvoke,
+  isDesktopBridge,
+} from "../../../platform/desktop/bridge";
+import { bytesToBase64 } from "../../../platform/desktop/encoding";
 
 /** Browser exports download actual bytes; imports use the system file chooser. */
 export const nativeArchiveFiles: ArchiveFilePort = {
@@ -27,6 +32,16 @@ export const nativeArchiveFiles: ArchiveFilePort = {
   async share({ name, mimeType, bytes }) {
     if (!/^[A-Za-z0-9_.-]{1,255}$/.test(name) || name === "." || name === "..")
       throw new Error("Export filename is invalid");
+    if (isDesktopBridge()) {
+      // Tauri shell: native save dialog writes the bytes itself (Rust rfd);
+      // `defaultDir: null` lets the OS choose the folder. None = user canceled.
+      await desktopInvoke<string | null>("files_save", {
+        name,
+        base64Data: bytesToBase64(bytes),
+        defaultDir: null,
+      });
+      return;
+    }
     const uri = URL.createObjectURL(
       new Blob([Uint8Array.from(bytes)], { type: mimeType }),
     );
