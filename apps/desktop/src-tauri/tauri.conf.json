@@ -4,10 +4,9 @@
   "version": "0.1.0",
   "identifier": "app.locallab.desktop",
   "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../out"
+    "beforeDevCommand": "node scripts/build-bundle.mjs --dev",
+    "beforeBuildCommand": "node scripts/build-bundle.mjs",
+    "frontendDist": "../dist/desktop-bundle"
   },
   "app": {
     "windows": [

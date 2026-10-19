@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window (stock defaults; no custom commands or plugins).",
+  "description": "Capability for the main window. Core defaults only: the crate registers no Tauri plugins and no app manifest, so the custom commands in src/desktop.rs are allowed without extra ACL grants (note per contract).",
   "windows": ["main"],
   "permissions": ["core:default"]
 }

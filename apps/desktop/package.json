@@ -3,27 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/build-bundle.mjs --dev",
+    "build": "node scripts/build-bundle.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
-  "dependencies": {
-    "@locallab/storage-blobs": "workspace:*",
-    "@locallab/jobs": "workspace:*",
-    "@locallab/contracts": "workspace:*",
-    "@locallab/storage-sqlite-core": "workspace:*",
-    "@locallab/security-secrets": "workspace:*",
-    "next": "16.1.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
   "devDependencies": {
-    "@tauri-apps/cli": "2.0.0",
-    "@types/node": "24.0.10",
-    "@types/react": "19.2.0",
-    "@types/react-dom": "19.2.0",
-    "typescript": "5.9.3"
+    "@tauri-apps/cli": "2.0.0"
   }
 }
