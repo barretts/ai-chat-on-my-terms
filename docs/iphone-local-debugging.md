@@ -28,9 +28,9 @@ The generated Xcode workspace is in `apps/mobile/ios`. Open its `.xcworkspace` f
 
 - Confirm the deep cobalt title bar is below the camera cutout and the composer remains visible when the keyboard opens. Extra chrome and the chat header/taskbar should collapse while typing; Hide keyboard in the title bar should restore them. Writing options should open in a separate dialog without moving the composer behind the taskbar.
 - Change Appearance to Dark and Light, close/reopen the app, and check persistence.
-- In Providers, add your PC at `http://192.168.1.213:35961/v1` (the **This PC** preset's address), allow local HTTP, and open Chat model. It should discover the model your local server currently has loaded. The phone needs access to the same private network and permission to access local devices.
+- In Connections, add your PC at `http://192.168.1.213:35961/v1` (the **This PC** preset's address), allow local HTTP, and open Chat model. It should discover the model your local server currently has loaded. The phone needs access to the same private network and permission to access local devices.
 - Save a provider, edit it, favorite it, and navigate to Voices and back. The current conversation should remain selected.
-- In Voice Studio, use any already installed voice pack. Select a voice and speed, preview it, and Stop. Models and voices remain in this app's private storage; a separately installed development build may not have another build's downloads.
+- In Voices, use any already installed voice pack. Select a voice and speed, preview it, and Stop. Models and voices remain in this app's private storage; a separately installed development build may not have another build's downloads.
 - For a download that appears stuck, share the exact visible phase and Xcode console output. The new code separates transfer from saving/unpacking and skips full model hash scans. No large model download is required merely to check the UI.
 
 Browser exercises and the local iOS JavaScript export do not prove physical device behavior. The current Windows session cannot operate this Mac or iPhone remotely.

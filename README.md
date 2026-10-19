@@ -8,17 +8,35 @@ Start with the [current work index](plans/README.md) and the [remaining work led
 
 The product is defined by choice, not by one deployment target. Every route is real, and the user picks per device, per chat, per Persona:
 
-| Route                         | What runs the model                                                                                                                                                        | Account or subscription         |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| **On the phone**              | On-device GGUF (`llama.rn`/llama.cpp) and Swift MLX, after the model is downloaded once                                                                                    | None, and free                  |
-| **On your own hardware**      | The required macOS companion (remote models/voice, encrypted relay routes, USB, sync), plus LAN servers such as LM Studio and Ollama, discovered directly                  | None; your own machines         |
-| **With your own paid access** | OpenAI Responses configured at first run, plus Anthropic, Gemini, Mistral and OpenRouter. Keys live in the phone's secure store and are sent only to the selected provider | Your own keys and your own bill |
+| Route                         | What runs the model                                                                                                                                                                                                                                                                  | Account or subscription         |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| **On the phone**              | On-device GGUF (`llama.rn`/llama.cpp), after the model is downloaded once                                                                                                                                                                                                            | None, and free                  |
+| **On your own hardware**      | The **AI Chat Connect** companion on your Mac or Windows PC (remote models and voice over the encrypted relay, USB, sync), plus LAN servers such as LM Studio, Ollama and llama.cpp, discovered directly                                                                             | None; your own machines         |
+| **With your own paid access** | OpenAI (Responses), Anthropic, Gemini, Mistral, OpenRouter, DeepSeek, Z.ai and Vercel Gateway, added in Connections. Keys live in the device's secure store — the iPhone keychain, or the Windows Credential Manager in the desktop app — and are sent only to the selected provider | Your own keys and your own bill |
 
 Offline-first is the default posture, not a locked-down mode: install, load or download a model, and chat with no account and no hosted app service. Remote access, backup, accounts, hosted search and purchases are separate opt-in paths.
 
+## The feature surface
+
+Phone, desktop and browser preview run the same screens; platform differences are capability gates, not separate apps.
+
+| Surface                                                                 | iPhone (build 21)         | Windows desktop         | Browser preview            |
+| ----------------------------------------------------------------------- | ------------------------- | ----------------------- | -------------------------- |
+| Chat, streaming, Personas + generator, memory, group room setup         | ✓                         | ✓                       | ✓                          |
+| Library, folders, chat search, recent/archived, Files workspace         | ✓                         | ✓                       | ✓                          |
+| Import & export (chat ZIP, TXT/PDF, LM Studio import)                   | ✓ native share/print      | ✓ native save dialog    | ✓ downloads                |
+| Offline voices (Kokoro; Piper en/de/ru/es/fr) and read-aloud            | ✓ on-device packs         | ✓ web engine            | ✓ host-prepared packs      |
+| Dictation and Whisper audio transcription                               | ✓ system speech           | —                       | —                          |
+| Image generation (ComfyUI), web research (DDG/Brave/SearXNG), MCP tools | ✓                         | ✓                       | ✓                          |
+| Connections: local model servers and 8 cloud kinds                      | ✓ keychain                | ✓ Credential Manager    | per-tab keys               |
+| On-device GGUF model runs                                               | ✓                         | use your own PC servers | storage only, no inference |
+| AI Chat Connect pairing / encrypted relay                               | built, not in build 21 UI | ✓ companion tray QR     | —                          |
+
+Built but not yet surfaced in the interface: the group chat transcript, phone pairing screens, sync/persona-sync panels, camera QR scanning and semantic search — each stays tracked on its own plan card.
+
 ## Where the work stands
 
-The first milestone is real offline GGUF chat and user-configured OpenAI remote chat on an iPhone, then a working full-feature iPhone build. Deep testing and internal release follow while iPad, Android and full desktop clients are built in parallel. The required Mac companion supports the phone's other remote/sync/voice routes.
+The first milestone is real offline GGUF chat and user-configured remote chat on an iPhone, and build 21 is the current full-feature preview. Deep testing and internal release follow. The Windows desktop client is proven end-to-end — the same screens over a Tauri shell with installers and an automated smoke test — while macOS/Linux installers, signing, iPad and Android come next. The **AI Chat Connect** companion runs on macOS and Windows and ships inside the Windows installer.
 
 The [feature inventory](docs/lm-mini-features.md) defines scope; it is a study of LM Mini, LM Mini Home and LM Mini Connect, and its "Pro" labels describe that product, not requirements for this one. Earlier research and design proposals are [archived](archived/README.md). `plans/` is the execution authority. The workspace holds the Expo mobile app, the desktop shell, the Rust companion, shared packages, runtime bridges and implementation evidence.
 

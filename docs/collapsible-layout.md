@@ -8,7 +8,7 @@ The transcript occupies the main screen. The composer stays at the bottom with M
 
 Phone overlays close when reopening the app. Theme and connection choices persist; closing the message-tools sheet preserves selected tools for the current composer. A small count beside the plus indicates selected web tools. Without a connection, drafting remains available and Send explains that a model is needed.
 
-Connections offers This PC, OpenRouter, and Other presets, with optional connection details folded. Settings uses standard segments and disclosure rows. Library prioritizes conversation search and opening conversations, while folder management is folded. Models starts with the suggested phone model; technical details and alternatives are folded. Voice Studio has one main action for the selected voice. Active download progress and cancellation remain outside model disclosures.
+Connections offers This PC, OpenRouter, and Other presets, with optional connection details folded. Settings uses standard segments and disclosure rows. Library prioritizes conversation search and opening conversations, while folder management is folded. Models starts with the suggested phone model; technical details and alternatives are folded. The Voices panel has one main action for the selected voice. Active download progress and cancellation remain outside model disclosures.
 
 Phone typography uses the iOS system family on iOS, `system-ui` in the browser, and `sans-serif` on Android. Reading text is 17 points with a 25-point line height, regular body weight, semibold headings, and explicit paragraph spacing. Native font rendering handles smoothing. Browser photographs at 3× density help inspect glyphs without mistaking a 1× capture for native font quality.
 

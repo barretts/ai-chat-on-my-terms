@@ -9,9 +9,9 @@ The current preview is at **http://localhost:8085**. For a fresh preview, run:
 & ./tools/start-local-preview.ps1 -Port 8085 -ProviderOrigin 'https://openrouter.ai'
 ```
 
-Open the returned URL. Models, Voices, and Connections are available from the phone chat menu (the desktop calls Connections "Providers"). If you also connect a local model server, include its exact origin in `-ProviderOrigin`, for example `@('https://openrouter.ai', 'http://192.168.1.213:35961')`. The server must already be running.
+Open the returned URL. Models, Voices, and Connections are available from the phone chat menu (both phone and desktop show the same **Connections** label). If you also connect a local model server, include its exact origin in `-ProviderOrigin`, for example `@('https://openrouter.ai', 'http://192.168.1.213:35961')`. The server must already be running.
 
-For this Windows PC, open **Connections** and choose **This PC**. This fills **http://192.168.1.213:35961/v1**, the connection name, and authorization for this local HTTP origin. **Connection settings** exposes the saved address when you need to change it. Open **Chat model** or **Load models** to discover the currently loaded model, then choose **Save & chat**. The endpoint last checked listed **qwen3.8-27b-sm89**; the preset discovers the model instead of hardcoding that ID. On your iPhone, use this LAN address and the same private network as the PC. Local compatible-server generation can run for up to five minutes before its transport timeout. On desktop, the preset is under **Providers → Provider type → Barrett's PC · local coder**.
+For this Windows PC, open **Connections** and choose **This PC**. This fills **http://192.168.1.213:35961/v1**, the connection name, and authorization for this local HTTP origin. **Connection settings** exposes the saved address when you need to change it. Open **Chat model** or **Load models** to discover the currently loaded model, then choose **Save & chat**. The endpoint last checked listed **qwen3.8-27b-sm89**; the preset discovers the model instead of hardcoding that ID. On your iPhone, use this LAN address and the same private network as the PC. Local compatible-server generation can run for up to five minutes before its transport timeout. On desktop, the preset is under **Connections → Provider type → This PC · local coder**.
 
 ## Phone models
 
@@ -31,14 +31,18 @@ Browser preview supports downloading and saving the choice. Native GGUF inferenc
 
 Model sources: [Qwen3.5 0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B), [2B](https://huggingface.co/Qwen/Qwen3.5-2B), [4B](https://huggingface.co/Qwen/Qwen3.5-4B), and the quantization publisher's [0.8B](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF), [2B](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF), [4B](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) repositories. All three selected artifacts declare Apache 2.0.
 
-## Offline female voices
+## Offline voices
 
-Open **Voices** from chat. Download a speech model once, select its voice, enter text, and tap **Read aloud**. Assistant replies also offer **Read aloud**. **Stop** cancels speech or playback. Voice selection and speed are saved locally. Persona profiles can select a separate voice and speed, or inherit the Voice Studio choices.
+Open **Voices** from chat. Download a speech model once, select its voice, enter text, and tap **Read aloud**. Assistant replies also offer **Read aloud**. **Stop** cancels speech or playback. Voice selection and speed are saved locally. Persona profiles can select a separate voice and speed, or inherit the Voices choices.
 
-| Speech model    | Voices                                 | Approximate native archive |
-| --------------- | -------------------------------------- | -------------------------- |
-| Kokoro 82M      | Heart, Bella — female American English | 350 MB                     |
-| Piper LJ Speech | Linda — female American English        | 116 MB                     |
+| Speech model    | Voices                                        | Approximate native archive |
+| --------------- | --------------------------------------------- | -------------------------- |
+| Kokoro 82M      | Heart, Bella — female American English        | 360 MB                     |
+| Piper LJ Speech | Linda — female American English               | 120 MB                     |
+| Piper Thorsten  | Thorsten — German                             | 67 MB                      |
+| Piper Denis     | Denis — Russian                               | 67 MB                      |
+| Piper Davefx    | Davefx — Spanish (Spain)                      | 67 MB                      |
+| Piper Siwis     | Siwis — French (France)                       | 67 MB                      |
 
 Speech is generated on the device after download. It does not call a speech service. The iPhone adapter uses Sherpa ONNX and Expo audio; browser preview uses Sherpa ONNX WASM and WebAudio. Browser synthesis and native synthesis have separate download stores.
 
