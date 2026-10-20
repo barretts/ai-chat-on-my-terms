@@ -109,6 +109,9 @@ importers:
       '@locallab/groups-config':
         specifier: workspace:*
         version: link:../../packages/groups/config
+      '@locallab/groups-parallel':
+        specifier: workspace:*
+        version: link:../../packages/groups/parallel
       '@locallab/groups-turns':
         specifier: workspace:*
         version: link:../../packages/groups/turns

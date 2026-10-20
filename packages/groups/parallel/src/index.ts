@@ -1,4 +1,8 @@
-import type { GroupTurnPlan, GroupTurnSpeaker } from "@locallab/groups-turns";
+import type {
+  GroupTurnPlan,
+  GroupTurnPort,
+  GroupTurnSpeaker,
+} from "@locallab/groups-turns";
 
 export class LeaseCanceledError extends Error {}
 
@@ -136,7 +140,9 @@ export interface GroupParallelGroupOptions {
    * Maps a speaker to its local model/host for leasing; return null for
    * remote providers that need no local context slot.
    */
-  localBinding(speaker: GroupTurnSpeaker): { modelKey: string; hostKey: string } | null;
+  localBinding(
+    speaker: GroupTurnSpeaker,
+  ): { modelKey: string; hostKey: string } | null;
   leases?: ModelLeaseRegistry;
   signal?: AbortSignal;
   onChunk?(chunk: GroupParallelChunk): void;
@@ -173,8 +179,7 @@ export async function runGroupTurnParallel(
         ...(options.signal ? { signal: options.signal } : {}),
         ...(options.onChunk
           ? {
-              onChunk: (text: string) =>
-                options.onChunk!({ speaker, text }),
+              onChunk: (text: string) => options.onChunk!({ speaker, text }),
             }
           : {}),
       });
@@ -191,4 +196,50 @@ export async function runGroupTurnParallel(
     }
   };
   return await Promise.all(plan.speakers.map((speaker) => runOne(speaker)));
+}
+
+export interface RoomLeaseOptions {
+  modelKey: string;
+  hostKey: string;
+  leases: ModelLeaseRegistry;
+}
+
+/**
+ * Room runtime v1 single-slot path: ALL generation traffic for one room —
+ * persona replies and the topic-interest selector call alike — flows
+ * through one host with capacity 1, reusing this registry's FIFO and
+ * abortable waiters. No second scheduler exists for group traffic.
+ */
+export async function withModelLease<T>(
+  run: () => Promise<T>,
+  options: RoomLeaseOptions,
+  signal?: AbortSignal,
+): Promise<T> {
+  const lease = await options.leases.acquire(
+    options.modelKey,
+    options.hostKey,
+    signal,
+  );
+  try {
+    return await run();
+  } finally {
+    lease.release();
+  }
+}
+
+/**
+ * Lease-wrapped view of the turn port: every generate() holds exactly one
+ * slot while its request runs, then releases. The model itself stays
+ * loaded between requests (reference-counted at the native layer); each
+ * call rebuilds its complete prompt from scratch, so one persona's
+ * instructions can never ride into another speaker's request.
+ */
+export function leasedTurnPort(
+  port: GroupTurnPort,
+  options: RoomLeaseOptions,
+): GroupTurnPort {
+  return {
+    generate: (input) =>
+      withModelLease(() => port.generate(input), options, input.signal),
+  };
 }

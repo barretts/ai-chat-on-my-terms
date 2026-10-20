@@ -10,6 +10,9 @@ export const GROUP_AUTONOMOUS_ROUND_CAP = 5;
 
 export type GroupTurnMode = "round-robin" | "autonomous" | "manual";
 
+/** How much of the round a later speaker sees (GR-12). */
+export type GroupContextMode = "discussion" | "independent";
+
 export class GroupTurnError extends Error {}
 
 /** A frozen speaker slot: seat identity is captured at planning time. */
