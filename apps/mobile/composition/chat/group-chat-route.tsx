@@ -41,6 +41,7 @@ import {
 } from "./group-driver";
 import {
   GroupModelRuntime,
+  closeStaleRound,
   groupModelKey,
   resolveSharedRoomBinding,
   type RoomModelBinding,
@@ -343,16 +344,9 @@ export default function GroupChatRoute() {
         // A round left "active" by a crash is stale: mark it stopped so the
         // conversation guard is free, but keep every saved reply. Completed
         // replies are never re-generated and the round never auto-resumes.
-        const latest =
-          saved.id === null ? null : await config.latestRound(saved.id);
-        if (mounted && latest && latest.round.status === "active") {
-          await config.setRoundStatus(
-            latest.round.id,
-            "stopped",
-            latest.round.seatCursor,
-          );
-          setStaleRoundId(latest.round.id);
-        }
+        const stale =
+          saved.id === null ? null : await closeStaleRound(config, saved.id);
+        if (mounted && stale) setStaleRoundId(stale.id);
         const history = await roomTranscript(database, saved);
         if (!mounted) return;
         entriesRef.current = history;

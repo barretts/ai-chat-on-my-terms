@@ -19,12 +19,17 @@ describe("managed Persona avatar port (native picker fixture)", () => {
       },
     });
     expect(await port.pick(id(2))).toEqual({ attachmentId: id(1), uri });
+    // resolve() hands back the managed preview while the photo is live.
+    expect(await port.resolve(id(1))).toBe(uri);
     uri = "https://example.invalid/avatar.png";
     await expect(port.pick(id(2))).rejects.toThrow("managed local storage");
     expect(released).toEqual([`${id(1)}:${id(2)}`]);
     expect(await port.resolve(id(1))).toBeUndefined();
     uri = "file://untrusted-host/share/avatar.png";
     await expect(port.pick(id(2))).rejects.toThrow("managed local storage");
+    // resolve() applies the same managed-storage guard: an untrusted-host
+    // file:// preview NEVER resolves, even though the fake always returns one.
+    expect(await port.resolve(id(1))).toBeUndefined();
   });
   it("rejects oversized or non-image bytes and treats cancellation as no change", async () => {
     const released: string[] = [];

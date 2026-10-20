@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
 import { test } from "vitest";
 import { ModelLeaseRegistry } from "@locallab/groups-parallel";
 import {
+  SQLiteGroupConfigStore,
+  defaultGroupRoomSettings,
+  emptyGroupParticipant,
+  type GroupParticipantDraft,
+  type GroupRoomDraft,
+} from "@locallab/groups-config";
+import type {
+  SQLiteDatabasePort,
+  SqliteBindValue,
+} from "@locallab/storage-sqlite-core";
+import {
+  closeStaleRound,
   groupModelKey,
   GroupModelRuntime,
   resolveSharedRoomBinding,
@@ -91,4 +104,138 @@ test("release waits for in-flight work, blocks new turns, unloads once", async (
   assert.equal(unloads, 1, "concurrent releases must unload exactly once");
   assert.equal(registry.activeContexts("phone"), 0);
   assert.equal(await runtime.schedule(async () => "after"), "after");
+});
+
+const gid = (n: number) =>
+  `0195c000-0000-7000-8000-${n.toString().padStart(12, "0")}`;
+
+function sqlite(database: DatabaseSync): SQLiteDatabasePort {
+  return {
+    execAsync: async (sql) => database.exec(sql),
+    runAsync: async (sql, ...params: SqliteBindValue[]) =>
+      database.prepare(sql).run(...params),
+    getFirstAsync: async <T,>(sql: string, ...params: SqliteBindValue[]) =>
+      (database.prepare(sql).get(...params) as T | undefined) ?? null,
+    getAllAsync: async <T,>(sql: string, ...params: SqliteBindValue[]) =>
+      database.prepare(sql).all(...params) as T[],
+    withTransactionAsync: async (work) => {
+      database.exec("BEGIN IMMEDIATE");
+      try {
+        await work();
+        database.exec("COMMIT");
+      } catch (cause) {
+        database.exec("ROLLBACK");
+        throw cause;
+      }
+    },
+  };
+}
+
+test("reopen closes a stale active round once, keeps saved progress, never resumes", async () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    const config = new SQLiteGroupConfigStore(sqlite(database));
+    await SQLiteGroupConfigStore.initialize(sqlite(database));
+    let nextId = 9000;
+    const createId = () => gid(nextId++);
+    const seats: GroupParticipantDraft[] = [
+      { ...emptyGroupParticipant(), personaId: gid(5001), displayName: "Ada" },
+      {
+        ...emptyGroupParticipant(),
+        personaId: gid(5002),
+        displayName: "Grace",
+      },
+    ];
+    const draft: GroupRoomDraft = {
+      id: null,
+      name: "War room",
+      scenario: "",
+      userDisplayName: "Sam",
+      conversationId: gid(6001),
+      settings: defaultGroupRoomSettings(),
+      participants: seats,
+    };
+    const roomId = await config.saveRoom(draft, createId);
+    const saved = await config.loadRoom(roomId);
+    assert.ok(saved);
+    // A crash left the round ACTIVE at seat 1 with seat 0 already answered.
+    const round = await config.beginRound(
+      roomId,
+      saved.conversationId,
+      {
+        trigger: "send",
+        frozenOrder: [0, 1],
+        settings: defaultGroupRoomSettings(),
+      },
+      createId,
+    );
+    await config.setRoundStatus(round.id, "active", 1);
+    const closed = await closeStaleRound(config, roomId);
+    assert.equal(closed?.id, round.id);
+    assert.equal(closed?.status, "stopped");
+    const latest = await config.latestRound(roomId);
+    assert.equal(latest?.round.status, "stopped");
+    assert.equal(latest?.round.seatCursor, 1, "saved progress stays");
+    assert.equal(
+      await closeStaleRound(config, roomId),
+      null,
+      "second reopen is a no-op; the round never auto-resumes",
+    );
+    // A fresh round still opens cleanly after the guard.
+    const fresh = await config.beginRound(
+      roomId,
+      saved.conversationId,
+      {
+        trigger: "pass",
+        frozenOrder: [0, 1],
+        settings: defaultGroupRoomSettings(),
+      },
+      createId,
+    );
+    assert.equal(fresh.status, "active");
+    assert.notEqual(fresh.id, round.id);
+  } finally {
+    database.close();
+  }
+});
+
+test("reopen leaves completed or stopped rounds untouched", async () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    const config = new SQLiteGroupConfigStore(sqlite(database));
+    await SQLiteGroupConfigStore.initialize(sqlite(database));
+    let nextId = 9100;
+    const createId = () => gid(nextId++);
+    const seats: GroupParticipantDraft[] = [
+      { ...emptyGroupParticipant(), personaId: gid(5011), displayName: "Ada" },
+    ];
+    const roomId = await config.saveRoom(
+      {
+        id: null,
+        name: "Calm room",
+        scenario: "",
+        userDisplayName: "Sam",
+        conversationId: gid(6011),
+        settings: defaultGroupRoomSettings(),
+        participants: seats,
+      },
+      createId,
+    );
+    assert.equal(await closeStaleRound(config, roomId), null, "no rounds yet");
+    const round = await config.beginRound(
+      roomId,
+      gid(6011),
+      {
+        trigger: "send",
+        frozenOrder: [0],
+        settings: defaultGroupRoomSettings(),
+      },
+      createId,
+    );
+    await config.setRoundStatus(round.id, "completed", 1);
+    assert.equal(await closeStaleRound(config, roomId), null);
+    assert.equal((await config.latestRound(roomId))?.round.status, "completed");
+  } finally {
+    database.close();
+  }
 });

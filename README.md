@@ -20,19 +20,19 @@ Offline-first is the default posture, not a locked-down mode: install, load or d
 
 Phone, desktop and browser preview run the same screens; platform differences are capability gates, not separate apps.
 
-| Surface                                                                 | iPhone (build 21)         | Windows desktop         | Browser preview            |
-| ----------------------------------------------------------------------- | ------------------------- | ----------------------- | -------------------------- |
-| Chat, streaming, Personas + generator, memory, group room setup         | ✓                         | ✓                       | ✓                          |
-| Library, folders, chat search, recent/archived, Files workspace         | ✓                         | ✓                       | ✓                          |
-| Import & export (chat ZIP, TXT/PDF, LM Studio import)                   | ✓ native share/print      | ✓ native save dialog    | ✓ downloads                |
-| Offline voices (Kokoro; Piper en/de/ru/es/fr) and read-aloud            | ✓ on-device packs         | ✓ web engine            | ✓ host-prepared packs      |
-| Dictation and Whisper audio transcription                               | ✓ system speech           | —                       | —                          |
-| Image generation (ComfyUI), web research (DDG/Brave/SearXNG), MCP tools | ✓                         | ✓                       | ✓                          |
-| Connections: local model servers and 8 cloud kinds                      | ✓ keychain                | ✓ Credential Manager    | per-tab keys               |
-| On-device GGUF model runs                                               | ✓                         | use your own PC servers | storage only, no inference |
-| AI Chat Connect pairing / encrypted relay                               | built, not in build 21 UI | ✓ companion tray QR     | —                          |
+| Surface                                                                     | iPhone (build 21)         | Windows desktop         | Browser preview            |
+| --------------------------------------------------------------------------- | ------------------------- | ----------------------- | -------------------------- |
+| Chat, streaming, Personas + generator, memory, group room setup, group chat | ✓ mounted in app source   | ✓ mounted in app source | ✓ mounted in app source    |
+| Library, folders, chat search, recent/archived, Files workspace             | ✓                         | ✓                       | ✓                          |
+| Import & export (chat ZIP, TXT/PDF, LM Studio import)                       | ✓ native share/print      | ✓ native save dialog    | ✓ downloads                |
+| Offline voices (Kokoro; Piper en/de/ru/es/fr) and read-aloud                | ✓ on-device packs         | ✓ web engine            | ✓ host-prepared packs      |
+| Dictation and Whisper audio transcription                                   | ✓ system speech           | —                       | —                          |
+| Image generation (ComfyUI), web research (DDG/Brave/SearXNG), MCP tools     | ✓                         | ✓                       | ✓                          |
+| Connections: local model servers and 8 cloud kinds                          | ✓ keychain                | ✓ Credential Manager    | per-tab keys               |
+| On-device GGUF model runs                                                   | ✓                         | use your own PC servers | storage only, no inference |
+| AI Chat Connect pairing / encrypted relay                                   | built, not in build 21 UI | ✓ companion tray QR     | —                          |
 
-Built but not yet surfaced in the interface: the group chat transcript, phone pairing screens, sync/persona-sync panels, camera QR scanning and semantic search — each stays tracked on its own plan card.
+Built but not yet surfaced in the interface: phone pairing screens, sync/persona-sync panels, camera QR scanning and semantic search — each stays tracked on its own plan card.
 
 ## Where the work stands
 

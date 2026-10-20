@@ -46,6 +46,8 @@ jobs:
         run: pnpm test:jobs
       - name: Run event projection and replay
         run: pnpm test:projection
+      - name: Group room settings, ordering policies, and turn guards
+        run: pnpm test:groups
 # This workflow provides fast fixture evidence only. Playwright/Maestro and real
 # device, OS, backend, and service evidence belong to T159A-H and T160-T169.
 # A green fixture job must never be reported as device or live-backend proof.

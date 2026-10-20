@@ -1,4 +1,5 @@
 import { ModelLeaseRegistry, type ModelLease } from "@locallab/groups-parallel";
+import type { GroupRoundRecord } from "@locallab/groups-config";
 
 /**
  * GR-13 shared-model room runtime (T174).
@@ -108,4 +109,30 @@ export class GroupModelRuntime {
     }
     await this.options.unload?.(this.options.modelKey);
   }
+}
+/**
+ * Reopen guard: a round left "active" by a crash is stale — mark it stopped
+ * so the conversation's round guard frees up, keep every saved reply, and
+ * NEVER auto-resume (the next driver call always starts a fresh round).
+ * Returns the round that was closed, or null when nothing was stale.
+ */
+export async function closeStaleRound(
+  config: {
+    latestRound(roomId: string): Promise<{ round: GroupRoundRecord } | null>;
+    setRoundStatus(
+      roundId: string,
+      status: "stopped",
+      seatCursor: number,
+    ): Promise<void>;
+  },
+  roomId: string,
+): Promise<GroupRoundRecord | null> {
+  const latest = await config.latestRound(roomId);
+  if (!latest || latest.round.status !== "active") return null;
+  await config.setRoundStatus(
+    latest.round.id,
+    "stopped",
+    latest.round.seatCursor,
+  );
+  return { ...latest.round, status: "stopped" };
 }
