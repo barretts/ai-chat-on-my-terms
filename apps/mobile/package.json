@@ -106,6 +106,7 @@
     "@locallab/chat-media-hooks": "workspace:*",
     "@locallab/diagnostics": "workspace:*",
     "@locallab/groups-config": "workspace:*",
+    "@locallab/groups-turns": "workspace:*",
     "@locallab/media-comfyui": "workspace:*",
     "@locallab/media-engine": "workspace:*",
     "@locallab/media-integration": "workspace:*",

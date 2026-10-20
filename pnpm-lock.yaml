@@ -109,6 +109,9 @@ importers:
       '@locallab/groups-config':
         specifier: workspace:*
         version: link:../../packages/groups/config
+      '@locallab/groups-turns':
+        specifier: workspace:*
+        version: link:../../packages/groups/turns
       '@locallab/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
