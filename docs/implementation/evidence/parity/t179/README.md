@@ -7,6 +7,10 @@ chain head `feecd21` + buildNumber bump `5a910e7` + signing-scope fix), fingerpr
 ([record](../../../../builds/ios-preview-24.md)).
 Install link: https://expo.dev/accounts/barrett/projects/locallab/builds/63b3ba76-566f-4bd6-905b-67b746a6cb2d
 
+Expected archive digest (downloaded 2026-10-20 from the artifact URL above, 26,889,815
+bytes): SHA-256 `06b37aec9b2a6acab2ceb16d7c5fda84a8ca7979d0fb4c5c8c03ee30b057baa7` —
+any on-phone install path (Expo link or manual IPA) installs this exact archive.
+
 Known build caveat: preview build 24 has NO Extended Virtual Addressing / Increased Memory
 Limit (the ad hoc profile predates those capabilities); benchmark rows must record memory
 observations against the stock per-app budget.
