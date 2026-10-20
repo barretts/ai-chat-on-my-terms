@@ -24,7 +24,7 @@ describe("versioned model catalog", () => {
       ),
     ).toEqual(["meta-llama/llama-3.2-3b-instruct"]);
     expect(searchCatalog(curatedCatalog, "", { quant: "q4_k_m" })).toHaveLength(
-      5,
+      7,
     );
     expect(
       searchCatalog(curatedCatalog, "", { capability: "tools" }),

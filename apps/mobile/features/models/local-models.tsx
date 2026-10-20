@@ -373,7 +373,9 @@ export function LocalModelsSection({
                   : `${model.artifact!.tier === "faster" ? "Faster" : "Larger"} · `}
                 {model.name}
               </Text>
-              <Text>{formatBytes(model.artifact!.sizeBytes)} · Apache 2.0</Text>
+              <Text>
+                {formatBytes(model.artifact!.sizeBytes)} · {model.license.name}
+              </Text>
               <Text>{model.description}</Text>
               <Text>
                 {local
