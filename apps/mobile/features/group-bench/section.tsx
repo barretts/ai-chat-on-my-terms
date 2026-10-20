@@ -91,6 +91,11 @@ export function DevBenchSection() {
       const plans = buildBenchMatrix(
         selectedBlobIds.map((blobId) => `blob:${blobId}`),
       );
+      const modelNames = Object.fromEntries(
+        models
+          .filter((model) => selectedBlobIds.includes(model.blobId))
+          .map((model) => [`blob:${model.blobId}`, model.name]),
+      );
       const collected: BenchScenarioRecord[] = [];
       const outcome = await session.run({
         plans,
@@ -110,7 +115,11 @@ export function DevBenchSection() {
             session.writeCheckpoint(
               session.manifestFor(
                 { scenarios: collected, stopped: false },
-                { roundsPerScenario, responseLimitTokens: limit },
+                {
+                  roundsPerScenario,
+                  responseLimitTokens: limit,
+                  modelNames,
+                },
               ),
             );
           } catch {
@@ -121,6 +130,7 @@ export function DevBenchSection() {
       const manifest = session.manifestFor(outcome, {
         roundsPerScenario,
         responseLimitTokens: limit,
+        modelNames,
       });
       lastManifestRef.current = manifest;
       const saved = await session.writeAndShareManifest(manifest);

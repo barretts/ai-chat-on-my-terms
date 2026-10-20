@@ -98,7 +98,11 @@ export interface BenchSession {
   run(options: BenchRunOptions): Promise<BenchRunOutcome>;
   manifestFor(
     outcome: BenchRunOutcome,
-    input: { roundsPerScenario: number; responseLimitTokens: number },
+    input: {
+      roundsPerScenario: number;
+      responseLimitTokens: number;
+      modelNames?: Record<string, string>;
+    },
   ): BenchManifest;
   writeAndShareManifest(
     manifest: BenchManifest,
@@ -267,6 +271,7 @@ export async function createBenchSession(): Promise<BenchSession> {
         roundsPerScenario: input.roundsPerScenario,
         responseLimitTokens: input.responseLimitTokens,
         deviceMemoryBytes: capacity.availableMemoryBytes,
+        ...(input.modelNames ? { modelNames: input.modelNames } : {}),
         scenarios: outcome.scenarios,
         notes: outcome.stopped
           ? ["Run stopped early; partial matrix.", ...defaultNotes()]

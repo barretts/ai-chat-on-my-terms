@@ -154,6 +154,8 @@ export interface BenchManifest {
   roundsPerScenario: number;
   responseLimitTokens: number;
   deviceMemoryBytes: number | null;
+  /** Display names for `blob:<id>` model ids, for readable device evidence. */
+  modelNames?: Record<string, string>;
   scenarios: BenchScenarioRecord[];
   notes: string[];
 }
@@ -167,6 +169,7 @@ export function assembleManifest(input: {
   roundsPerScenario: number;
   responseLimitTokens: number;
   deviceMemoryBytes: number | null;
+  modelNames?: Record<string, string>;
   scenarios: BenchScenarioRecord[];
   notes?: string[];
 }): BenchManifest {
