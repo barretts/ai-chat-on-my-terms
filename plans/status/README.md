@@ -173,7 +173,7 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 | Card | Remaining work |
 | --- | --- |
 | [T170](../../plans/tasks/P12/T170.md) | Implemented `ace67ef`. Migration 0009 side tables (settings, Drunk prefs, rounds, runs, group-conversation mapping; `trigger_kind` not `trigger`), stable seat IDs, settings round-trip + validation, round/run storage API. No core-table ALTERs (card amended). Check: schema 20, groups 21, mobile group vitest 7, chat-composition 286, typecheck. |
-| [T171](../../plans/tasks/P12/T171.md) | Queued. Liquid LFM2.5-2.6B catalog pin, native top_k/penalty_repeat forwarding (llama.rn names verified), publisher defaults. |
+| [T171](../../plans/tasks/P12/T171.md) | Implemented `1698783`. Catalog `liquid/lfm2.5-2.6b-q4_k_m` pinned (revision e7caca5d…, sha256 02a8b7e1…, 1674455040 B, LFM Open v1.0); native top_k/penalty_repeat forwarding + conditional penalty_last_n; capabilities; publisher sampling folded under user scopes at model level. Check: models 8, gguf-ios 34, chat-settings 5, capabilities 5, models-ui 5, composition 286, typecheck. Device proof T179. |
 | [T172](../../plans/tasks/P12/T172.md) | Queued; depends T170. Assistant-only engine path, participant_id writes, round record writer, single-action guard. |
 | [T173](../../plans/tasks/P12/T173.md) | Queued; depends T171,T172. Dice/topic-interest ordering, Pass, context modes, Drunk 512-window. |
 | [T174](../../plans/tasks/P12/T174.md) | Queued; depends T170-T172. One shared model context, lease serialization, release discipline. |
