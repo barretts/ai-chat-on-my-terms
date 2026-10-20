@@ -6,7 +6,9 @@ module.exports = ({ config }) => {
   if (storeBuild) {
     const developerVariables = Object.keys(process.env).filter(
       (key) =>
-        key.startsWith("EXPO_PUBLIC_STRATA_") && process.env[key]?.trim(),
+        (key.startsWith("EXPO_PUBLIC_STRATA_") ||
+          key.startsWith("EXPO_PUBLIC_DEV_")) &&
+        process.env[key]?.trim(),
     );
     if (developerVariables.length > 0) {
       throw new Error(

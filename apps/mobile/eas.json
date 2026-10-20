@@ -10,7 +10,8 @@
       "environment": "preview",
       "env": {
         "EXPO_PUBLIC_STRATA_BASE_URL": "http://192.168.1.213:1234/v1",
-        "EXPO_PUBLIC_STRATA_MODEL_ID": "qwen3.8-flash-next-iq3_s-128k"
+        "EXPO_PUBLIC_STRATA_MODEL_ID": "qwen3.8-flash-next-iq3_s-128k",
+        "EXPO_PUBLIC_DEV_BENCH": "1"
       },
       "developmentClient": false,
       "distribution": "internal",

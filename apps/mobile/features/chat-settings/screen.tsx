@@ -36,6 +36,7 @@ import { AccountSection } from "../account/section";
 import { BillingSection } from "../billing/section";
 import { CommunitySection } from "../community/section";
 import { SupportSection } from "../support/section";
+import { DevBenchSection } from "../group-bench/section";
 import { AnalyticsSection } from "../diagnostics/analytics-section";
 import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
@@ -660,6 +661,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       <CommunitySection />
       <SupportSection />
       <AnalyticsSection />
+      {process.env.EXPO_PUBLIC_DEV_BENCH === "1" ? <DevBenchSection /> : null}
       <SettingsSection
         phone={phone}
         title="Settings scope"

@@ -67,7 +67,7 @@
     "test:models-integration": "pnpm --filter @locallab/models-integration test",
     "test:chat-composition": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/composition",
     "test:groups": "pnpm --filter @locallab/groups-config --filter @locallab/groups-parallel --filter @locallab/groups-turns test",
-    "test:group-features": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/features/group-chat apps/mobile/features/group-setup",
+    "test:group-features": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/features/group-chat apps/mobile/features/group-setup apps/mobile/features/group-bench",
     "test:chat-integration": "pnpm --filter @locallab/chat-integration test",
     "typecheck:chat-integration": "pnpm --filter @locallab/chat-integration typecheck",
     "test:personas": "pnpm --filter @locallab/personas-library test",
