@@ -13,6 +13,11 @@ export interface GroupSeatChoice {
   detail?: string;
 }
 
+export interface GroupModelChoice {
+  value: string;
+  label: string;
+}
+
 export function newGroupRoomDraft(conversationId: string): GroupRoomDraft {
   return {
     id: null,
@@ -45,6 +50,16 @@ export function directModelSeat(
     modelId: connection.modelId,
     displayName: connection.modelId,
   };
+}
+
+/** Shared-model picker options; values follow the room sharedModelId
+ * convention `blob:<blobId>` that the group chat route resolves. */
+export function groupModelChoices(
+  installed: readonly { blobId: string; name: string }[],
+): GroupModelChoice[] {
+  return installed
+    .filter((model) => model.blobId !== "")
+    .map((model) => ({ value: `blob:${model.blobId}`, label: model.name }));
 }
 
 /** Picker options: saved Personas first, then direct model connections. */

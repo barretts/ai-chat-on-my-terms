@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+import { Switch, Text, TextInput } from "react-native-paper";
 import {
   NativeButton,
   NativeDropdown,
@@ -11,7 +11,10 @@ import {
   SQLiteGroupConfigStore,
   emptyGroupParticipant,
   validateGroupRoom,
+  type GroupConversationMode,
+  type GroupReplyDisplay,
   type GroupRoomDraft,
+  type GroupSpeakerOrder,
   type GroupValidationError,
 } from "@locallab/groups-config";
 import type {
@@ -26,6 +29,7 @@ import {
   groupSeatChoices,
   newGroupRoomDraft,
   personaSeatFromIntent,
+  type GroupModelChoice,
 } from ".";
 
 export interface GroupSetupPanelProps {
@@ -40,7 +44,34 @@ export interface GroupSetupPanelProps {
   onRoomSaved?: (roomId: string) => void;
   /** "Open" pressed on a saved room; enters the group chat screen. */
   onOpenRoom?: (roomId: string) => void;
+  /** Installed GGUF models for the shared-model picker; values are blob:<id>. */
+  modelChoices?: GroupModelChoice[];
 }
+
+const CONVERSATION_OPTIONS: readonly {
+  value: GroupConversationMode;
+  label: string;
+}[] = [
+  { value: "discussion", label: "Discussion" },
+  { value: "independent", label: "Independent" },
+];
+
+const SPEAKER_ORDER_OPTIONS: readonly {
+  value: GroupSpeakerOrder;
+  label: string;
+}[] = [
+  { value: "round-robin", label: "Round robin" },
+  { value: "dice", label: "Dice roll" },
+  { value: "topic-interest", label: "Topic interest" },
+];
+
+const REPLY_DISPLAY_OPTIONS: readonly {
+  value: GroupReplyDisplay;
+  label: string;
+}[] = [
+  { value: "complete", label: "Complete replies" },
+  { value: "live", label: "Live text" },
+];
 
 export function GroupSetupPanel(props: GroupSetupPanelProps) {
   const { phone } = useWorkspaceLayout();
@@ -55,6 +86,34 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
   const [savedNote, setSavedNote] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const modelChoices = props.modelChoices ?? [];
+  const sharedModelDefaulted = useRef(false);
+
+  const patchSettings = (patch: Partial<GroupRoomDraft["settings"]>) => {
+    setDraft((current) => ({
+      ...current,
+      settings: { ...current.settings, ...patch },
+    }));
+    setErrors([]);
+  };
+
+  // A room with no shared-model selection gets the first installed model
+  // (the recommended entry) so the chat route can always run it; an
+  // explicit "No shared model" choice wins and saved selections stay.
+  useEffect(() => {
+    const first = modelChoices[0];
+    if (
+      !sharedModelDefaulted.current &&
+      draft.settings.sharedModelId === null &&
+      first !== undefined
+    ) {
+      sharedModelDefaulted.current = true;
+      setDraft((current) => ({
+        ...current,
+        settings: { ...current.settings, sharedModelId: first.value },
+      }));
+    }
+  }, [modelChoices, draft.settings.sharedModelId]);
 
   useEffect(() => {
     let active = true;
@@ -277,6 +336,69 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
           }
           disabled={busy}
         />
+        <Text variant="titleMedium">Room settings</Text>
+        <NativeDropdown
+          label="Conversation"
+          value={draft.settings.conversationMode}
+          options={CONVERSATION_OPTIONS}
+          disabled={busy}
+          onChange={(value) => {
+            const option = CONVERSATION_OPTIONS.find(
+              (candidate) => candidate.value === value,
+            );
+            if (option) patchSettings({ conversationMode: option.value });
+          }}
+        />
+        <NativeDropdown
+          label="Turn order"
+          value={draft.settings.speakerOrder}
+          options={SPEAKER_ORDER_OPTIONS}
+          disabled={busy}
+          onChange={(value) => {
+            const option = SPEAKER_ORDER_OPTIONS.find(
+              (candidate) => candidate.value === value,
+            );
+            if (option) patchSettings({ speakerOrder: option.value });
+          }}
+        />
+        <NativeDropdown
+          label="Reply display"
+          value={draft.settings.replyDisplay}
+          options={REPLY_DISPLAY_OPTIONS}
+          disabled={busy}
+          onChange={(value) => {
+            const option = REPLY_DISPLAY_OPTIONS.find(
+              (candidate) => candidate.value === value,
+            );
+            if (option) patchSettings({ replyDisplay: option.value });
+          }}
+        />
+        <NativeDropdown
+          label="Shared model"
+          value={draft.settings.sharedModelId ?? ""}
+          options={[
+            { value: "", label: "No shared model (each seat uses its own)" },
+            ...modelChoices,
+          ]}
+          emptyText="Install a GGUF model to run this room on one model."
+          disabled={busy}
+          onChange={(value) =>
+            patchSettings({ sharedModelId: value === "" ? null : value })
+          }
+        />
+        <TextInput
+          label="Response limit (tokens per reply, 16-4096)"
+          accessibilityLabel="Response limit"
+          value={String(draft.settings.responseLimitTokens)}
+          keyboardType="numeric"
+          onChangeText={(raw) =>
+            patchSettings({
+              responseLimitTokens:
+                Number.parseInt(raw.replace(/\D/g, ""), 10) || 0,
+            })
+          }
+          disabled={busy}
+        />
         {!phone ? <Text variant="titleMedium">Participants</Text> : null}
         {draft.participants.map((seat, index) => (
           <View key={`${draft.id ?? "new"}-${index}`}>
@@ -306,6 +428,24 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
               }
               disabled={busy}
             />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginVertical: 4,
+              }}
+            >
+              <Text variant="bodySmall" style={{ flex: 1 }}>
+                Drunk - only remembers the last few messages in this room
+              </Text>
+              <Switch
+                accessibilityLabel={`Participant ${index + 1} drunk switch`}
+                value={seat.drunk}
+                disabled={busy}
+                onValueChange={(drunk) => patchSeat(index, { drunk })}
+              />
+            </View>
             {errorsFor(index).map((problem) => (
               <Text key={problem.message} variant="bodySmall">
                 {problem.message}

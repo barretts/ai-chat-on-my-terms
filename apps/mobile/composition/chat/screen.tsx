@@ -50,6 +50,10 @@ import { memoryModelControlPrompt } from "./persona-memory";
 import { resolvePersonaModelBinding } from "@locallab/personas-bindings";
 import { SQLiteGroupConfigStore } from "@locallab/groups-config";
 import { GroupSetupPanel } from "../../features/group-setup/screen";
+import {
+  groupModelChoices,
+  type GroupModelChoice,
+} from "../../features/group-setup";
 import { createMediaRuntime, type MediaRuntime } from "../media/providers";
 import { MediaPanel } from "../../features/media/screen";
 import { DEFAULT_WORKFLOW as DEFAULT_MEDIA_WORKFLOW } from "../../features/media";
@@ -430,6 +434,29 @@ export default function CompleteChatScreen() {
     () => (runtime ? new SQLiteGroupConfigStore(runtime.db) : null),
     [runtime],
   );
+  const [roomModelChoices, setRoomModelChoices] = useState<GroupModelChoice[]>(
+    [],
+  );
+  useEffect(() => {
+    if (panel !== "groups") return;
+    let active = true;
+    void listInstalledModels()
+      .then((installed) => {
+        if (active)
+          setRoomModelChoices(
+            groupModelChoices(
+              installed.map((model) => ({
+                blobId: model.blobId,
+                name: model.name,
+              })),
+            ),
+          );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [panel]);
   const [mode, setMode] = useState<FirstRunMode>("local");
   const [models, setModels] = useState<LocalModel[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
@@ -3485,6 +3512,10 @@ export default function CompleteChatScreen() {
             router.push({ pathname: "/group-chat", params: { roomId } })
           }
           onPendingSeatConsumed={() => setPendingGroupSeat(null)}
+          modelChoices={roomModelChoices}
+          onRoomSaved={(roomId) =>
+            router.push({ pathname: "/group-chat", params: { roomId } })
+          }
         />
       ) : panel === "media" && runtime.media ? (
         runtime.media.service ? (
