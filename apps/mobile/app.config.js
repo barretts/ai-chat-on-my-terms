@@ -14,5 +14,12 @@ module.exports = ({ config }) => {
       );
     }
   }
+  if (!storeBuild) {
+    // The EAS-managed ad-hoc provisioning profile predates the memory
+    // capabilities, so device/preview builds sign without them; store builds
+    // keep the declared pair (build 23 proof).
+    const { entitlements, ...ios } = config.ios ?? {};
+    config.ios = ios;
+  }
   return config;
 };
