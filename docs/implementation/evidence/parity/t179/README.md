@@ -39,13 +39,56 @@ live: yes — run on physical device by <name> at <timestamp>
 
 Fixture/web results are never device proof.
 
+## Device runs on build 26 (2026-10-20, owner)
+
+Two manifests from the owner's iPhone, archived here:
+
+- `group-bench-20261020T2157-partial.json` — model `blob:01a15b4d-d661-7466-bcf7-139c173a8b7f`.
+  Checkpoint written after scenario 2 (2-seat dice): the run stopped at scenario 3 — the FIRST
+  topic-interest scenario, i.e. the first `json_object` selector call for this model — same cut-off
+  point as the build-25 crash at 2/18. Round stats before the stop: 2-seat round-robin median
+  3.8 s/reply, 32 tok/s, 3/4 replies hit the 128-token cap; 2-seat dice median 3.1 s/reply,
+  30 tok/s, 7.9 s and 6.4 s rounds. The checkpoint survived the stop and shared after restart.
+- `group-bench-20261020T2222.json` — model `blob:01a15b64-bb8b-7cf7-8c43-726346747095`.
+  Full 9-scenario grid, 2 rounds each, all runs `finishReason: stop` except one: the 5-seat
+  topic-interest first selector emitted 512 tokens and hit `length` (truncated JSON — core's
+  seating-order fallback absorbed it and the scenario completed). Median reply latency 2.1-5.7 s;
+  median throughput 9.2-14.4 tok/s; round durations: 2-seat rr 6.0-7.8 s, 3-seat rr 7.5-7.9 s,
+  5-seat rr 26.2-31.4 s; topic-interest rounds are selector-dominated: 16-21 s (2-seat),
+  19-20 s (3-seat), 45.7-59.0 s (5-seat, incl. the 31 s truncated selector).
+
+Manifest fields: `buildNumber 26`, iOS 26.6, `deviceMemoryBytes 6744162304` (= 55% of 12 GB
+Device.totalMemory, the onboarding fit estimate). `thermal` is `unknown` in every scenario:
+react-native 0.86.3 exposes no `ProcessThermalState`, so thermal is not observable from the app —
+record the gap, do not read `unknown` as nominal.
+
+Quality finding (repetition/persona consistency): both models parrot the preceding seat.
+In the full run's 2-seat round-robin, the poet's reply is the pirate's reply verbatim with a
+`Bench Pirate:` prefix, and round 2 has both seats repeating it with doubled prefixes; each
+5-seat scenario contains 21 verbatim/near-verbatim reply pairs. Persona differentiation does not
+survive multi-seat transcripts on either model (repetition row of the card: FAIL observed on device).
+
+```
+row: T179 row 3 — device benchmark runs (partial grid + full grid)
+device: iPhone 17 Pro Max (UDID 00008150-001844EC3C02401C)
+build: 26 (0dc28760-647b-43de-bd25-5f16cdd8853e)
+os: iOS 26.6
+model: blob:01a15b4d-…-139c173a8b7f and blob:01a15b64-…-726346747095 — display names pending owner confirmation
+action: Settings → Developer benchmark → tick one model → Run matrix (rounds=2, limit=128); run 1 stopped/crashed at scenario 3 of 9; run 2 completed 9/9; both manifests shared from the section
+observed: run 2 full-grid latencies/throughput as above; run 1 checkpoint preserved 2 scenarios; crash/cut-off at first json_object selector for the other model; persona echo/parroting on both models
+live: yes — run on physical device by owner at 2026-10-20T21:57Z (partial) and 2026-10-20T22:28Z (full)
+```
+
+Still open for row 3: model display names; whether either run was airplane/offline; the
+model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21:57 stop.
+
 ## Row status
 
 | # | Card row | Status |
 | - | -------- | ------ |
 | 1 | Pinned build shipped, build id recorded | done (this directory + build record; commit `8951af8`) |
 | 2 | Both GGUF downloads on device, `assertModelIntegrity` + GGUF magic pass | pending device run |
-| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | pending device run — on build 26 press Settings → Developer benchmark → tick models → Run matrix (stale bench rows from the build-25 crash are swept automatically; progress shows per-round completion; a `-partial` checkpoint manifest is written after every scenario and stays shareable after a crash/restart); the runner emits the manifest JSON (share sheet + Copy button, file under `Documents/locallab/bench/`); `build:` line use 26. Peak RSS still not observable in-app; the manifest records live thermal + memory fit-estimate fields instead |
+| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — two build-26 device runs filed above (full 9-scenario grid on one model; the other model stops at its first topic-interest selector — crash log pending). Airplane-mode status and model names unconfirmed; thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |

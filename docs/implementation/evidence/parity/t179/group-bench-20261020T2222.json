@@ -1,0 +1,1189 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-20T22:28:07.819Z",
+  "device": "iPhone",
+  "iosVersion": "26.6",
+  "appVersion": "0.1.0",
+  "buildNumber": "26",
+  "roundsPerScenario": 2,
+  "responseLimitTokens": 128,
+  "deviceMemoryBytes": 6744162304,
+  "scenarios": [
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15b68-e1ad-7850-8379-3ceb25d3ec21",
+      "conversationId": "01a15b68-e1a7-78cd-b7f5-862df3c2924d",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 7774,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b68-e1b8-70d8-befd-bef74045e6e0",
+              "durationMs": 4900,
+              "inputTokens": 118,
+              "outputTokens": 35,
+              "tokensPerSec": 7.14,
+              "finishReason": "stop",
+              "text": "Best idea, ye scallywag: set sail on a plank of oak! One thing I'd worry about is the kraken of the neighbor's barking dog."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b68-f4e2-773f-b395-ca3cdee46743",
+              "durationMs": 2857,
+              "inputTokens": 204,
+              "outputTokens": 38,
+              "tokensPerSec": 13.3,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea, ye scallywag: set sail on a plank of oak! One thing I'd worry about is the kraken of the neighbor's barking dog."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 6013,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-0016-770c-bd1c-4acaac38e6e6",
+              "durationMs": 2808,
+              "inputTokens": 185,
+              "outputTokens": 38,
+              "tokensPerSec": 13.53,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea, ye scallywag: set sail on a plank of oak! One thing I'd worry about is the kraken of the neighbor's barking dog."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-0b14-766c-adff-0e5334654d6c",
+              "durationMs": 3187,
+              "inputTokens": 271,
+              "outputTokens": 38,
+              "tokensPerSec": 11.92,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea, ye scallywag: set sail on a plank of oak! One thing I'd worry about is the kraken of the neighbor's barking dog."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "dice",
+      "diceSeed": 1001,
+      "roomId": "01a15b69-179c-7d42-989e-36beef81ae8b",
+      "conversationId": "01a15b69-1799-7663-a056-c60f093cc848",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 4878,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-17a4-7fa3-8d4b-a9d53451ab90",
+              "durationMs": 2328,
+              "inputTokens": 118,
+              "outputTokens": 27,
+              "tokensPerSec": 11.6,
+              "finishReason": "stop",
+              "text": "A campfire with s'mores, a starry night view,\nBut bug bites might happen, so stay on your feet, too."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-20c3-7209-8207-15c1fa3d8ff5",
+              "durationMs": 2532,
+              "inputTokens": 188,
+              "outputTokens": 30,
+              "tokensPerSec": 11.85,
+              "finishReason": "stop",
+              "text": "Bench Poet: A campfire with s'mores, a starry night view,\nBut bug bites might happen, so stay on your feet, too."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 5185,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-2ab2-78c8-9352-08c6ae3425e0",
+              "durationMs": 2597,
+              "inputTokens": 169,
+              "outputTokens": 30,
+              "tokensPerSec": 11.55,
+              "finishReason": "stop",
+              "text": "Bench Poet: A campfire with s'mores, a starry night view,\nBut bug bites might happen, so stay on your feet, too."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-34de-7edc-a33c-51dc72b587a4",
+              "durationMs": 2572,
+              "inputTokens": 239,
+              "outputTokens": 30,
+              "tokensPerSec": 11.66,
+              "finishReason": "stop",
+              "text": "Bench Poet: A campfire with s'mores, a starry night view,\nBut bug bites might happen, so stay on your feet, too."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15b69-3efb-7793-8ed4-9d3fc8bf6910",
+      "conversationId": "01a15b69-3ef9-7564-a060-5ba40898224b",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 15934,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-5de5-7087-9b89-58da647202ae",
+              "durationMs": 3703,
+              "inputTokens": 118,
+              "outputTokens": 56,
+              "tokensPerSec": 15.12,
+              "finishReason": "stop",
+              "text": "Best idea: A treasure hunt around the yard. Each clue leads to a new spot, and the final treasure is a bucket full of gold doubloons.\n\nWorry: The tide might be high when we leave, or the kids might get lured away by other ships."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-6c61-75d8-90dd-ac6c14f05288",
+              "durationMs": 4310,
+              "inputTokens": 246,
+              "outputTokens": 59,
+              "tokensPerSec": 13.69,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: A treasure hunt around the yard. Each clue leads to a new spot, and the final treasure is a bucket full of gold doubloons.\n\nWorry: The tide might be high when we leave, or the kids might get lured away by other ships."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 20797,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-9f2c-7439-8210-e9ef8a24cd30",
+              "durationMs": 5843,
+              "inputTokens": 227,
+              "outputTokens": 87,
+              "tokensPerSec": 14.89,
+              "finishReason": "stop",
+              "text": "Bench Poet: Oh, by the kraken's tentacles, that sounds like a tempest in a teacup! A treasure hunt around the yard? That's as swashbuckling as a bottle of rum on a deserted isle.\n\nBut the worry about the tide? Why, that's a barnacle scratching at the hull! And the kids being lured away? That's just the sea turning its fickle eye!"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-b605-7376-b6f8-89f515f921aa",
+              "durationMs": 6255,
+              "inputTokens": 411,
+              "outputTokens": 87,
+              "tokensPerSec": 13.91,
+              "finishReason": "stop",
+              "text": "Bench Poet: Oh, by the kraken's tentacles, that sounds like a tempest in a teacup! A treasure hunt around the yard? That's as swashbuckling as a bottle of rum on a deserted isle.\n\nBut the worry about the tide? Why, that's a barnacle scratching at the hull! And the kids being lured away? That's just the sea turning its fickle eye!"
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15b69-3eff-7583-b585-7acf9b7eed3b",
+          "messageId": "01a15b69-3eff-7093-8469-7f2c5005bd1e",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792534986496,
+          "inputTokens": 241,
+          "outputTokens": 131,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792534994399,
+          "durationMs": 7903
+        },
+        {
+          "runId": "01a15b69-7d3f-7d9e-9697-5cbb38dc35bd",
+          "messageId": "01a15b69-7d3f-70d4-b435-0227123c4a8a",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535002433,
+          "inputTokens": 241,
+          "outputTokens": 133,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792535011110,
+          "durationMs": 8677
+        }
+      ]
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15b69-ce87-7c33-80de-2d5275330bda",
+      "conversationId": "01a15b69-ce84-7734-aa0e-04e282f2ee89",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 7454,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-ce8f-744d-938a-2dae38273115",
+              "durationMs": 2155,
+              "inputTokens": 118,
+              "outputTokens": 24,
+              "tokensPerSec": 11.14,
+              "finishReason": "stop",
+              "text": "Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-d6ff-7009-a97c-308439e2085c",
+              "durationMs": 2642,
+              "inputTokens": 182,
+              "outputTokens": 27,
+              "tokensPerSec": 10.22,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b69-e157-7a40-a357-1f3ad6b7e8c5",
+              "durationMs": 2636,
+              "inputTokens": 244,
+              "outputTokens": 27,
+              "tokensPerSec": 10.24,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 7850,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b69-ebaf-79f8-8318-ba22c8a85ff3",
+              "durationMs": 2499,
+              "inputTokens": 195,
+              "outputTokens": 24,
+              "tokensPerSec": 9.6,
+              "finishReason": "stop",
+              "text": "Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b69-f578-7064-ba7d-922019f97d3d",
+              "durationMs": 2548,
+              "inputTokens": 253,
+              "outputTokens": 27,
+              "tokensPerSec": 10.6,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b69-ff72-7afa-9477-0889ead4f1b4",
+              "durationMs": 2780,
+              "inputTokens": 315,
+              "outputTokens": 27,
+              "tokensPerSec": 9.71,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The clearest water, the most tranquil harbor. But keep a lookout for the sky's squalls."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "dice",
+      "diceSeed": 1004,
+      "roomId": "01a15b6a-0a61-70cc-8580-dd1766ae716b",
+      "conversationId": "01a15b6a-0a5e-7ee6-8aee-ca5882870c7a",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            0
+          ],
+          "durationMs": 5927,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6a-0a68-7772-ab0a-c196504542fb",
+              "durationMs": 1728,
+              "inputTokens": 118,
+              "outputTokens": 16,
+              "tokensPerSec": 9.26,
+              "finishReason": "stop",
+              "text": "Your campout is in the yard,\nBut please worry about the food."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6a-112e-72e0-b6f0-59b70b9af3ad",
+              "durationMs": 2050,
+              "inputTokens": 164,
+              "outputTokens": 19,
+              "tokensPerSec": 9.27,
+              "finishReason": "stop",
+              "text": "Bench Poet: Your campout is in the yard,\nBut please worry about the food."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6a-1935-7c05-95f9-3926a2f197ce",
+              "durationMs": 2128,
+              "inputTokens": 214,
+              "outputTokens": 19,
+              "tokensPerSec": 8.93,
+              "finishReason": "stop",
+              "text": "Bench Poet: Your campout is in the yard,\nBut please worry about the food."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            0
+          ],
+          "durationMs": 12486,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6a-2190-7593-b050-6d49e594b620",
+              "durationMs": 2081,
+              "inputTokens": 171,
+              "outputTokens": 19,
+              "tokensPerSec": 9.13,
+              "finishReason": "stop",
+              "text": "Bench Poet: Your campout is in the yard,\nBut please worry about the food."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6a-29ba-7c38-b0b5-5dd2a0ab1c07",
+              "durationMs": 7532,
+              "inputTokens": 217,
+              "outputTokens": 119,
+              "tokensPerSec": 15.8,
+              "finishReason": "stop",
+              "text": "Bench Poet: Your one-night campout should be a \"Star Party\".\n\n1.  Set up a projector and a large sheet or wall outside your house.\n2.  Download a free star chart app to display constellations.\n3.  Let the kids lie down on the grass and stargaze.\n4.  Bring a telescope or binoculars to look at planets if possible.\n5.  Have a picnic with hot dogs or other kid-friendly foods.\n\nTradeoff: The tradeoff is that the stargazing could be interrupted by local noise like sirens or airplanes."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6a-472c-70b5-83b6-28b74712bb9e",
+              "durationMs": 2848,
+              "inputTokens": 467,
+              "outputTokens": 22,
+              "tokensPerSec": 7.72,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Bench Poet: Your campout is in the yard,\nBut please worry about the food."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15b6a-525e-73e7-9b9f-3637f76ee556",
+      "conversationId": "01a15b6a-525b-7f2b-a922-40f73b477284",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 19409,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6a-7fcd-7eda-b584-97100f095799",
+              "durationMs": 2303,
+              "inputTokens": 118,
+              "outputTokens": 27,
+              "tokensPerSec": 11.72,
+              "finishReason": "stop",
+              "text": "Marrow: The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6a-88d2-7903-8b73-ba99f7115c9b",
+              "durationMs": 2696,
+              "inputTokens": 188,
+              "outputTokens": 30,
+              "tokensPerSec": 11.13,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6a-9361-7b89-8e56-64b45b377e60",
+              "durationMs": 2763,
+              "inputTokens": 256,
+              "outputTokens": 30,
+              "tokensPerSec": 10.86,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 20017,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6a-cc1f-7da4-be8a-a9c79af66c54",
+              "durationMs": 2545,
+              "inputTokens": 204,
+              "outputTokens": 27,
+              "tokensPerSec": 10.61,
+              "finishReason": "stop",
+              "text": "Marrow: The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6a-d616-73d7-801f-3685d598ada8",
+              "durationMs": 2970,
+              "inputTokens": 268,
+              "outputTokens": 30,
+              "tokensPerSec": 10.1,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Marrow: The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6a-e1b6-7e79-a262-692bf65a7e4a",
+              "durationMs": 2728,
+              "inputTokens": 336,
+              "outputTokens": 24,
+              "tokensPerSec": 8.8,
+              "finishReason": "stop",
+              "text": "The wind will fill your sails with adventure, but keep a watchful eye on the tide; lest Neptune claim your treasures."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15b6a-5262-747f-a404-d20f9fe62bec",
+          "messageId": "01a15b6a-5262-7348-a8df-91f4c7b55cd2",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535056995,
+          "inputTokens": 302,
+          "outputTokens": 187,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792535068613,
+          "durationMs": 11618
+        },
+        {
+          "runId": "01a15b6a-9e36-7cd0-be7f-60d0b4dde3b9",
+          "messageId": "01a15b6a-9e36-72d7-84f3-c0e83224dad9",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535076410,
+          "inputTokens": 302,
+          "outputTokens": 187,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792535088155,
+          "durationMs": 11745
+        }
+      ]
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15b6a-ec73-7e84-b808-2901dbd4b56e",
+      "conversationId": "01a15b6a-ec6f-7df0-a9dd-31dcc97ace61",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 26173,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6a-ec79-70de-8633-ac12e132958c",
+              "durationMs": 4395,
+              "inputTokens": 118,
+              "outputTokens": 64,
+              "tokensPerSec": 14.56,
+              "finishReason": "stop",
+              "text": "By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6a-fda9-736b-9fa1-e5cbb0b08a79",
+              "durationMs": 4923,
+              "inputTokens": 260,
+              "outputTokens": 66,
+              "tokensPerSec": 13.41,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6b-10eb-753c-b333-61bb4fb00b03",
+              "durationMs": 5264,
+              "inputTokens": 400,
+              "outputTokens": 66,
+              "tokensPerSec": 12.54,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6b-2582-7b49-8e7c-951080baf2e4",
+              "durationMs": 5628,
+              "inputTokens": 546,
+              "outputTokens": 66,
+              "tokensPerSec": 11.73,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6b-3b85-757f-be0e-5710fb7d73b3",
+              "durationMs": 5929,
+              "inputTokens": 691,
+              "outputTokens": 66,
+              "tokensPerSec": 11.13,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 31401,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6b-52b8-7efc-a34d-675ca57807f9",
+              "durationMs": 5350,
+              "inputTokens": 455,
+              "outputTokens": 66,
+              "tokensPerSec": 12.34,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6b-67a5-7763-9ba4-e32b99860817",
+              "durationMs": 5701,
+              "inputTokens": 597,
+              "outputTokens": 66,
+              "tokensPerSec": 11.58,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6b-7df0-75f5-873f-95157e956a88",
+              "durationMs": 6860,
+              "inputTokens": 737,
+              "outputTokens": 81,
+              "tokensPerSec": 11.81,
+              "finishReason": "stop",
+              "text": "1. Head out in the morning before it gets hot.\n2. Pack plenty of water and snacks.\n3. Set up the tent and sleeping gear in a sunny spot.\n4. Gather a good amount of firewood to keep the campfire going.\n5. Bring along a portable speaker for our sing-along.\n\nTradeoff: It's less fun than just staying at home."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6b-98c2-7028-ad90-58ee1bc34f8b",
+              "durationMs": 6546,
+              "inputTokens": 915,
+              "outputTokens": 66,
+              "tokensPerSec": 10.08,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6b-b25a-7c9c-acbb-3dcc663f52ee",
+              "durationMs": 6908,
+              "inputTokens": 1060,
+              "outputTokens": 66,
+              "tokensPerSec": 9.55,
+              "finishReason": "stop",
+              "text": "Bench Chef: By yon salty wind, I'd single-handedly go with a campfire sing-along and stargazing under the clear night sky. But I've a bad feeling in my gut, like bilge water in a storm cellar, about the potential for a squall of mischief from the young scallywags."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "dice",
+      "diceSeed": 1007,
+      "roomId": "01a15b6b-cd69-7af2-943f-b45b3562f896",
+      "conversationId": "01a15b6b-cd67-7876-b0c6-eb610c025845",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            3,
+            0,
+            4
+          ],
+          "durationMs": 13326,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6b-cd70-7893-8cac-baa97f39d429",
+              "durationMs": 2200,
+              "inputTokens": 118,
+              "outputTokens": 24,
+              "tokensPerSec": 10.91,
+              "finishReason": "stop",
+              "text": "The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6b-d60e-7db6-8011-323ec77d6b62",
+              "durationMs": 2602,
+              "inputTokens": 180,
+              "outputTokens": 27,
+              "tokensPerSec": 10.38,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6b-e03f-7f88-94a3-92b6e298af5f",
+              "durationMs": 2629,
+              "inputTokens": 248,
+              "outputTokens": 27,
+              "tokensPerSec": 10.27,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6b-ea8a-7749-b520-c5c8082d51de",
+              "durationMs": 2910,
+              "inputTokens": 312,
+              "outputTokens": 27,
+              "tokensPerSec": 9.28,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6b-f5ef-71b5-a1ec-dfe05462aabc",
+              "durationMs": 2949,
+              "inputTokens": 379,
+              "outputTokens": 27,
+              "tokensPerSec": 9.16,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            3,
+            0,
+            4
+          ],
+          "durationMs": 15720,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6c-0180-7f6b-baf0-619fb93fb47f",
+              "durationMs": 2765,
+              "inputTokens": 260,
+              "outputTokens": 27,
+              "tokensPerSec": 9.76,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6c-0c52-785f-a801-62ee5ee9261d",
+              "durationMs": 2854,
+              "inputTokens": 322,
+              "outputTokens": 26,
+              "tokensPerSec": 9.11,
+              "finishReason": "stop",
+              "text": "1. Plan a fun day for the kids.\n2. Worry about their safety.\nTradeoff: Safety over convenience."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6c-177e-7b2c-8758-d194e7601f94",
+              "durationMs": 3335,
+              "inputTokens": 390,
+              "outputTokens": 30,
+              "tokensPerSec": 9,
+              "finishReason": "stop",
+              "text": "Bench Poet: Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6c-248b-7498-bf68-6a2c4eca1a57",
+              "durationMs": 3203,
+              "inputTokens": 460,
+              "outputTokens": 27,
+              "tokensPerSec": 8.43,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6c-3114-7eec-955f-d36b4b85500d",
+              "durationMs": 3529,
+              "inputTokens": 527,
+              "outputTokens": 27,
+              "tokensPerSec": 7.65,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to make it a fun day,\nAnd worry about the kids to keep them safe all day."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15b6c-3ef8-7112-977d-79e573890f94",
+      "conversationId": "01a15b6c-3ef5-7370-a77b-b29a8fa962f2",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 59012,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6c-cfe8-77df-8f1e-35f8fa9368b1",
+              "durationMs": 3663,
+              "inputTokens": 118,
+              "outputTokens": 48,
+              "tokensPerSec": 13.1,
+              "finishReason": "stop",
+              "text": "Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6c-de3d-7567-968a-cbae905d14d4",
+              "durationMs": 4102,
+              "inputTokens": 230,
+              "outputTokens": 51,
+              "tokensPerSec": 12.43,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6c-ee48-713f-ba1d-0cb21c241128",
+              "durationMs": 4394,
+              "inputTokens": 340,
+              "outputTokens": 51,
+              "tokensPerSec": 11.61,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6c-ff78-7dee-931c-ec1801a3899f",
+              "durationMs": 4689,
+              "inputTokens": 456,
+              "outputTokens": 51,
+              "tokensPerSec": 10.88,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6d-11cf-7103-997e-e8e301cdebfb",
+              "durationMs": 5036,
+              "inputTokens": 571,
+              "outputTokens": 51,
+              "tokensPerSec": 10.13,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 45695,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b6d-71f4-760b-a795-35fe86091a45",
+              "durationMs": 4472,
+              "inputTokens": 380,
+              "outputTokens": 51,
+              "tokensPerSec": 11.4,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b6d-8372-794c-949d-5cd4e14b5b8f",
+              "durationMs": 4791,
+              "inputTokens": 492,
+              "outputTokens": 51,
+              "tokensPerSec": 10.64,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15b6d-9630-7ad9-a563-963dd7a95d89",
+              "durationMs": 5086,
+              "inputTokens": 602,
+              "outputTokens": 51,
+              "tokensPerSec": 10.03,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15b6d-aa14-7183-be75-8cdd005b624b",
+              "durationMs": 5630,
+              "inputTokens": 718,
+              "outputTokens": 55,
+              "tokensPerSec": 9.77,
+              "finishReason": "stop",
+              "text": "Bench Skeptic: Bench Pirate: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15b6d-c018-7833-8005-036bffe324f5",
+              "durationMs": 6113,
+              "inputTokens": 841,
+              "outputTokens": 51,
+              "tokensPerSec": 8.34,
+              "finishReason": "stop",
+              "text": "Bench Chef: Best idea: Let the tide of excitement wash over the little buccaneers with a treasure hunt around the yard.\nWorry: Keep a weather eye on the horizon; no one wants a tempest to ruin their adventure on the high seas!"
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15b6c-3efc-7618-ac52-8d38745a1cef",
+          "messageId": "01a15b6c-3efc-7097-a6d8-c75a941b4a5b",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535183103,
+          "inputTokens": 434,
+          "outputTokens": 512,
+          "finishReason": "length",
+          "canceled": false,
+          "endedAtMs": 1792535214556,
+          "durationMs": 31453
+        },
+        {
+          "runId": "01a15b6c-3efc-7618-ac52-8d38745a1cef",
+          "messageId": "01a15b6c-3efc-7097-a6d8-c75a941b4a5b",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535214556,
+          "inputTokens": 507,
+          "outputTokens": 64,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792535220196,
+          "durationMs": 5640
+        },
+        {
+          "runId": "01a15b6d-2585-7379-af48-53e6b6dcfcf2",
+          "messageId": "01a15b6d-2585-7ca8-b613-3364edf41df2",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792535242118,
+          "inputTokens": 434,
+          "outputTokens": 299,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792535261679,
+          "durationMs": 19561
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Latencies are wall-clock per run at the provider port.",
+    "Peak RSS is not observable from the app; thermal state is recorded live.",
+    "memoryBytes fields repeat the static onboarding fit estimate (55% of Device.totalMemory), not free RAM."
+  ]
+}

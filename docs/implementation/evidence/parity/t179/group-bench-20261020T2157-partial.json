@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-20T21:57:51.661Z",
+  "device": "iPhone",
+  "iosVersion": "26.6",
+  "appVersion": "0.1.0",
+  "buildNumber": "26",
+  "roundsPerScenario": 2,
+  "responseLimitTokens": 128,
+  "deviceMemoryBytes": 6744162304,
+  "scenarios": [
+    {
+      "modelId": "blob:01a15b4d-d661-7466-bcf7-139c173a8b7f",
+      "seats": 2,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15b51-6f74-76ee-81e8-a5ae4a5f0c25",
+      "conversationId": "01a15b51-6f71-727a-bd7d-3d5569b29432",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 15441,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b51-6f7b-7489-a084-89a4ec9c9bb2",
+              "durationMs": 3534,
+              "inputTokens": 275,
+              "outputTokens": 128,
+              "tokensPerSec": 36.22,
+              "finishReason": "length",
+              "text": "*Grins, eyes glinting in the twilight as I toss a rope through the air.*\n\n**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweeten the air, for**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweeten the air, for the wind in the yard is a fickle pirate captain who can be as cruel as the sea,"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b51-8dbe-7201-b763-442069bd3e99",
+              "durationMs": 3920,
+              "inputTokens": 804,
+              "outputTokens": 128,
+              "tokensPerSec": 32.65,
+              "finishReason": "length",
+              "text": "Bench Pirate: *Grins, eyes glinting in the twilight as I toss a rope through the air.*\n\n**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweeten**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweeten the air, for the wind in the yard is a fickle pirate captain who can be as cruel as the sea."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 15904,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b51-abce-756e-8cec-9d7bfb9620d7",
+              "durationMs": 3987,
+              "inputTokens": 787,
+              "outputTokens": 128,
+              "tokensPerSec": 32.1,
+              "finishReason": "length",
+              "text": "**Bench Pirate:** *Grins, eyes glinting in the twilight as I toss a rope through the air.*\n\n**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweet**Bench Pirate:** *Grins, eyes glinting in the twilight as I toss a rope through the air.*\n\n**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chips of sugar to sweet"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b51-ca4d-7706-a44b-1bcd885180ce",
+              "durationMs": 3763,
+              "inputTokens": 1316,
+              "outputTokens": 96,
+              "tokensPerSec": 25.51,
+              "finishReason": "stop",
+              "text": "Bench Pirate: **Bench Pirate:** *Grins, eyes glinting in the twilight as I toss a rope through the air.*\n\n**The Best Idea:**\nWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn.\n\n**The One Thing I Would Worry About:**\nThat our crew might forget to pack enough sea-chipsWe'll hoist a massive, salt-and-pepper rigging of canvas between the tree trunks, then hang a dozen inflatable rafts and a galleon-sized inflatable in the center. The children will be the crew, paddling our makeshift fleet from the warm deck of the living room sofa to the cool, shaded waters of the lawn, but be mindful that the sun might set before we reach the water's edge, leaving the raft unmoored in the twilight."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b4d-d661-7466-bcf7-139c173a8b7f",
+      "seats": 2,
+      "policy": "dice",
+      "diceSeed": 1001,
+      "roomId": "01a15b51-e9f6-74a6-9a58-7e756e59f903",
+      "conversationId": "01a15b51-e9f3-7ec3-b31a-7e136e0d7ce0",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 7884,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b51-e9fb-7a48-b185-ce26e0ec293e",
+              "durationMs": 1188,
+              "inputTokens": 121,
+              "outputTokens": 31,
+              "tokensPerSec": 26.09,
+              "finishReason": "stop",
+              "text": "We'll light a bonfire to share the warm glow with the stars.\nWe'll make a quiet campfire song to keep the kids warm tonight."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b51-eea5-7bb5-801e-d7accb00e74d",
+              "durationMs": 3053,
+              "inputTokens": 357,
+              "outputTokens": 100,
+              "tokensPerSec": 32.75,
+              "finishReason": "stop",
+              "text": "We'll light a bonfire to share the warm glow with the stars.\nWe'll make a quiet campfire song to keep the kids warm tonight.\n\nOh, aye, aye! The single best idea is to cast a *tragic* shadow.\nAs the sun dips low, it'll leave a *sorrowful* silhouette on the grass,\nAnd our campfire will be the *melancholy* center of the *sorrowful* night.\nThe kids will sing *sorrowful* songs, and the fire will *sorrowfully* glow.\n\nBut the one thing I'dBut the one thing I'd worry about is if the *tragic* shadow falls too low on the youngest child's face, casting a *sorrowful* shade over the *melancholy* firelight that keeps the *sorrowful* heart from sinking to the earth!\n\nOr perhaps, if the *sorrowful* silence is too loud, drowning out the *joyful* laughter of the *sorrowful* campers in the *sorrowful* breeze."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 6370,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15b52-08ca-7119-8b60-8bde58d43864",
+              "durationMs": 3095,
+              "inputTokens": 389,
+              "outputTokens": 95,
+              "tokensPerSec": 30.69,
+              "finishReason": "stop",
+              "text": "Bench Poet: We'll light a bonfire to share the warm glow with the stars.\nWe'll make a quiet campfire song to keep the kids warm tonight.\n\nBut the one thing I'd worry about is if the *tragic* shadow falls too low on the youngest child's face, casting a *sorrowful* shade over the *melancholy* firelight that keeps the *sorrowful* heart from sinking to the earth!"
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15b52-14e6-7014-b6b2-413f28560549",
+              "durationMs": 3258,
+              "inputTokens": 606,
+              "outputTokens": 99,
+              "tokensPerSec": 30.39,
+              "finishReason": "stop",
+              "text": "Bench Poet: Bench Poet: We'll light a bonfire to share the warm glow with the stars.\nWe'll make a quiet campfire song to keep the kids warm tonight.\n\nBut the one thing I'd worry about is if the *tragic* shadow falls too low on the youngest child's face, casting a *sorrowful* shade over the *melancholy* firelight that keeps the *sorrowful* heart from sinking to the earth!"
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    }
+  ],
+  "notes": [
+    "Latencies are wall-clock per run at the provider port.",
+    "Peak RSS is not observable from the app; thermal state is recorded live.",
+    "memoryBytes fields repeat the static onboarding fit estimate (55% of Device.totalMemory), not free RAM."
+  ]
+}
