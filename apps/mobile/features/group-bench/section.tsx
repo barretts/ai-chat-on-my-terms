@@ -1,8 +1,8 @@
 /**
- * T180 dev-only benchmark section: runs the T179 row-3 matrix over the real
- * group runtime and shares the JSON manifest. Mount is gated by
- * EXPO_PUBLIC_DEV_BENCH (preview profile only); store builds fail on
- * EXPO_PUBLIC_DEV_* env vars.
+ * T180 developer benchmark section: runs the T179 row-3 matrix over the
+ * real group runtime and shares the JSON manifest. Mounted unconditionally
+ * in Settings (T181 owner request); after an app crash the "-partial"
+ * checkpoint from the last run stays shareable from this section.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -10,8 +10,16 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { setStringAsync } from "expo-clipboard";
 import { shareAsync } from "expo-sharing";
 import { listInstalledModels } from "../../platform/model-download";
-import { buildBenchMatrix, type BenchManifest } from "./matrix";
-import { createBenchSession, type BenchSession } from "./runner";
+import {
+  buildBenchMatrix,
+  type BenchManifest,
+  type BenchScenarioRecord,
+} from "./matrix";
+import {
+  listBenchManifests,
+  createBenchSession,
+  type BenchSession,
+} from "./runner";
 
 const LIMIT_CHOICES = [64, 128, 256] as const;
 
@@ -36,6 +44,10 @@ export function DevBenchSection() {
     fileName: string;
     uri: string;
   } | null>(null);
+  const [existingFile, setExistingFile] = useState<{
+    fileName: string;
+    uri: string;
+  } | null>(null);
   const lastManifestRef = useRef<BenchManifest | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const sessionRef = useRef<BenchSession | null>(null);
@@ -44,6 +56,7 @@ export function DevBenchSection() {
     void listInstalledModels()
       .then(setModels)
       .catch(() => setModels([]));
+    setExistingFile(listBenchManifests()[0] ?? null);
     return () => {
       abortRef.current?.abort();
       void sessionRef.current?.dispose();
@@ -78,6 +91,7 @@ export function DevBenchSection() {
       const plans = buildBenchMatrix(
         selectedBlobIds.map((blobId) => `blob:${blobId}`),
       );
+      const collected: BenchScenarioRecord[] = [];
       const outcome = await session.run({
         plans,
         roundsPerScenario,
@@ -85,7 +99,24 @@ export function DevBenchSection() {
         signal: controller.signal,
         onProgress: (done, total, label) =>
           setProgress(`Scenario ${done + 1}/${total}: ${label}`),
-        onScenarioDone: () => {},
+        onRoundDone: (done, total, label, round, roundsTotal) =>
+          setProgress(
+            `Scenario ${done + 1}/${total}: ${label} — round ${round}/${roundsTotal} done`,
+          ),
+        onScenarioDone: (scenario) => {
+          collected.push(scenario);
+          // Crash-proof: rewrite the on-disk copy after every scenario.
+          try {
+            session.writeCheckpoint(
+              session.manifestFor(
+                { scenarios: collected, stopped: false },
+                { roundsPerScenario, responseLimitTokens: limit },
+              ),
+            );
+          } catch {
+            /* checkpoint is best-effort */
+          }
+        },
       });
       const manifest = session.manifestFor(outcome, {
         roundsPerScenario,
@@ -121,7 +152,7 @@ export function DevBenchSection() {
 
   return (
     <View style={styles.row} testID="dev-bench-section">
-      <Text style={styles.title}>Developer benchmark (dev builds only)</Text>
+      <Text style={styles.title}>Developer benchmark</Text>
       <Text style={styles.help}>
         Runs the T179 group matrix (seats 2/3/5 x round-robin/dice/
         topic-interest) on the selected installed models, then shares a JSON
@@ -190,6 +221,14 @@ export function DevBenchSection() {
               <Text style={styles.action}>Copy manifest</Text>
             </Pressable>
           </>
+        ) : null}
+        {lastFile === null && existingFile !== null ? (
+          <Pressable
+            onPress={() => void shareAsync(existingFile.uri)}
+            testID="dev-bench-share-last"
+          >
+            <Text style={styles.action}>Share {existingFile.fileName}</Text>
+          </Pressable>
         ) : null}
       </View>
       {progress !== "" ? (

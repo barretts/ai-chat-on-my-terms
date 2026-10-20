@@ -138,6 +138,8 @@ export interface BenchScenarioRecord {
   conversationId: string;
   thermalBefore: string;
   thermalAfter: string;
+  memoryBytesBefore: number | null;
+  memoryBytesAfter: number | null;
   rounds: BenchRoundRecord[];
   selectorRuns: BenchRunRecord[];
 }

@@ -661,7 +661,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       <CommunitySection />
       <SupportSection />
       <AnalyticsSection />
-      {process.env.EXPO_PUBLIC_DEV_BENCH === "1" ? <DevBenchSection /> : null}
+      <DevBenchSection />
       <SettingsSection
         phone={phone}
         title="Settings scope"

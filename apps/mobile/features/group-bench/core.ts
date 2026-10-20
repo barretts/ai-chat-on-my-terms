@@ -52,6 +52,14 @@ export interface BenchRunOptions {
   responseLimitTokens: number;
   signal: AbortSignal;
   onProgress(done: number, total: number, label: string): void;
+  /** Optional finer signal: fired after each completed round. */
+  onRoundDone?(
+    scenariosDone: number,
+    total: number,
+    label: string,
+    roundDone: number,
+    roundsTotal: number,
+  ): void;
   onScenarioDone(scenario: BenchScenarioRecord): void;
 }
 
@@ -160,6 +168,13 @@ export async function runBenchMatrix(
             handle.room,
           ),
         });
+        options.onRoundDone?.(
+          scenarios.length,
+          options.plans.length,
+          scenarioLabel(plan),
+          rounds.length,
+          options.roundsPerScenario,
+        );
         if (result.status !== "completed") {
           stopped = true;
           break;
@@ -201,6 +216,8 @@ export async function runBenchMatrix(
         conversationId: handle.room.conversationId,
         thermalBefore: before.thermal,
         thermalAfter: after.thermal,
+        memoryBytesBefore: before.memoryBytes,
+        memoryBytesAfter: after.memoryBytes,
         rounds,
         selectorRuns,
       };

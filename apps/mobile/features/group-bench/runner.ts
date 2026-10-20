@@ -45,13 +45,18 @@ import {
   type BenchRunRecord,
 } from "./matrix";
 import { createRecordingPort } from "./recorder";
+import { createMobileChatAttachmentIntake } from "../../composition/chat/attachments";
+import {
+  deleteConversation,
+  runConversationCleanups,
+  type ConversationCleanupPorts,
+} from "../../composition/chat/conversation-lifecycle";
 
 /**
- * T180 dev-only runner: the REAL group runtime (route bootstrap mirrored
+ * T180 dev runner: the REAL group runtime (route bootstrap mirrored
  * verbatim) driving the benchmark matrix, so on-device manifests are valid
- * T179 row-3 evidence. Dev builds only — the settings section mount is gated
- * by EXPO_PUBLIC_DEV_BENCH, and store builds fail on any EXPO_PUBLIC_DEV_*
- * var (app.config.js guard).
+ * T179 row-3 evidence. T181: mounted unconditionally in Settings (owner
+ * request); no env gate.
  */
 
 const LOCAL_GGUF_PROVIDER_ID = "00000000-0000-7000-8000-000000000026";
@@ -88,11 +93,6 @@ async function ensureBenchRoomModel(
   );
   return id;
 }
-
-export function devBenchEnabled(): boolean {
-  return process.env.EXPO_PUBLIC_DEV_BENCH === "1";
-}
-
 export interface BenchSession {
   ports: BenchPorts;
   run(options: BenchRunOptions): Promise<BenchRunOutcome>;
@@ -103,6 +103,9 @@ export interface BenchSession {
   writeAndShareManifest(
     manifest: BenchManifest,
   ): Promise<{ fileName: string; uri: string }>;
+  /** Crash-safe manifest rewritten after every completed scenario so a
+   * device crash never loses finished rows (T181). */
+  writeCheckpoint(manifest: BenchManifest): { fileName: string; uri: string };
   dispose(): Promise<void>;
 }
 
@@ -119,6 +122,24 @@ export async function createBenchSession(): Promise<BenchSession> {
   });
   await library.initialize();
 
+  const intake = await createMobileChatAttachmentIntake({
+    db: database,
+    blobs,
+    createId: createChatId,
+  });
+  const cleanupPorts: ConversationCleanupPorts = {
+    releaseAttachment: (ownerId, attachmentId) =>
+      intake.attachments.release(ownerId, attachmentId),
+    removeBlobReference: (blobId, owner) =>
+      blobs.removeReference(blobId, owner),
+  };
+  // T181 self-heal: a crashed or stopped session can leave bench rooms,
+  // conversations and allocation keys behind; reruns died on "Allocated
+  // conversation is missing". Sweep everything bench-shaped first, then
+  // finish any queued file cleanups.
+  await sweepStaleBenchSessions(database);
+  await runConversationCleanups(database, cleanupPorts).catch(() => {});
+
   // Stable bench personas: reused across runs, deleted at session teardown.
   const personaIds = new Map<string, string>();
   const keyByPersonaId = new Map<string, string>();
@@ -134,6 +155,20 @@ export async function createBenchSession(): Promise<BenchSession> {
   }
 
   const capacity = readDeviceCapacity();
+
+  const runStamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13);
+  const benchDirectory = () => {
+    const directory = new Directory(Paths.document, "locallab", "bench");
+    directory.create({ intermediates: true, idempotent: true });
+    return directory;
+  };
+  const writeManifestFile = (suffix: string, manifest: BenchManifest) => {
+    const fileName = `group-bench-${runStamp}${suffix}.json`;
+    const file = new File(benchDirectory(), fileName);
+    file.create({ overwrite: true });
+    file.write(JSON.stringify(manifest, null, 2));
+    return { fileName, uri: file.uri };
+  };
 
   const ports: BenchPorts = {
     personaKeyFor: (personaId) =>
@@ -238,20 +273,17 @@ export async function createBenchSession(): Promise<BenchSession> {
           : defaultNotes(),
       }),
     writeAndShareManifest: async (manifest) => {
-      const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13);
-      const directory = new Directory(Paths.document, "locallab", "bench");
-      directory.create({ intermediates: true, idempotent: true });
-      const fileName = `group-bench-${stamp}.json`;
-      const file = new File(directory, fileName);
-      file.create({ overwrite: true });
-      file.write(JSON.stringify(manifest, null, 2));
-      if (await isAvailableAsync()) await shareAsync(file.uri);
-      return { fileName, uri: file.uri };
+      const saved = writeManifestFile("", manifest);
+      if (await isAvailableAsync()) await shareAsync(saved.uri);
+      return saved;
     },
+    writeCheckpoint: (manifest) => writeManifestFile("-partial", manifest),
     dispose: async () => {
       for (const id of personaIds.values()) {
         await library.delete(id).catch(() => {});
       }
+      // Release blob owners queued by the scenario deletes before closing.
+      await runConversationCleanups(database, cleanupPorts).catch(() => {});
       await generationSession.dispose();
     },
   };
@@ -270,7 +302,8 @@ function processThermalState(): string {
 function defaultNotes(): string[] {
   return [
     "Latencies are wall-clock per run at the provider port.",
-    "Peak RSS is not observable from the app; thermal state and device memory are recorded instead.",
+    "Peak RSS is not observable from the app; thermal state is recorded live.",
+    "memoryBytes fields repeat the static onboarding fit estimate (55% of Device.totalMemory), not free RAM.",
   ];
 }
 
@@ -285,7 +318,35 @@ async function deleteBenchRoom(
     roomId,
   );
   await db.runAsync("DELETE FROM group_rooms WHERE id=?", roomId);
-  await db.runAsync("DELETE FROM conversations WHERE id=?", conversationId);
+  // T181: production delete — messages, messages owners, allocations, metadata and
+  // lifecycle rows chain here. The hand-rolled DELETE left allocation keys
+  // behind and broke reruns with "Allocated conversation is missing".
+  await deleteConversation(db, conversationId);
+}
+
+/** T181 self-heal: remove rooms, conversations and allocation keys left by
+ * a crashed or stopped session so the next run starts from a clean slate. */
+async function sweepStaleBenchSessions(db: SQLiteDatabasePort): Promise<void> {
+  const rooms = await db.getAllAsync<{ id: string; conversation_id: string }>(
+    "SELECT id,conversation_id FROM group_rooms WHERE name LIKE 'DEV BENCH %'",
+  );
+  for (const room of rooms) {
+    await db.runAsync(
+      "DELETE FROM group_participants WHERE group_room_id=?",
+      room.id,
+    );
+    await db.runAsync("DELETE FROM group_rooms WHERE id=?", room.id);
+    await deleteConversation(db, room.conversation_id);
+  }
+  const allocated = await db.getAllAsync<{ conversation_id: string }>(
+    "SELECT conversation_id FROM chat_history_allocations WHERE allocation_key LIKE 'dev-bench-%'",
+  );
+  for (const row of allocated)
+    await deleteConversation(db, row.conversation_id);
+  const titled = await db.getAllAsync<{ id: string }>(
+    "SELECT id FROM conversations WHERE title LIKE 'DEV BENCH %'",
+  );
+  for (const row of titled) await deleteConversation(db, row.id);
 }
 
 function benchRoomDraft(
@@ -316,4 +377,21 @@ function benchRoomDraft(
         BENCH_PERSONAS.find((persona) => persona.key === key)?.prompt ?? "",
     })),
   };
+}
+
+/** Already-written manifest files (the "-partial" checkpoints survive an
+ * app crash); newest name first — the run stamp is embedded and sortable. */
+export function listBenchManifests(): { fileName: string; uri: string }[] {
+  const directory = new Directory(Paths.document, "locallab", "bench");
+  if (!directory.exists) return [];
+  return directory
+    .list()
+    .filter(
+      (entry): entry is File =>
+        entry instanceof File &&
+        entry.name.startsWith("group-bench-") &&
+        entry.name.endsWith(".json"),
+    )
+    .map((file) => ({ fileName: file.name, uri: file.uri }))
+    .sort((a, b) => b.fileName.localeCompare(a.fileName));
 }
