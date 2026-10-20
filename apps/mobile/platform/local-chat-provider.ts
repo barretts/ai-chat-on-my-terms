@@ -71,6 +71,8 @@ export function createLocalChatPort(blobs: BlobStore): ProviderPort {
           "parameter.max_output_tokens": "yes" as const,
           "parameter.temperature": "yes" as const,
           "parameter.top_p": "yes" as const,
+          "parameter.top_k": "yes" as const,
+          "parameter.penalty_repeat": "yes" as const,
           "parameter.enable_thinking": "yes" as const,
         },
       };

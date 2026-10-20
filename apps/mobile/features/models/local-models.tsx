@@ -44,17 +44,23 @@ export function LocalModelsSection({
   const [moreModelsExpanded, setMoreModelsExpanded] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
-  useEffect(() => { onErrorChange?.(error); }, [error, onErrorChange]);
+  useEffect(() => {
+    onErrorChange?.(error);
+  }, [error, onErrorChange]);
   const reloadInstalled = async () => {
     setError("");
     try {
       const models = await listInstalledModels();
       if (mounted.current) setInstalled(models);
     } catch (cause) {
-      if (mounted.current) setError(describeError(cause, {
-        operation: "Load downloaded phone models",
-        recovery: "Tap Reload Models to reopen model storage. Check available device storage, then try again.",
-      }));
+      if (mounted.current)
+        setError(
+          describeError(cause, {
+            operation: "Load downloaded phone models",
+            recovery:
+              "Tap Reload Models to reopen model storage. Check available device storage, then try again.",
+          }),
+        );
     }
   };
   useEffect(() => {
@@ -99,11 +105,13 @@ export function LocalModelsSection({
     } catch (error) {
       if (abort.signal.aborted) {
         traceLog.event("Phone model download and install", "cancelled");
-        if (mounted.current) setMessage("Download cancelled. No partial model was installed.");
+        if (mounted.current)
+          setMessage("Download cancelled. No partial model was installed.");
       } else {
         const message = describeError(error, {
           operation: "Download and install a phone model",
-          recovery: "Keep Models open, check your internet connection and free device storage, then try Download again.",
+          recovery:
+            "Keep Models open, check your internet connection and free device storage, then try Download again.",
         });
         if (mounted.current) setError(message);
       }
@@ -131,10 +139,14 @@ export function LocalModelsSection({
         );
       }
     } catch (error) {
-      if (mounted.current) setError(describeError(error, {
-        operation: "Select a downloaded phone model for chat",
-        recovery: "Reload Models to check that this download remains installed, then try Use in chat again.",
-      }));
+      if (mounted.current)
+        setError(
+          describeError(error, {
+            operation: "Select a downloaded phone model for chat",
+            recovery:
+              "Reload Models to check that this download remains installed, then try Use in chat again.",
+          }),
+        );
     } finally {
       if (mounted.current) setBusy("");
     }
@@ -229,7 +241,8 @@ export function LocalModelsSection({
           <View style={styles.phoneDetailsBody}>
             <Text variant="bodyMedium">{model.name}</Text>
             <Text variant="bodyMedium">
-              {model.artifact!.contextWindow / 1024}K context · Apache 2.0
+              {model.artifact!.contextWindow / 1024}K context ·{" "}
+              {model.license.id}
             </Text>
             <Text
               variant="bodySmall"
@@ -248,7 +261,12 @@ export function LocalModelsSection({
       <Text variant={phone ? "titleMedium" : "titleLarge"}>Phone models</Text>
       {error && !onErrorChange ? <ErrorNotice message={error} /> : null}
       {error ? (
-        <NativeButton accessibilityLabel="Reload downloaded phone models" mode="outlined" disabled={!!busy} onPress={() => void reloadInstalled()}>
+        <NativeButton
+          accessibilityLabel="Reload downloaded phone models"
+          mode="outlined"
+          disabled={!!busy}
+          onPress={() => void reloadInstalled()}
+        >
           Reload phone models
         </NativeButton>
       ) : null}
@@ -408,10 +426,7 @@ export function LocalModelsSection({
         </NativeButton>
       )}
       {remove && (
-        <LocalModelRemoval
-          phone={phone}
-          onCancel={() => setRemove(null)}
-        >
+        <LocalModelRemoval phone={phone} onCancel={() => setRemove(null)}>
           <Text variant={phone ? "titleLarge" : "bodyMedium"}>
             Remove {remove.name} from this device?
           </Text>
@@ -446,7 +461,8 @@ export function LocalModelsSection({
                 .catch((error: unknown) => {
                   const message = describeError(error, {
                     operation: "Remove a downloaded phone model",
-                    recovery: "Reload Models to check whether the download remains. Check available storage, then try Remove download again if needed.",
+                    recovery:
+                      "Reload Models to check whether the download remains. Check available storage, then try Remove download again if needed.",
                   });
                   if (mounted.current) setError(message);
                 })

@@ -128,6 +128,74 @@ test("loads only a managed blob, clamps parameters, streams ordered deltas, then
   assert.ok(calls.some((call) => "contextReleased" in call));
 });
 
+test("forwards top_k/penalty_repeat and adds penalty_last_n only when penalties are on", async () => {
+  const { calls, port } = setup({
+    memory: {
+      async availableBytes() {
+        return 1_000_000_000;
+      },
+    },
+    maxContextSize: 4096,
+  });
+  for await (const _event of port.startRun(
+    request({ top_k: 50, penalty_repeat: 1.1, temperature: 0.1 }),
+    new AbortController().signal,
+  )) {
+    // drain
+  }
+  const withPenalty = calls.find((call) => "completion" in call)?.[
+    "completion"
+  ] as Record<string, unknown>;
+  assert.equal(withPenalty["temperature"], 0.1);
+  assert.equal(withPenalty["top_k"], 50);
+  assert.equal(withPenalty["penalty_repeat"], 1.1);
+  assert.equal(withPenalty["penalty_last_n"], 64);
+
+  const second = setup({
+    memory: {
+      async availableBytes() {
+        return 1_000_000_000;
+      },
+    },
+    maxContextSize: 4096,
+  });
+  for await (const _event of second.port.startRun(
+    request({ top_k: 3000, penalty_repeat: 9 }),
+    new AbortController().signal,
+  )) {
+    // drain
+  }
+  const clamped = second.calls.find((call) => "completion" in call)?.[
+    "completion"
+  ] as Record<string, unknown>;
+  assert.equal(clamped["top_k"], 1000);
+  assert.equal(clamped["penalty_repeat"], 2);
+  assert.equal(clamped["penalty_last_n"], 64);
+});
+
+test("no sampling knobs leaves llama.cpp defaults and omits penalty_last_n", async () => {
+  const { calls, port } = setup({
+    memory: {
+      async availableBytes() {
+        return 1_000_000_000;
+      },
+    },
+    maxContextSize: 4096,
+  });
+  for await (const _event of port.startRun(
+    request(),
+    new AbortController().signal,
+  )) {
+    // drain
+  }
+  const completion = calls.find((call) => "completion" in call)?.[
+    "completion"
+  ] as Record<string, unknown>;
+  assert.equal(completion["top_k"], 40);
+  assert.equal(completion["penalty_repeat"], 1);
+  assert.ok(!("penalty_last_n" in completion));
+});
+
 test("cancels a live native request and emits a single terminal cancellation", async () => {
   let resolveCompletion!: (value: {
     timings: { prompt_n: number; predicted_n: number };

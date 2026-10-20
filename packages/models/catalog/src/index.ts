@@ -93,7 +93,7 @@ const phoneModels = [
 /** Artifacts are pinned to the publisher revision and exact LFS digest. */
 export const curatedCatalog: ModelCatalog = ModelCatalogSchema.parse({
   schemaVersion: 1,
-  revision: "2026-09-27.2",
+  revision: "2026-10-19.1",
   models: [
     ...phoneModels.map((model) => {
       const repository = `unsloth/Qwen3.5-${model.size}-GGUF`;
@@ -126,6 +126,40 @@ export const curatedCatalog: ModelCatalog = ModelCatalogSchema.parse({
         },
       };
     }),
+    {
+      id: "liquid/lfm2.5-2.6b-q4_k_m",
+      name: "Liquid AI LFM2.5 2.6B Q4_K_M",
+      publisher: "Liquid AI",
+      description:
+        "Responsive 2.6B alternative for group rounds; selectable, not the default. " +
+        "Publisher sampling (temperature 0.1, top_k 50, penalty_repeat 1.1) rides " +
+        "the model-scope defaults.",
+      tags: ["chat", "offline", "iphone", "balanced"],
+      languages: ["en", "multilingual"],
+      formats: ["gguf"],
+      quants: ["Q4_K_M"],
+      capabilities: { tools: "unknown", vision: "no", reasoning: "unknown" },
+      license: {
+        id: "lfm-open-1.0",
+        name: "LFM Open License v1.0",
+        url: "https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/blob/e7caca5d835a3901a8e0d63e94009429bafafdfc/LICENSE",
+        commercialUse: "restricted",
+      },
+      source: {
+        repository: "LiquidAI/LFM2.5-2.6B-GGUF",
+        revision: "e7caca5d835a3901a8e0d63e94009429bafafdfc",
+      },
+      sizeBytes: 1674455040,
+      artifact: {
+        fileName: "LFM2.5-2.6B-Q4_K_M.gguf",
+        url: "https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/resolve/e7caca5d835a3901a8e0d63e94009429bafafdfc/LFM2.5-2.6B-Q4_K_M.gguf",
+        sha256:
+          "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
+        sizeBytes: 1674455040,
+        tier: "balanced",
+        contextWindow: 4096,
+      },
+    },
     {
       id: "meta-llama/llama-3.2-3b-instruct",
       name: "Llama 3.2 3B Instruct",

@@ -45,6 +45,8 @@ export interface ChatPanelsProps {
   db: SQLiteDatabasePort;
   conversationId: string;
   modelId?: string;
+  /** Catalog id of the bound on-device model, for publisher sampling defaults. */
+  catalogModelId?: string;
   personaId?: string;
   personaEnabled?: boolean;
   capabilities: CapabilityMap;
@@ -178,6 +180,9 @@ export function ChatPanels(props: ChatPanelsProps) {
             : {})}
           personaEnabled={!!props.personaId && (props.personaEnabled ?? true)}
           {...(props.modelId ? { modelId: props.modelId } : {})}
+          {...(props.catalogModelId
+            ? { catalogModelId: props.catalogModelId }
+            : {})}
           {...(props.personaId ? { personaId: props.personaId } : {})}
           {...(props.onContextReload
             ? { onContextReload: props.onContextReload }

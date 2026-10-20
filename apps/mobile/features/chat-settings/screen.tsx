@@ -42,6 +42,7 @@ import { useDiagnostics } from "../diagnostics/context";
 import type { CapabilityMap } from "@locallab/contracts/ports";
 import type { ContextPolicy } from "@locallab/context";
 import {
+  catalogPublisherDefaults,
   EMPTY_PRESETS,
   PARAMETER_CONTROLS,
   resetModelToGlobal,
@@ -75,6 +76,8 @@ const RESPONSE_CONTROLS = new Set([
 export interface ChatSettingsScreenProps {
   conversationId: string;
   modelId?: string;
+  /** Catalog id of the bound on-device model; enables publisher sampling defaults. */
+  catalogModelId?: string;
   personaId?: string;
   store: ChatSettingsStore;
   capabilities: CapabilityMap;
@@ -104,6 +107,13 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
   );
   const { themePreference, setThemePreference, openThemeEditor } =
     useAppTheme();
+  const publisherDefaults = useMemo(
+    () =>
+      props.catalogModelId
+        ? catalogPublisherDefaults(props.catalogModelId)
+        : undefined,
+    [props.catalogModelId],
+  );
   const [presets, setPresets] = useState<SettingsPresets>(EMPTY_PRESETS);
   const [appearance, setAppearance] = useState<ChatAppearance>({});
   const [scope, setScope] = useState<SettingsScope>("chat");
@@ -207,6 +217,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         ...(props.serverMaxOutputTokens
           ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
           : {}),
+        ...(publisherDefaults ? { publisherDefaults } : {}),
       }),
     [
       presets,
@@ -214,6 +225,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       props.capabilities,
       props.serverContextWindow,
       props.serverMaxOutputTokens,
+      publisherDefaults,
     ],
   );
   const displayed = useMemo(() => {
@@ -232,6 +244,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       ...(props.serverMaxOutputTokens
         ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
         : {}),
+      ...(publisherDefaults ? { publisherDefaults } : {}),
     });
   }, [
     presets,
@@ -240,6 +253,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
     props.capabilities,
     props.serverContextWindow,
     props.serverMaxOutputTokens,
+    publisherDefaults,
   ]);
 
   const enqueueWrite = (work: () => Promise<void>) => {
@@ -266,6 +280,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         ...(props.serverMaxOutputTokens
           ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
           : {}),
+        ...(publisherDefaults ? { publisherDefaults } : {}),
       }).effective;
       const after = resolveSettings({
         presets: next,
@@ -277,6 +292,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         ...(props.serverMaxOutputTokens
           ? { serverMaxOutputTokens: props.serverMaxOutputTokens }
           : {}),
+        ...(publisherDefaults ? { publisherDefaults } : {}),
       }).effective;
       presetsRef.current = next;
       const version = ++editVersion.current;
@@ -321,6 +337,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       props.personaEnabled,
       props.serverContextWindow,
       props.serverMaxOutputTokens,
+      publisherDefaults,
       props.store,
       identity,
       scope,

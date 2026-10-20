@@ -15,21 +15,22 @@ For this Windows PC, open **Connections** and choose **This PC**. This fills **h
 
 ## Phone models
 
-Open **Models** from chat. The phone downloads are exact Qwen3.5 GGUF artifacts from Unsloth, pinned to a repository revision, file size, and SHA-256 digest.
+Open **Models** from chat. The phone downloads are exact GGUF artifacts pinned to a repository revision, file size, and SHA-256 digest.
 
 | Choice                    | Model               | Download |
 | ------------------------- | ------------------- | -------- |
 | Faster                    | Qwen3.5 0.8B Q4_K_M | 532.5 MB |
 | Suggested starting choice | Qwen3.5 2B Q4_K_M   | 1.28 GB  |
 | Larger                    | Qwen3.5 4B Q4_K_M   | 2.74 GB  |
+| Selectable, not default   | LFM2.5 2.6B Q4_K_M  | 1.67 GB  |
 
-For iPhone 17 Pro Max, start with 2B and a 4K context. Try 0.8B for smaller downloads, or 4B if you want to compare more demanding replies. These are recommendations to try; physical iPhone speed and memory fit have not been measured. These downloads support text chat. Vision requires separate projection artifacts that are not included here.
+For iPhone 17 Pro Max, start with 2B and a 4K context. Try 0.8B for smaller downloads, or 4B if you want to compare more demanding replies. The Liquid LFM2.5 2.6B is a selectable alternative (it is never chosen for you); its publisher sampling (temperature 0.1, Top K 50, penalty repeat 1.1) is pre-applied at the model scope, and your own settings always win. These are recommendations to try; physical iPhone speed and memory fit have not been measured. These downloads support text chat. Vision requires separate projection artifacts that are not included here.
 
 Keep Models open during a download. You can cancel it. The expected size and a small GGUF header are checked before saving. Full model SHA-256 scans are skipped, as requested; catalog digests identify the publisher artifact and are not a measured digest of the downloaded file. Choose **Use in chat** after download. The model stays in private app storage and is protected by a lease while inference uses it.
 
 Browser preview supports downloading and saving the choice. Native GGUF inference uses the iPhone app. Browser files stay in their browser profile and do not transfer to the phone.
 
-Model sources: [Qwen3.5 0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B), [2B](https://huggingface.co/Qwen/Qwen3.5-2B), [4B](https://huggingface.co/Qwen/Qwen3.5-4B), and the quantization publisher's [0.8B](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF), [2B](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF), [4B](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) repositories. All three selected artifacts declare Apache 2.0.
+Model sources: [Qwen3.5 0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B), [2B](https://huggingface.co/Qwen/Qwen3.5-2B), [4B](https://huggingface.co/Qwen/Qwen3.5-4B), the quantization publisher's [0.8B](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF), [2B](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF), [4B](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) repositories, and Liquid AI's [LFM2.5-2.6B](https://huggingface.co/LiquidAI/LFM2.5-2.6B) with its [GGUF repository](https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF). The Qwen artifacts declare Apache 2.0; the Liquid artifact declares the LFM Open License v1.0, which restricts commercial use above a revenue threshold.
 
 ## Offline voices
 

@@ -85,6 +85,15 @@ export const PARAMETER_CONTROLS: readonly ParameterControl[] = [
     step: 0.05,
   },
   {
+    key: "penalty_repeat",
+    label: "Penalty repeat (on-device)",
+    kind: "number",
+    capability: "parameter.penalty_repeat",
+    min: 0,
+    max: 2,
+    step: 0.05,
+  },
+  {
     key: "max_output_tokens",
     label: "Maximum output tokens",
     kind: "number",
@@ -195,6 +204,25 @@ export interface SettingsSnapshot {
   capabilities: ReturnType<typeof resolveCapabilities>;
 }
 
+/**
+ * Publisher-recommended sampling, keyed by the installed model's catalog id —
+ * never by a shared model-name preset. Folded into the model scope below every
+ * explicit user preset by resolveSettings.
+ */
+const publisherSamplingDefaults: Readonly<Record<string, ParameterValues>> = {
+  "liquid/lfm2.5-2.6b-q4_k_m": {
+    temperature: 0.1,
+    top_k: 50,
+    penalty_repeat: 1.1,
+  },
+};
+
+export function catalogPublisherDefaults(
+  catalogId: string,
+): ParameterValues | undefined {
+  return publisherSamplingDefaults[catalogId];
+}
+
 export function resolveSettings(input: {
   presets: SettingsPresets;
   personaEnabled: boolean;
@@ -203,6 +231,8 @@ export function resolveSettings(input: {
   serverContextWindow?: number;
   /** Active model output limit reported by the selected server. */
   serverMaxOutputTokens?: number;
+  /** Publisher sampling for the bound catalog model; user presets always win. */
+  publisherDefaults?: ParameterValues;
 }): SettingsSnapshot {
   const serverContextWindow =
     Number.isSafeInteger(input.serverContextWindow) &&
@@ -224,7 +254,14 @@ export function resolveSettings(input: {
         ...input.presets.global.explicitlySet,
       },
     },
-    model: input.presets.model,
+    model: input.publisherDefaults
+      ? {
+          explicitlySet: {
+            ...input.publisherDefaults,
+            ...input.presets.model.explicitlySet,
+          },
+        }
+      : input.presets.model,
     persona: { ...input.presets.persona, enabled: input.personaEnabled },
     chat: input.presets.chat,
   };

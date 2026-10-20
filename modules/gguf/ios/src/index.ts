@@ -211,6 +211,12 @@ export function createGgufInferencePort(
         const { messages, tools } = nativeChatRequest(request);
         const prompt = textOf(request.context.at(-1)?.value);
         const params = request.parameters;
+        const penaltyRepeat = boundedNumber(
+          params["penalty_repeat"],
+          1.0,
+          0,
+          2,
+        );
         const completionParams = {
           messages,
           ...(tools.length ? { jinja: true, tools, tool_choice: "auto" } : {}),
@@ -224,6 +230,20 @@ export function createGgufInferencePort(
           ),
           temperature: boundedNumber(params["temperature"], 0.7, 0, 2),
           top_p: boundedNumber(params["top_p"], 0.95, 0, 1),
+          top_k: boundedInteger(params["top_k"], 40, 0, 1000),
+          penalty_repeat: penaltyRepeat,
+          // llama.rn names verified in lib/typescript/types.d.ts (0.12.4):
+          // top_k, penalty_last_n, penalty_repeat - not repeat_penalty.
+          ...(penaltyRepeat === 1
+            ? {}
+            : {
+                penalty_last_n: boundedInteger(
+                  params["penalty_last_n"],
+                  64,
+                  0,
+                  8192,
+                ),
+              }),
           enable_thinking:
             typeof params["enable_thinking"] === "boolean"
               ? params["enable_thinking"]

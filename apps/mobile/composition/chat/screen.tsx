@@ -268,6 +268,7 @@ import {
 import { createWebResearchTools } from "./web-research-tools";
 import { withWebResearchToolSources } from "./web-research-tool-sources";
 import {
+  catalogPublisherDefaults,
   EMPTY_PRESETS,
   resolveSettings,
   type ChatAppearance,
@@ -303,7 +304,12 @@ type ChatRuntime = {
   identities: Awaited<ReturnType<typeof initializePersonaMemoryChat>>;
   media: MediaRuntime;
 };
-type LocalModel = { id: string; label: string; sha256: string };
+type LocalModel = {
+  id: string;
+  label: string;
+  sha256: string;
+  catalogId?: string;
+};
 type PendingLeave = { kind: "new" } | { kind: "open"; conversationId: string };
 
 function conversationCleanupPorts(
@@ -496,6 +502,16 @@ export default function CompleteChatScreen() {
         : undefined,
     [runtime?.db, runtime?.conversationId],
   );
+  // Catalog id of the bound on-device GGUF, for publisher sampling defaults.
+  const catalogModelId = useMemo(() => {
+    const blobId =
+      registration?.kind === "local-gguf"
+        ? managedBlobIdFromModelId(registration.modelId)
+        : mode === "local"
+          ? selectedModel
+          : "";
+    return models.find((model) => model.id === blobId)?.catalogId;
+  }, [registration, mode, selectedModel, models]);
   const selectedContextKey = registration
     ? modelContextKey(registration)
     : null;
@@ -1105,13 +1121,15 @@ export default function CompleteChatScreen() {
       const installed = await listInstalledModels();
       const available = (await runtime.blobs.list())
         .filter((blob) => /gguf/i.test(blob.mimeType))
-        .map((blob) => ({
-          id: blob.id,
-          label:
-            installed.find((model) => model.blobId === blob.id)?.name ??
-            `GGUF  -  ${formatBytes(blob.byteLength)}`,
-          sha256: blob.sha256,
-        }));
+        .map((blob) => {
+          const local = installed.find((model) => model.blobId === blob.id);
+          return {
+            id: blob.id,
+            label: local?.name ?? `GGUF  -  ${formatBytes(blob.byteLength)}`,
+            sha256: blob.sha256,
+            ...(local?.catalogId ? { catalogId: local.catalogId } : {}),
+          };
+        });
       setModels(available);
       const saved = await runtime.db.getFirstAsync<{ model_id: string }>(
         "SELECT model_id FROM first_run_chat_settings WHERE mode='local'",
@@ -1647,6 +1665,9 @@ export default function CompleteChatScreen() {
           modelId,
           personaId: identity.personaId,
         });
+        const publisherDefaults = catalogModelId
+          ? catalogPublisherDefaults(catalogModelId)
+          : undefined;
         const settings = resolveSettings({
           presets: { ...EMPTY_PRESETS, ...presets },
           personaEnabled: identity.personaId !== DEFAULT_PERSONA_ID,
@@ -1654,6 +1675,7 @@ export default function CompleteChatScreen() {
           ...(detectedContext
             ? { serverContextWindow: detectedContext.contextWindowTokens }
             : {}),
+          ...(publisherDefaults ? { publisherDefaults } : {}),
         });
         const transport =
           selected?.kind === "openai" || (!selected && mode === "openai")
@@ -3576,6 +3598,7 @@ export default function CompleteChatScreen() {
           {...(activeServerContext
             ? { serverContextStatus: activeServerContext.status }
             : {})}
+          {...(catalogModelId ? { catalogModelId } : {})}
           {...(persona
             ? {
                 personaId: persona.id,

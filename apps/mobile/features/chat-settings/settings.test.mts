@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  catalogPublisherDefaults,
   EMPTY_PRESETS,
   resetModelToGlobal,
   resetScopeValue,
@@ -79,5 +80,33 @@ describe("per-chat parameter settings", () => {
     expect(scopeChangeNeedsContextReload({}, { "load.gpu_layers": 12 })).toBe(
       true,
     );
+  });
+
+  it("folds publisher defaults under every explicit user scope", () => {
+    const liquid = catalogPublisherDefaults("liquid/lfm2.5-2.6b-q4_k_m");
+    expect(liquid).toEqual({
+      temperature: 0.1,
+      top_k: 50,
+      penalty_repeat: 1.1,
+    });
+    expect(catalogPublisherDefaults("qwen/qwen3.5-2b-q4_k_m")).toBeUndefined();
+    let presets = updateScopeValue(EMPTY_PRESETS, "model", "top_k", 20);
+    presets = updateScopeValue(presets, "chat", "temperature", 0.9);
+    const result = resolveSettings({
+      presets,
+      personaEnabled: false,
+      capabilities: {
+        "parameter.temperature": "yes",
+        "parameter.top_k": "yes",
+        "parameter.penalty_repeat": "yes",
+      },
+      publisherDefaults: liquid,
+    });
+    expect(result.effective.penalty_repeat).toBe(1.1);
+    expect(result.effective.top_k).toBe(20);
+    expect(result.effective.temperature).toBe(0.9);
+    expect(result.origins).toMatchObject({ temperature: "chat" });
+    expect(result.origins.penalty_repeat).toBeUndefined();
+    expect(result.outbound).toMatchObject({ penalty_repeat: 1.1, top_k: 20 });
   });
 });
