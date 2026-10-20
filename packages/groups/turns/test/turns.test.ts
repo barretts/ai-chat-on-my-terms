@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { GroupRoomDraft } from "@locallab/groups-config";
+import {
+  defaultGroupRoomSettings,
+  type GroupRoomDraft,
+} from "@locallab/groups-config";
 import {
   GROUP_AUTONOMOUS_ROUND_CAP,
   GroupTurnError,
@@ -12,6 +15,7 @@ import {
 } from "../src/index.js";
 
 const seat = (displayName: string) => ({
+  id: null,
   personaId: null,
   providerConnectionId: "0195c000-0000-7000-8000-0000000000e1",
   modelId: "llama",
@@ -20,6 +24,7 @@ const seat = (displayName: string) => ({
   systemPrompt: `role:${displayName}`,
   voice: null,
   toolsEnabled: false,
+  drunk: false,
 });
 
 const room: GroupRoomDraft = {
@@ -28,6 +33,7 @@ const room: GroupRoomDraft = {
   scenario: "Interview practice",
   userDisplayName: "Me",
   conversationId: "0195c000-0000-7000-8000-0000000000e2",
+  settings: defaultGroupRoomSettings(),
   participants: [seat("Ada"), seat("Grace"), seat("Alan")],
 };
 
@@ -42,9 +48,9 @@ function countingPort(onCall?: (speaker: GroupTurnSpeaker) => void): {
       generate: async ({ speaker, instruction }) => {
         calls.push(speaker.displayName);
         onCall?.(speaker);
-        return `${speaker.displayName} replies to: ${instruction.split(
-          "\n",
-        )[0]}`;
+        return `${speaker.displayName} replies to: ${
+          instruction.split("\n")[0]
+        }`;
       },
     },
   };
@@ -144,5 +150,8 @@ test("stopping the signal terminates the whole user turn", async () => {
 });
 
 test("mention matching uses display names case-insensitively", () => {
-  assert.deepEqual(mentionedSeatIndices("hey @ALAN and @Ada", room.participants), [0, 2]);
+  assert.deepEqual(
+    mentionedSeatIndices("hey @ALAN and @Ada", room.participants),
+    [0, 2],
+  );
 });

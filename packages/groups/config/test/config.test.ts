@@ -7,10 +7,12 @@ import type {
 } from "@locallab/storage-sqlite-core";
 import {
   SQLiteGroupConfigStore,
+  defaultGroupRoomSettings,
   emptyGroupParticipant,
   validateGroupRoom,
   type GroupParticipantDraft,
   type GroupRoomDraft,
+  type GroupRoomSettings,
 } from "../src/index.js";
 
 const id = (n: number) =>
@@ -41,13 +43,17 @@ function adapter(database: DatabaseSync): SQLiteDatabasePort {
 let nextId = 1000;
 const createId = () => id(nextId++);
 
-function room(participants: GroupParticipantDraft[]): GroupRoomDraft {
+function room(
+  participants: GroupParticipantDraft[],
+  settings: GroupRoomSettings = defaultGroupRoomSettings(),
+): GroupRoomDraft {
   return {
     id: null,
     name: "War room",
     scenario: "Ship-day standup",
     userDisplayName: "Barrett",
     conversationId: id(4001),
+    settings,
     participants,
   };
 }
@@ -185,22 +191,27 @@ test("saved rooms reopen intact with turn order and opaque voice", async () => {
   assert.equal(reopened.scenario, "Ship-day standup");
   assert.equal(reopened.userDisplayName, "Barrett");
   assert.equal(reopened.participants.length, 2);
-  assert.deepEqual(reopened.participants[0], {
-    ...seats[0],
-  });
-  assert.deepEqual(reopened.participants[1], {
-    ...seats[1],
-  });
+  // Freshly saved seats carry generated IDs; the rest round-trips intact.
+  for (const [index, seat] of reopened.participants.entries()) {
+    assert.match(seat.id ?? "", /^0195c000-0000-7000-8000-\d{12}$/);
+    assert.deepEqual(seat, {
+      ...seats[index],
+      id: seat.id,
+      voice: seats[index].voice ? { ...seats[index].voice } : null,
+    });
+  }
   const rooms = await config.listRooms();
   assert.deepEqual(rooms, [{ id: roomId, name: "War room" }]);
-  // Re-saving the same room replaces seats without duplicating them.
-  await config.saveRoom(
-    { ...room(seats), id: roomId, name: "War room II" },
-    createId,
-  );
+  // Re-saving with the reopened draft keeps seat IDs stable and updates the
+  // room name in place; no seat rows are duplicated.
+  await config.saveRoom({ ...reopened, name: "War room II" }, createId);
   const again = await config.loadRoom(roomId);
   assert.equal(again!.name, "War room II");
   assert.equal(again!.participants.length, 2);
+  assert.deepEqual(
+    again!.participants.map((seat) => seat.id),
+    reopened.participants.map((seat) => seat.id),
+  );
   database.close();
 });
 
@@ -279,5 +290,212 @@ test("saveRoom resolves on a shared connection that queues every operation", asy
   );
   const reopened = await within("loadRoom", config.loadRoom(roomId));
   assert.equal(reopened?.participants.length, 2);
+  database.close();
+});
+
+test("room settings, Drunk flags and seat IDs round-trip across re-saves", async () => {
+  const { database, config } = await store();
+  const seats: GroupParticipantDraft[] = [
+    { ...emptyGroupParticipant(), personaId: id(5001), displayName: "Ada" },
+    { ...emptyGroupParticipant(), personaId: id(5002), displayName: "Grace" },
+  ];
+  const roomId = await config.saveRoom(room(seats), createId);
+  const saved = await config.loadRoom(roomId);
+  assert.ok(saved);
+  const updated: GroupRoomDraft = {
+    ...saved,
+    settings: {
+      conversationMode: "independent",
+      speakerOrder: "dice",
+      replyDisplay: "live",
+      sharedModelId: "qwen/qwen3.5-2b-q4_k_m",
+      responseLimitTokens: 512,
+    },
+    participants: saved.participants.map((seat, index) => ({
+      ...seat,
+      drunk: index === 1,
+    })),
+  };
+  await config.saveRoom(updated, createId);
+  const again = await config.loadRoom(roomId);
+  assert.ok(again);
+  assert.deepEqual(again.settings, updated.settings);
+  assert.deepEqual(again.participants, [...updated.participants]);
+  assert.deepEqual(
+    again.participants.map((seat) => seat.id),
+    saved.participants.map((seat) => seat.id),
+  );
+  database.close();
+});
+
+test("removing a seat deletes it and its Drunk preference", async () => {
+  const { database, config } = await store();
+  const seats: GroupParticipantDraft[] = [
+    { ...emptyGroupParticipant(), personaId: id(5011), displayName: "Ada" },
+    { ...emptyGroupParticipant(), personaId: id(5012), displayName: "Mid" },
+    { ...emptyGroupParticipant(), personaId: id(5013), displayName: "Alan" },
+  ];
+  const roomId = await config.saveRoom(
+    { ...room(seats), settings: defaultGroupRoomSettings() },
+    createId,
+  );
+  const saved = await config.loadRoom(roomId);
+  assert.ok(saved);
+  await config.saveRoom(
+    {
+      ...saved,
+      participants: saved.participants
+        .filter((seat) => seat.displayName !== "Mid")
+        .map((seat) => ({ ...seat, drunk: true })),
+    },
+    createId,
+  );
+  const again = await config.loadRoom(roomId);
+  assert.ok(again);
+  assert.deepEqual(
+    again.participants.map((seat) => [seat.displayName, seat.drunk]),
+    [
+      ["Ada", true],
+      ["Alan", true],
+    ],
+  );
+  const previousIds = new Map(
+    saved.participants.map((seat) => [seat.displayName, seat.id]),
+  );
+  assert.deepEqual(
+    again.participants.map((seat) => seat.id),
+    again.participants.map((seat) => previousIds.get(seat.displayName)),
+  );
+  const leftovers = database
+    .prepare(
+      "SELECT COUNT(*) AS n FROM group_participants WHERE group_room_id=?",
+    )
+    .get(roomId) as { n: number };
+  assert.equal(leftovers.n, 2);
+  const prefs = database
+    .prepare("SELECT COUNT(*) AS n FROM group_participant_prefs")
+    .get() as { n: number };
+  assert.equal(prefs.n, 2);
+  database.close();
+});
+
+test("out-of-range stored response limits load as the default and fail validation", async () => {
+  const { database, config } = await store();
+  const seats: GroupParticipantDraft[] = [
+    { ...emptyGroupParticipant(), personaId: id(5101), displayName: "Ada" },
+  ];
+  const roomId = await config.saveRoom(room(seats), createId);
+  database
+    .prepare(
+      "UPDATE group_room_settings SET response_limit_tokens=99999 WHERE room_id=?",
+    )
+    .run(roomId);
+  const loaded = await config.loadRoom(roomId);
+  assert.ok(loaded);
+  assert.equal(loaded.settings.responseLimitTokens, 256);
+  const errors = await validateGroupRoom(
+    {
+      ...loaded,
+      settings: { ...loaded.settings, responseLimitTokens: 99999 },
+    },
+    {
+      findConnection: async () => undefined,
+      findPersona: async () => ({ id: id(5101) }),
+    },
+  );
+  assert.ok(
+    errors.some(
+      (error) =>
+        error.participantIndex === null && /Response limit/.test(error.message),
+    ),
+    JSON.stringify(errors),
+  );
+  database.close();
+});
+
+test("rounds and speaker runs persist trigger, frozen order and status", async () => {
+  const { database, config } = await store();
+  const seats: GroupParticipantDraft[] = [
+    { ...emptyGroupParticipant(), personaId: id(5201), displayName: "Ada" },
+    { ...emptyGroupParticipant(), personaId: id(5202), displayName: "Grace" },
+  ];
+  const roomId = await config.saveRoom(room(seats), createId);
+  const saved = await config.loadRoom(roomId);
+  assert.ok(saved);
+  const round = await config.beginRound(
+    roomId,
+    saved.conversationId,
+    {
+      trigger: "ask",
+      frozenOrder: [2, 0, 1],
+      settings: { ...defaultGroupRoomSettings(), speakerOrder: "dice" },
+    },
+    createId,
+  );
+  const finished = await config.beginSpeakerRun(
+    round.id,
+    2,
+    saved.participants[1].id,
+    "qwen/qwen3.5-2b-q4_k_m",
+    createId,
+  );
+  await config.finishSpeakerRun(finished, "completed");
+  await config.beginSpeakerRun(
+    round.id,
+    0,
+    saved.participants[0].id,
+    null,
+    createId,
+  );
+  await config.setRoundStatus(round.id, "stopped", 2);
+  const resumed = await config.latestRound(roomId);
+  assert.ok(resumed);
+  assert.equal(resumed.round.id, round.id);
+  assert.equal(resumed.round.roomId, roomId);
+  assert.equal(resumed.round.conversationId, saved.conversationId);
+  assert.equal(resumed.round.trigger, "ask");
+  assert.deepEqual(resumed.round.frozenOrder, [2, 0, 1]);
+  assert.equal(resumed.round.settings.speakerOrder, "dice");
+  assert.equal(resumed.round.status, "stopped");
+  assert.equal(resumed.round.seatCursor, 2);
+  assert.deepEqual(
+    resumed.runs.map((run) => [run.seatIndex, run.status]),
+    [
+      [0, "running"],
+      [2, "completed"],
+    ],
+  );
+  assert.deepEqual(
+    resumed.runs.map((run) => run.participantId),
+    [saved.participants[0].id, saved.participants[1].id],
+  );
+  database.close();
+});
+
+test("a dedicated conversation is marked group exactly once", async () => {
+  const { database, config } = await store();
+  // The mapping has a real foreign key to core conversations; the store
+  // never runs on a database without the migrated core schema.
+  database.exec(
+    "CREATE TABLE conversations(id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '')",
+  );
+  database.prepare("INSERT INTO conversations(id) VALUES (?)").run(id(6001));
+  const roomId = await config.saveRoom(
+    room([
+      { ...emptyGroupParticipant(), personaId: id(5301), displayName: "Ada" },
+    ]),
+    createId,
+  );
+  await config.markGroupConversation(id(6001), roomId);
+  await config.markGroupConversation(id(6001), roomId);
+  const rows = database
+    .prepare(
+      "SELECT conversation_id, group_room_id FROM group_room_conversations",
+    )
+    .all()
+    .map((row) => ({ ...row }));
+  assert.deepEqual(rows, [
+    { conversation_id: id(6001), group_room_id: roomId },
+  ]);
   database.close();
 });

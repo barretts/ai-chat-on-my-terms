@@ -69,10 +69,10 @@ test("fresh embedded database applies the complete static chain and remains idem
   const db = new DatabaseSync(":memory:");
   const trace: string[] = [];
   try {
-    assert.equal(EMBEDDED_SCHEMA_VERSION, 8);
-    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 8);
+    assert.equal(EMBEDDED_SCHEMA_VERSION, 9);
+    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 9);
     const before = schema(db);
-    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 8);
+    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 9);
     assert.deepEqual(schema(db), before);
     assert.deepEqual(
       ledger(db).map((row) => ({ ...row })),
@@ -158,7 +158,7 @@ test("populated unversioned first-run database is adopted atomically and survive
       )
       .all();
     const trace: string[] = [];
-    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 8);
+    assert.equal(await migrateEmbeddedSQLite(adapter(db, trace)), 9);
     const stampIndex = trace.findIndex((sql) =>
       sql.includes("VALUES (1,'0001-core')"),
     );
@@ -193,7 +193,7 @@ test("populated unversioned first-run database is adopted atomically and survive
     );
     db.close();
     db = new DatabaseSync(path);
-    assert.equal(await migrateEmbeddedSQLite(adapter(db)), 8);
+    assert.equal(await migrateEmbeddedSQLite(adapter(db)), 9);
     assert.deepEqual(
       db.prepare("SELECT * FROM messages WHERE id='message'").get(),
       message,
@@ -216,7 +216,7 @@ test("populated unversioned first-run database is adopted atomically and survive
 });
 
 for (const previousVersion of [1, 3]) {
-  test(`populated ledger version ${previousVersion} upgrades to version 7 without rewriting prior records`, async () => {
+  test(`populated ledger version ${previousVersion} upgrades to the full chain without rewriting prior records`, async () => {
     const db = new DatabaseSync(":memory:");
     try {
       assert.equal(
@@ -232,8 +232,8 @@ for (const previousVersion of [1, 3]) {
           "INSERT INTO personas(id,name,prompt) VALUES ('old-persona','Prior persona','Keep this profile'); INSERT INTO arena_sessions(id,status,config_json) VALUES ('old-arena','completed','{\"preserve\":true}')",
         );
       const before = db.prepare("SELECT * FROM messages").all();
-      assert.equal(await migrateEmbeddedSQLite(adapter(db)), 8);
-      assert.equal(await migrateEmbeddedSQLite(adapter(db)), 8);
+      assert.equal(await migrateEmbeddedSQLite(adapter(db)), 9);
+      assert.equal(await migrateEmbeddedSQLite(adapter(db)), 9);
       assert.deepEqual(db.prepare("SELECT * FROM messages").all(), before);
       if (previousVersion === 3) {
         assert.equal(
@@ -349,8 +349,8 @@ test("failed additive migration rolls back DDL and ledger together", async () =>
       applySQLiteMigrations(adapter(db), [
         ...EMBEDDED_MIGRATIONS,
         {
-          version: 9,
-          name: "0009-failure-fixture",
+          version: 10,
+          name: "0010-failure-fixture",
           sql: "CREATE TABLE rollback_fixture(id TEXT); INVALID SQL",
         },
       ]),

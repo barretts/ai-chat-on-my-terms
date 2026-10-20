@@ -40,9 +40,10 @@ test("full migration chain registers and applies the versioned feature tables", 
         "0006-arena-engine",
         "0007-tool-engine",
         "0008-conversation-archive",
+        "0009-group-chat",
       ],
     );
-    assert.equal(await migrateSQLite(adapter(database)), 8);
+    assert.equal(await migrateSQLite(adapter(database)), 9);
     assert.ok(
       database
         .prepare(
@@ -57,6 +58,13 @@ test("full migration chain registers and applies the versioned feature tables", 
       "tool_engine_invocations",
       "conversation_archive_state",
       "conversation_delete_cleanups",
+      "group_rooms",
+      "group_participants",
+      "group_room_settings",
+      "group_participant_prefs",
+      "group_rounds",
+      "group_runs",
+      "group_room_conversations",
     ]) {
       assert.ok(
         database
@@ -66,7 +74,7 @@ test("full migration chain registers and applies the versioned feature tables", 
           .get(name),
       );
     }
-    assert.equal(await migrateSQLite(adapter(database)), 8);
+    assert.equal(await migrateSQLite(adapter(database)), 9);
   } finally {
     database.close();
   }

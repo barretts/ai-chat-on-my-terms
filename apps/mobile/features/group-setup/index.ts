@@ -1,4 +1,5 @@
 import {
+  defaultGroupRoomSettings,
   emptyGroupParticipant,
   type GroupParticipantDraft,
   type GroupRoomDraft,
@@ -19,6 +20,7 @@ export function newGroupRoomDraft(conversationId: string): GroupRoomDraft {
     scenario: "",
     userDisplayName: "",
     conversationId,
+    settings: defaultGroupRoomSettings(),
     participants: [],
   };
 }
