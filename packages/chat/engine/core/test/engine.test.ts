@@ -612,6 +612,67 @@ describe("group round guard and assistant-only runs", () => {
     }
   });
 
+  it("appendUserMessage inserts one attributed user row and no run", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "chat-append-user-"));
+    const path = join(dir, "db.sqlite");
+    const db = await ready(path);
+    try {
+      const engine = new ChatEngine({ db: adapter(db) });
+      await assert.rejects(
+        () =>
+          engine.appendUserMessage({
+            conversationId: "018f0000-0000-7000-8000-000000000999",
+            text: "nowhere",
+          }),
+        /Conversation does not exist/,
+      );
+      const userMessageId = await engine.appendUserMessage({
+        conversationId,
+        text: "group send",
+      });
+      const runsBefore = db.prepare("SELECT COUNT(*) AS n FROM runs").get() as {
+        n: number;
+      };
+      assert.equal(runsBefore.n, 0, "no run may accompany a bare user row");
+      engine.beginGroupRound(conversationId, ids[0]!);
+      const run = await engine.beginAssistantRun({
+        conversationId,
+        participantId,
+        binding: binding(provider("local"), "local"),
+      });
+      for await (const event of run.events) void event;
+      engine.endGroupRound(conversationId, ids[0]!);
+      const user = db
+        .prepare(
+          "SELECT role, parts_json, participant_id, run_id, sequence FROM messages WHERE id = ?",
+        )
+        .get(userMessageId) as {
+        role: string;
+        parts_json: string;
+        participant_id: string | null;
+        run_id: string | null;
+        sequence: number;
+      };
+      assert.equal(user.role, "user");
+      assert.ok(user.parts_json.includes("group send"));
+      assert.equal(user.participant_id, null);
+      assert.equal(user.run_id, null);
+      const assistant = db
+        .prepare("SELECT sequence FROM messages WHERE id = ?")
+        .get(run.assistantMessageId) as { sequence: number };
+      assert.ok(
+        assistant.sequence > user.sequence,
+        "seat reply lands after the Send row",
+      );
+      const runsAfter = db.prepare("SELECT COUNT(*) AS n FROM runs").get() as {
+        n: number;
+      };
+      assert.equal(runsAfter.n, 1, "only the seat run exists");
+    } finally {
+      db.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
   it("assistant-only run attributes the seat and inserts no user row", async () => {
     const dir = await mkdtemp(join(tmpdir(), "chat-assistant-"));
     const path = join(dir, "db.sqlite");

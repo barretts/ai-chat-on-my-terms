@@ -72,6 +72,8 @@ export interface AdvancedAssistantTurnInput {
   readonly preparedMessages: readonly ContextMessage[];
   /** Messages packContext must never drop; defaults to the last prepared message. */
   readonly requiredMessageIds?: readonly string[];
+  /** Force provider JSON mode (group topic-interest selector calls). */
+  readonly json?: boolean;
 }
 
 export interface ContextUsageSnapshot {
@@ -222,6 +224,7 @@ export class AdvancedChatEngine {
         port: contextualPort(retryingPort(binding.port), packed.messages),
       },
       ...(input.parameters ? { parameters: input.parameters } : {}),
+      ...(input.json ? { json: true } : {}),
     });
     return {
       ...run,
@@ -246,6 +249,16 @@ export class AdvancedChatEngine {
 
   isGroupRoundActive(conversationId: string): boolean {
     return this.core.isGroupRoundActive(conversationId);
+  }
+
+  /** Group Send inserts exactly one user row; seats answer via beginAssistantTurn. */
+  appendUserMessage(input: {
+    conversationId: string;
+    text: string;
+    userParts?: SendInput["userParts"];
+    participantId?: string;
+  }): Promise<string> {
+    return this.core.appendUserMessage(input);
   }
 
   getProjection(conversationId: string) {

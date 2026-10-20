@@ -3481,6 +3481,9 @@ export default function CompleteChatScreen() {
           conversationId={runtime.conversationId}
           createId={createChatId}
           pendingSeat={pendingGroupSeat}
+          onOpenRoom={(roomId) =>
+            router.push({ pathname: "/group-chat", params: { roomId } })
+          }
           onPendingSeatConsumed={() => setPendingGroupSeat(null)}
         />
       ) : panel === "media" && runtime.media ? (

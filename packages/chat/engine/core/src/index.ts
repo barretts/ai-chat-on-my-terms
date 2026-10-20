@@ -139,6 +139,54 @@ export class ChatEngine {
   isGroupRoundActive(conversationId: string): boolean {
     return this.roundGuard.has(conversationId);
   }
+
+  /**
+   * Insert one user row without starting a run. Group rounds use this for
+   * the Send message; seats are answered through `beginAssistantRun`, so
+   * no solo assistant reply is created. Same sequence handling, parts
+   * shape and conversation touch as `send()`.
+   */
+  async appendUserMessage(input: {
+    conversationId: string;
+    text: string;
+    userParts?: SendInput["userParts"];
+    participantId?: string;
+  }): Promise<string> {
+    const db = this.options.db;
+    const userMessageId = this.createId();
+    const createdAt = this.now();
+    await this.serializePersistence(() =>
+      db.withTransactionAsync(async (transaction) => {
+        const scopedDb = transaction ?? db;
+        const exists = await scopedDb.getFirstAsync<{ id: string }>(
+          "SELECT id FROM conversations WHERE id = ?",
+          input.conversationId,
+        );
+        if (!exists) throw new Error("Conversation does not exist");
+        const next = await scopedDb.getFirstAsync<{ n: number }>(
+          "SELECT COALESCE(MAX(sequence) + 1, 0) AS n FROM messages WHERE conversation_id = ?",
+          input.conversationId,
+        );
+        await scopedDb.runAsync(
+          "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, participant_id, created_at) VALUES (?, ?, 'user', ?, ?, NULL, ?, ?)",
+          userMessageId,
+          input.conversationId,
+          JSON.stringify(
+            input.userParts ?? [{ type: "text", text: input.text }],
+          ),
+          next?.n ?? 0,
+          input.participantId ?? null,
+          createdAt,
+        );
+        await scopedDb.runAsync(
+          "UPDATE conversations SET updated_at = ? WHERE id = ?",
+          createdAt,
+          input.conversationId,
+        );
+      }),
+    );
+    return userMessageId;
+  }
   async send(input: SendInput): Promise<ChatRunHandle> {
     if (this.roundGuard.has(input.conversationId))
       throw new GroupRoundActiveError(

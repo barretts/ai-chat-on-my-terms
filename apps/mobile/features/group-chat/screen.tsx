@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Switch, Text, useTheme } from "react-native-paper";
-import {
-  NativeButton,
-  NativeSurface,
-} from "@locallab/ui-native-primitives";
+import { Switch, Text, TextInput, useTheme } from "react-native-paper";
+import { NativeButton, NativeSurface } from "@locallab/ui-native-primitives";
 import type { SpeechOutputPort } from "@locallab/audio-session";
-import type { GroupRoomDraft } from "@locallab/groups-config";
+import type {
+  GroupReplyDisplay,
+  GroupRoomDraft,
+} from "@locallab/groups-config";
 import { ErrorNotice } from "../diagnostics/error-notice";
 import {
   groupSpeakQueue,
@@ -16,12 +16,38 @@ import {
   type GroupTranscriptEntry,
 } from ".";
 
+/** Send/Pass/Ask/Stop turn controller (GR-05): one action per tap. */
+export interface GroupChatController {
+  /** A round is generating seats right now. */
+  running: boolean;
+  /** Pass only makes sense once the room has content. */
+  hasConversation: boolean;
+  /** A stored round never finished; input stays locked until a fresh round. */
+  staleRound: boolean;
+  replyDisplay: GroupReplyDisplay;
+  onSend(text: string): void;
+  onPass(): void;
+  onStop(): void;
+  onStartNewRound(): void;
+}
+
+/** The seat generating right now; drives the thinking line and live text. */
+export interface GroupSeatLive {
+  seatIndex: number;
+  displayName: string;
+  accentColor: string;
+  /** Cumulative streamed text; empty in complete-reply mode. */
+  text: string;
+}
+
 export interface GroupChatScreenProps {
   room: GroupRoomDraft;
   entries: readonly GroupTranscriptEntry[];
   speech: SpeechOutputPort;
-  /** Ask routes one direct request to a participant (manual Ask chip). */
-  onAsk: (seatIndex: number) => void;
+  controller: GroupChatController;
+  live: GroupSeatLive | null;
+  /** Ask routes one direct request to a participant (composer text optional). */
+  onAsk: (seatIndex: number, text: string) => void;
   /** Per-seat tool permission; never a global toggle (GR-04). */
   onToolsToggle: (participants: GroupRoomDraft["participants"]) => void;
   onScenarioChanged?: (scenario: string) => void;
@@ -34,9 +60,12 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
   >(new Map());
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState("");
-  const [participants, setParticipants] = useState(
-    () => [...props.room.participants],
-  );
+  const [draft, setDraft] = useState("");
+  const [participants, setParticipants] = useState(() => [
+    ...props.room.participants,
+  ]);
+  const { controller, live } = props;
+  const locked = controller.running || controller.staleRound;
 
   const setSeatStatus = (seatIndex: number, status: GroupSpeakStatus) => {
     setStatuses((current) => {
@@ -50,7 +79,8 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
     setPlaying(true);
     setError("");
     const queue = groupSpeakQueue(participants, props.entries);
-    for (const intent of queue) setSeatStatus(intent.seatIndex, { kind: "queued" });
+    for (const intent of queue)
+      setSeatStatus(intent.seatIndex, { kind: "queued" });
     try {
       await playGroupSpeakQueue(props.speech, queue, setSeatStatus);
     } catch (cause) {
@@ -66,6 +96,13 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
     props.onToolsToggle(next);
   };
 
+  const send = () => {
+    const text = draft.trim();
+    if (text === "") return;
+    setDraft("");
+    controller.onSend(text);
+  };
+
   return (
     <ScrollView style={{ flex: 1 }} accessibilityLabel="Group chat transcript">
       <NativeSurface accessibilityLabel="Group transcript surface">
@@ -73,10 +110,24 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
         {props.room.scenario ? (
           <Text variant="titleMedium">{props.room.scenario}</Text>
         ) : null}
-        {props.entries.length === 0 ? (
+        {controller.staleRound ? (
+          <View accessibilityLabel="Interrupted round notice">
+            <Text variant="bodyMedium">
+              A previous round did not finish. Completed replies are saved, but
+              the unfinished round will not resume automatically.
+            </Text>
+            <NativeButton
+              accessibilityLabel="Start a new round"
+              onPress={() => controller.onStartNewRound()}
+            >
+              Start a new round
+            </NativeButton>
+          </View>
+        ) : null}
+        {props.entries.length === 0 && !live ? (
           <Text variant="bodyMedium">
-            No replies yet. Ask a participant to start the conversation; the
-            turn engine arrives with group scheduling.
+            No replies yet. Send a message to the room, or ask a participant
+            directly to start the conversation.
           </Text>
         ) : null}
         {props.entries.map((entry) => (
@@ -90,6 +141,84 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
             <Text>{entry.text}</Text>
           </View>
         ))}
+        {live ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              accessibilityLabel={`${live.displayName} avatar`}
+              style={{
+                color: "#ffffff",
+                backgroundColor: live.accentColor || theme.colors.primary,
+                borderRadius: 12,
+                width: 24,
+                height: 24,
+                textAlign: "center",
+                lineHeight: 24,
+              }}
+            >
+              {(live.displayName.trim()[0] ?? "?").toUpperCase()}
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={{ flex: 1 }}
+              accessibilityLiveRegion="polite"
+            >
+              {live.text === ""
+                ? `${live.displayName} is thinking…`
+                : live.text}
+            </Text>
+          </View>
+        ) : null}
+        <TextInput
+          label="Message the room"
+          placeholder="Send one message; everyone answers in turn…"
+          value={draft}
+          multiline
+          disabled={locked}
+          onChangeText={setDraft}
+          accessibilityLabel="Group message composer"
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+            marginVertical: 8,
+          }}
+        >
+          <NativeButton
+            accessibilityLabel="Send message to the room"
+            disabled={locked || draft.trim() === ""}
+            onPress={send}
+          >
+            Send
+          </NativeButton>
+          <NativeButton
+            accessibilityLabel="Pass: keep the conversation going"
+            disabled={locked || !controller.hasConversation}
+            onPress={() => controller.onPass()}
+          >
+            Pass
+          </NativeButton>
+          <NativeButton
+            accessibilityLabel="Stop the current round"
+            disabled={!controller.running}
+            onPress={() => controller.onStop()}
+          >
+            Stop
+          </NativeButton>
+        </View>
+        <Text variant="bodySmall">
+          {controller.replyDisplay === "live"
+            ? "Replies stream in as each participant generates."
+            : "Replies appear when each participant finishes."}
+        </Text>
         <Text variant="titleMedium">Ask a participant</Text>
         {participants.map((seat, seatIndex) => (
           <View
@@ -103,8 +232,8 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
           >
             <NativeButton
               accessibilityLabel={`Ask ${seat.displayName || "participant"}`}
-              disabled={playing}
-              onPress={() => props.onAsk(seatIndex)}
+              disabled={locked || playing}
+              onPress={() => props.onAsk(seatIndex, draft.trim())}
             >
               Ask {seat.displayName || `Participant ${seatIndex + 1}`}
             </NativeButton>
@@ -116,7 +245,7 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
                 seat.displayName || "Participant"
               } tools switch`}
               value={seat.toolsEnabled}
-              disabled={playing}
+              disabled={locked || playing}
               onValueChange={(value) => toggleSeatTools(seatIndex, value)}
             />
           </View>
@@ -128,20 +257,22 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
             <ErrorNotice key={`status-${seatIndex}`} message={status.message} />
           ) : (
             <Text key={`status-${seatIndex}`} variant="bodySmall">
-              {seat.displayName}: {status.kind === "queued" ? "queued" : "speaking"}
+              {seat.displayName}:{" "}
+              {status.kind === "queued" ? "queued" : "speaking"}
             </Text>
           );
         })}
         <NativeButton
           accessibilityLabel="Play group replies in order"
-          disabled={playing || props.entries.length === 0}
+          disabled={playing || locked || props.entries.length === 0}
           onPress={() => void play()}
         >
           Play replies in order
         </NativeButton>
         <Text variant="bodySmall">
-          Each participant keeps its own voice; playback follows the transcript
-          order, and a failed voice only marks that participant.
+          Playback follows the transcript order; each participant speaks with
+          its own voice, and a completed reply plays even while a new round
+          waits.
         </Text>
       </NativeSurface>
     </ScrollView>

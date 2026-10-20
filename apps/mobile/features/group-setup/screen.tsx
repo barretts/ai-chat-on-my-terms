@@ -38,6 +38,8 @@ export interface GroupSetupPanelProps {
   pendingSeat: PersonaGroupIntent | null;
   onPendingSeatConsumed: () => void;
   onRoomSaved?: (roomId: string) => void;
+  /** "Open" pressed on a saved room; enters the group chat screen. */
+  onOpenRoom?: (roomId: string) => void;
 }
 
 export function GroupSetupPanel(props: GroupSetupPanelProps) {
@@ -196,7 +198,7 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
       );
       setErrors([]);
       setSavedNote(
-        "Group saved. Every participant binding is valid; open this room in a group chat when it is available.",
+        "Group saved. Every participant binding is valid. Open the room below to chat with it.",
       );
       props.onRoomSaved?.(roomId);
     } catch (cause) {
@@ -210,10 +212,7 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
     errors.filter((problem) => problem.participantIndex === index);
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      accessibilityLabel="Group setup panel"
-    >
+    <ScrollView style={{ flex: 1 }} accessibilityLabel="Group setup panel">
       <NativeSurface accessibilityLabel="Group setup surface">
         {error ? <ErrorNotice message={error} /> : null}
         {errors.some((problem) => problem.participantIndex === null) ? (
@@ -233,6 +232,27 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
           disabled={busy}
           onChange={(roomId) => void openRoom(roomId)}
         />
+        {props.onOpenRoom && roomChoices.length > 0 ? (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              marginVertical: 8,
+            }}
+          >
+            {roomChoices.map((room) => (
+              <NativeButton
+                key={room.value}
+                accessibilityLabel={`Open group ${room.label}`}
+                disabled={busy}
+                onPress={() => props.onOpenRoom?.(room.value)}
+              >
+                Open {room.label}
+              </NativeButton>
+            ))}
+          </View>
+        ) : null}
         <TextInput
           label="Group name"
           accessibilityLabel="Group name"
@@ -317,8 +337,8 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
         </NativeButton>
         <Text variant="bodySmall">
           A model removed from Connections or a deleted Persona blocks the save
-          with a per-participant message; nothing is replaced automatically.
-          One model can hold several seats with different system prompts.
+          with a per-participant message; nothing is replaced automatically. One
+          model can hold several seats with different system prompts.
         </Text>
       </NativeSurface>
     </ScrollView>
