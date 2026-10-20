@@ -47,6 +47,10 @@ async function setup(path: string): Promise<DatabaseSync> {
   await initializeConversationLibrary(adapter(db));
   db.exec(`CREATE TABLE chat_history_metadata (conversation_id TEXT PRIMARY KEY, model_id TEXT, last_used_at TEXT);
     CREATE TABLE managed_blobs (id TEXT PRIMARY KEY, managed_path TEXT NOT NULL);`);
+  db.exec(`CREATE TABLE chat_appearance (conversation_id TEXT PRIMARY KEY, appearance_json TEXT NOT NULL);
+    CREATE TABLE group_room_conversations (conversation_id TEXT PRIMARY KEY, group_room_id TEXT NOT NULL);
+    CREATE TABLE conversation_personas (conversation_id TEXT PRIMARY KEY, persona_id TEXT);
+    CREATE TABLE persona_profiles (persona_id TEXT PRIMARY KEY, photo_attachment_id TEXT);`);
   return db;
 }
 
@@ -135,6 +139,9 @@ test("folders, covers, moves, local text search and deletion tombstones survive 
           modelId: null,
           lastUsedAt: null,
           archivedAt: null,
+          kind: "solo",
+          avatarAttachmentId: null,
+          personaPhotoAttachmentId: null,
           createdAt: "2026-01-02",
           updatedAt: "2026-02-02",
         },
@@ -145,6 +152,9 @@ test("folders, covers, moves, local text search and deletion tombstones survive 
           modelId: "local-model",
           lastUsedAt: "2026-02-01",
           archivedAt: null,
+          kind: "solo",
+          avatarAttachmentId: null,
+          personaPhotoAttachmentId: null,
           createdAt: "2026-01-01",
           updatedAt: "2026-02-01",
         },
@@ -325,49 +335,148 @@ test("archive hides a conversation from Recent, lists it under Archived, and una
     const message = db.prepare(
       "INSERT INTO messages (id,conversation_id,role,parts_json,sequence) VALUES (?,?,?,?,?)",
     );
-    message.run("a-1", "chat-a", "user", JSON.stringify([{ type: "text", text: "Barred owl calls?" }]), 0);
-    message.run("a-2", "chat-a", "assistant", JSON.stringify([{ type: "text", text: "  Who cooks\n for you  " }]), 1);
-    message.run("a-3", "chat-a", "assistant", JSON.stringify([{ type: "reasoning", text: "hidden" }]), 2);
+    message.run(
+      "a-1",
+      "chat-a",
+      "user",
+      JSON.stringify([{ type: "text", text: "Barred owl calls?" }]),
+      0,
+    );
+    message.run(
+      "a-2",
+      "chat-a",
+      "assistant",
+      JSON.stringify([{ type: "text", text: "  Who cooks\n for you  " }]),
+      1,
+    );
+    message.run(
+      "a-3",
+      "chat-a",
+      "assistant",
+      JSON.stringify([{ type: "reasoning", text: "hidden" }]),
+      2,
+    );
 
     const recent = await library.listHistory();
-    assert.deepEqual(recent.map((c) => [c.id, c.preview, c.archivedAt]), [
-      ["chat-b", null, null],
-      ["chat-a", "Who cooks for you", null],
-    ]);
+    assert.deepEqual(
+      recent.map((c) => [c.id, c.preview, c.archivedAt]),
+      [
+        ["chat-b", null, null],
+        ["chat-a", "Who cooks for you", null],
+      ],
+    );
 
     await library.archiveConversation("chat-a", "2026-03-05T10:00:00.000Z");
     // Archiving twice keeps the original timestamp rather than failing.
     await library.archiveConversation("chat-a", "2026-03-06T10:00:00.000Z");
-    assert.deepEqual((await library.listConversations()).map((c) => c.id), ["chat-b"]);
-    assert.deepEqual((await library.listHistory({ query: "owl" })).map((c) => c.id), []);
-    const archived = await library.listHistory({ archived: true });
-    assert.deepEqual(archived.map((c) => [c.id, c.archivedAt]), [
-      ["chat-a", "2026-03-05T10:00:00.000Z"],
-    ]);
     assert.deepEqual(
-      (await library.listHistory({ archived: true, query: "barred" })).map((c) => c.id),
+      (await library.listConversations()).map((c) => c.id),
+      ["chat-b"],
+    );
+    assert.deepEqual(
+      (await library.listHistory({ query: "owl" })).map((c) => c.id),
+      [],
+    );
+    const archived = await library.listHistory({ archived: true });
+    assert.deepEqual(
+      archived.map((c) => [c.id, c.archivedAt]),
+      [["chat-a", "2026-03-05T10:00:00.000Z"]],
+    );
+    assert.deepEqual(
+      (await library.listHistory({ archived: true, query: "barred" })).map(
+        (c) => c.id,
+      ),
       ["chat-a"],
     );
     assert.equal(await library.countArchived(), 1);
     // Messages are untouched by archiving.
     assert.equal(
-      (db.prepare("SELECT COUNT(*) AS n FROM messages WHERE conversation_id='chat-a'").get() as { n: number }).n,
+      (
+        db
+          .prepare(
+            "SELECT COUNT(*) AS n FROM messages WHERE conversation_id='chat-a'",
+          )
+          .get() as { n: number }
+      ).n,
       3,
     );
 
     await library.unarchiveConversation("chat-a");
-    assert.deepEqual((await library.listConversations()).map((c) => c.id).sort(), ["chat-a", "chat-b"]);
+    assert.deepEqual(
+      (await library.listConversations()).map((c) => c.id).sort(),
+      ["chat-a", "chat-b"],
+    );
     assert.deepEqual(await library.listHistory({ archived: true }), []);
     assert.equal(await library.countArchived(), 0);
 
-    await assert.rejects(library.archiveConversation("missing", "2026-03-07"), /Conversation not found/);
+    await assert.rejects(
+      library.archiveConversation("missing", "2026-03-07"),
+      /Conversation not found/,
+    );
 
     await library.archiveConversation("chat-b", "2026-03-08");
     db.prepare("DELETE FROM conversations WHERE id='chat-b'").run();
     assert.equal(await library.countArchived(), 0);
     assert.equal(
-      (db.prepare("SELECT COUNT(*) AS n FROM conversation_archive_state").get() as { n: number }).n,
+      (
+        db
+          .prepare("SELECT COUNT(*) AS n FROM conversation_archive_state")
+          .get() as { n: number }
+      ).n,
       0,
+    );
+  } finally {
+    db.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("conversation rows carry avatar, group, and persona photo fields from side tables", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "locallab-library-avatars-"));
+  const path = join(dir, "chat.sqlite");
+  const db = await setup(path);
+  try {
+    const library = new SQLiteConversationLibrary(adapter(db));
+    for (const id of ["solo-avatar", "group-room", "solo-persona", "plain"]) {
+      db.prepare("INSERT INTO conversations (id,title) VALUES (?,?)").run(
+        id,
+        id,
+      );
+    }
+    db.prepare(
+      "INSERT INTO chat_appearance (conversation_id,appearance_json) VALUES (?,?)",
+    ).run("solo-avatar", JSON.stringify({ avatarAttachmentId: "blob-1" }));
+    db.prepare(
+      "INSERT INTO chat_appearance (conversation_id,appearance_json) VALUES (?,?)",
+    ).run("group-room", JSON.stringify({ avatarAttachmentId: "blob-2" }));
+    db.prepare(
+      "INSERT INTO group_room_conversations (conversation_id,group_room_id) VALUES (?,?)",
+    ).run("group-room", "room-1");
+    db.prepare(
+      "INSERT INTO conversation_personas (conversation_id,persona_id) VALUES (?,?)",
+    ).run("solo-persona", "persona-9");
+    db.prepare(
+      "INSERT INTO persona_profiles (persona_id,photo_attachment_id) VALUES (?,?)",
+    ).run("persona-9", "photo-7");
+    const rows = await library.listConversations();
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    assert.equal(byId.get("solo-avatar")?.kind, "solo");
+    assert.equal(byId.get("solo-avatar")?.avatarAttachmentId, "blob-1");
+    assert.equal(byId.get("solo-avatar")?.personaPhotoAttachmentId, null);
+    assert.equal(byId.get("group-room")?.kind, "group");
+    assert.equal(byId.get("group-room")?.avatarAttachmentId, "blob-2");
+    assert.equal(byId.get("solo-persona")?.personaPhotoAttachmentId, "photo-7");
+    assert.equal(byId.get("plain")?.kind, "solo");
+    assert.equal(byId.get("plain")?.avatarAttachmentId, null);
+    const history = new Map(
+      (await library.listHistory()).map((row) => [row.id, row]),
+    );
+    assert.equal(history.get("solo-avatar")?.kind, "solo");
+    assert.equal(history.get("solo-avatar")?.avatarAttachmentId, "blob-1");
+    assert.equal(history.get("group-room")?.kind, "group");
+    assert.equal(
+      history.get("solo-persona")?.personaPhotoAttachmentId,
+      "photo-7",
     );
   } finally {
     db.close();

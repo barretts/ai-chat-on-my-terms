@@ -22,6 +22,7 @@ import { SQLiteConversationLibrary } from "@locallab/conversation-library";
 import { LibraryScreen } from "../../features/library/screen";
 import type { LibraryFeatureProps } from "../../features/library";
 import { ChatSettingsScreen } from "../../features/chat-settings/screen";
+import type { PersonaAvatarPort } from "../../features/personas";
 import type { ChatSettingsStore } from "../../features/chat-settings";
 import { SQLiteChatSettingsStore } from "./settings-store";
 import {
@@ -74,6 +75,8 @@ export interface ChatPanelsProps {
   contextPolicy?: ContextPolicy;
   /** Notify the host after a durable save so it can apply new settings. */
   onSettingsChanged?: (kind: "parameters" | "appearance") => void;
+  /** Managed photo port for the conversation avatar (GR-13). */
+  avatarPort?: PersonaAvatarPort;
   semanticSearch?: ChatSemanticQueryPort;
   /** Change this after transcript edits to discard stale displayed search hits. */
   refreshKey?: string | number;
@@ -206,6 +209,12 @@ export function ChatPanels(props: ChatPanelsProps) {
             : {})}
           {...(props.contextPolicy
             ? { contextPolicy: props.contextPolicy }
+            : {})}
+          {...(props.avatarPort
+            ? {
+                avatarPort: props.avatarPort,
+                avatarOwnerId: `chat-avatar:${props.conversationId}`,
+              }
             : {})}
         />
       ) : (

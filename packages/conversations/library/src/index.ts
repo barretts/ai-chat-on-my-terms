@@ -19,6 +19,12 @@ export interface LibraryConversation {
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** "group" when a group room owns this conversation (T170 mapping table). */
+  kind: "solo" | "group";
+  /** Custom conversation photo from chat appearance settings (GR-13). */
+  avatarAttachmentId: string | null;
+  /** Solo fallback photo from the bound persona profile. */
+  personaPhotoAttachmentId: string | null;
   snippet?: string;
 }
 
@@ -108,6 +114,9 @@ type ConversationRow = {
   last_used_at: string | null;
   archived_at: string | null;
   created_at: string;
+  kind: string;
+  avatar_attachment_id: string | null;
+  persona_photo_attachment_id: string | null;
   updated_at: string;
 };
 const fromFolder = (row: FolderRow): ConversationFolder => ({
@@ -127,6 +136,9 @@ const fromConversation = (row: ConversationRow): LibraryConversation => ({
   archivedAt: row.archived_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  kind: row.kind === "group" ? "group" : "solo",
+  avatarAttachmentId: row.avatar_attachment_id,
+  personaPhotoAttachmentId: row.persona_photo_attachment_id,
 });
 
 /** Local conversation organization and text search; folder deletion is a sync-ready tombstone. */
@@ -270,7 +282,10 @@ export class SQLiteConversationLibrary
   }
 
   /** Reversible: hides the conversation from Recent without touching its messages. */
-  async archiveConversation(conversationId: string, now: string): Promise<void> {
+  async archiveConversation(
+    conversationId: string,
+    now: string,
+  ): Promise<void> {
     const conversation = await this.db.getFirstAsync<{ id: string }>(
       "SELECT id FROM conversations WHERE id=?",
       conversationId,
@@ -326,7 +341,9 @@ export class SQLiteConversationLibrary
     const previews = new Map<string, string>();
     for (const row of rows) {
       if (previews.has(row.id)) continue;
-      const text = visibleText(parseJson(row.parts_json)).replace(/\s+/g, " ").trim();
+      const text = visibleText(parseJson(row.parts_json))
+        .replace(/\s+/g, " ")
+        .trim();
       if (text) previews.set(row.id, text.slice(0, 160));
     }
     return conversations.map((conversation) => ({
@@ -424,11 +441,18 @@ export class SQLiteConversationLibrary
 }
 
 /** Requires schema migration 0008 (conversation_archive_state). */
-const conversationSelect = `SELECT c.id,c.title,f.folder_id,h.model_id,h.last_used_at,a.archived_at,c.created_at,c.updated_at
+const conversationSelect = `SELECT c.id,c.title,f.folder_id,h.model_id,h.last_used_at,a.archived_at,c.created_at,c.updated_at,
+    json_extract(ap.appearance_json,'$.avatarAttachmentId') AS avatar_attachment_id,
+    CASE WHEN gm.conversation_id IS NOT NULL THEN 'group' ELSE 'solo' END AS kind,
+    pp.photo_attachment_id AS persona_photo_attachment_id
   FROM conversations c
   LEFT JOIN conversation_folder_memberships f ON f.conversation_id=c.id
   LEFT JOIN chat_history_metadata h ON h.conversation_id=c.id
-  LEFT JOIN conversation_archive_state a ON a.conversation_id=c.id`;
+  LEFT JOIN conversation_archive_state a ON a.conversation_id=c.id
+  LEFT JOIN chat_appearance ap ON ap.conversation_id=c.id
+  LEFT JOIN group_room_conversations gm ON gm.conversation_id=c.id
+  LEFT JOIN conversation_personas cp ON cp.conversation_id=c.id
+  LEFT JOIN persona_profiles pp ON pp.persona_id=cp.persona_id`;
 
 function normalizeName(value: string): string {
   const name = value.trim().replace(/\s+/g, " ");

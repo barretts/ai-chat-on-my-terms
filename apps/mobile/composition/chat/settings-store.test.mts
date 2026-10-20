@@ -104,10 +104,12 @@ describe("SQLite chat settings composition", () => {
       await first.saveAppearance("conversation-a", {
         background: "#123456",
         avatar: "blob:avatar-a",
+        avatarAttachmentId: "00000000-0000-4000-8000-0000000000a7",
       });
       assert.deepEqual(await first.loadAppearance("conversation-a"), {
         background: "#123456",
         avatar: "blob:avatar-a",
+        avatarAttachmentId: "00000000-0000-4000-8000-0000000000a7",
       });
       assert.deepEqual(await second.loadAppearance("conversation-b"), {});
     } finally {

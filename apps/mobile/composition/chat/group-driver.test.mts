@@ -379,6 +379,48 @@ test("Send inserts one user message and one attributed reply per seat", async ()
     "instruction and newest row survive packing",
   );
 });
+test("seat prompts carry persona text but never ids of any kind", async () => {
+  const state = fake();
+  const collected = collect();
+  const driver = new GroupTurnDriver({ ...state, createId });
+  const personaRoom: GroupRoomDraft = {
+    ...room(),
+    participants: room().participants.map((participant, index) => ({
+      ...participant,
+      personaId: seatIds[index]!,
+    })),
+  };
+  const result = await driver.startTurn({
+    room: personaRoom,
+    trigger: "send",
+    userText: "Introductions please.",
+    history: [],
+    binding,
+    presenter: collected.presenter,
+    // The route resolves persona prompts by id and passes only the text;
+    // seat ids, persona ids, and avatar attachment ids never enter prompts.
+    seatInstruction: (participant) =>
+      participant.personaId
+        ? "Warm mentor who loves lighthouses."
+        : participant.systemPrompt,
+  });
+  assert.equal(result.status, "completed");
+  const uuidToken =
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  for (const turn of state.seatTurns) {
+    assert.ok(
+      turn.preparedTexts.some((text) =>
+        text.includes("Warm mentor who loves lighthouses."),
+      ),
+      "persona prompt reaches its seat",
+    );
+    for (const text of turn.preparedTexts)
+      assert.ok(
+        !uuidToken.test(text),
+        "no entity or attachment ids leak into model prompts",
+      );
+  }
+});
 
 test("Pass adds zero user messages and seats keep answering", async () => {
   const state = fake();

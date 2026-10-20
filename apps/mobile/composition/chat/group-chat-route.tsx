@@ -31,6 +31,9 @@ import { createLocalChatPort } from "../../platform/local-chat-provider";
 import { createId as createChatId } from "../../platform/crypto";
 import { mobileSpeech } from "../../platform/speech";
 import { createProviderBinding } from "../first-run-chat";
+import { SQLiteChatSettingsStore } from "./settings-store";
+import { createMobileChatAttachmentIntake } from "./attachments";
+import { createManagedPersonaAvatarPort } from "../../features/personas/avatar";
 import {
   DRUNK_STYLE,
   GroupTurnDriver,
@@ -203,6 +206,8 @@ export default function GroupChatRoute() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modelProblem, setModelProblem] = useState("");
+  const [seatAvatars, setSeatAvatars] = useState<(string | undefined)[]>([]);
+  const [roomAvatarUri, setRoomAvatarUri] = useState<string | undefined>();
 
   const driverRef = useRef<GroupTurnDriver | null>(null);
   const configRef = useRef<SQLiteGroupConfigStore | null>(null);
@@ -294,6 +299,47 @@ export default function GroupChatRoute() {
         personaPromptRef.current = new Map(
           (await library.list()).map((persona) => [persona.id, persona.prompt]),
         );
+        const photos = new Map(
+          (await library.list()).flatMap((persona) =>
+            persona.photoAttachmentId
+              ? [[persona.id, persona.photoAttachmentId] as const]
+              : [],
+          ),
+        );
+        const intake = await createMobileChatAttachmentIntake({
+          db: database,
+          blobs,
+          createId: createChatId,
+        });
+        const avatarPort = createManagedPersonaAvatarPort({
+          pickImage: (ownerId, signal) => intake.pickImage(ownerId, signal),
+          preview: (id) => intake.preview(id),
+          release: (id, ownerId) => intake.attachments.release(ownerId, id),
+        });
+        const avatars = await Promise.all(
+          saved.participants.map((seat) => {
+            const photo = seat.personaId
+              ? photos.get(seat.personaId)
+              : undefined;
+            return photo
+              ? avatarPort.resolve(photo).catch(() => undefined)
+              : Promise.resolve(undefined);
+          }),
+        );
+        if (mounted) setSeatAvatars(avatars);
+        // The room's own conversation carries its appearance (T177); a missing
+        // file falls back to initials, never blocking the round machinery.
+        await SQLiteChatSettingsStore.initialize(database);
+        const roomAppearance = await new SQLiteChatSettingsStore(
+          database,
+          saved.conversationId,
+        ).loadAppearance(saved.conversationId);
+        if (mounted && roomAppearance.avatarAttachmentId) {
+          const uri = await avatarPort
+            .resolve(roomAppearance.avatarAttachmentId)
+            .catch(() => undefined);
+          if (mounted && uri) setRoomAvatarUri(uri);
+        }
         // A round left "active" by a crash is stale: mark it stopped so the
         // conversation guard is free, but keep every saved reply. Completed
         // replies are never re-generated and the round never auto-resumes.
@@ -486,6 +532,8 @@ export default function GroupChatRoute() {
           })
         }
         onToolsToggle={(participants) => setRoom({ ...room, participants })}
+        {...(seatAvatars.length > 0 ? { seatAvatars } : {})}
+        {...(roomAvatarUri ? { roomAvatarUri } : {})}
       />
     </>
   );

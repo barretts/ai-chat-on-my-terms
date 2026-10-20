@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import { Switch, Text, TextInput, useTheme } from "react-native-paper";
 import { NativeButton, NativeSurface } from "@locallab/ui-native-primitives";
 import type { SpeechOutputPort } from "@locallab/audio-session";
@@ -51,6 +51,10 @@ export interface GroupChatScreenProps {
   /** Per-seat tool permission; never a global toggle (GR-04). */
   onToolsToggle: (participants: GroupRoomDraft["participants"]) => void;
   onScenarioChanged?: (scenario: string) => void;
+  /** Resolved seat photos indexed by seat index (persona avatars, GR-13). */
+  seatAvatars?: readonly (string | undefined)[];
+  /** Custom photo stored for this room's conversation (GR-13). */
+  roomAvatarUri?: string;
 }
 
 export function GroupChatScreen(props: GroupChatScreenProps) {
@@ -102,6 +106,33 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
     setDraft("");
     controller.onSend(text);
   };
+  const seatAvatar = (seatIndex: number, name: string, accent: string) => {
+    const uri = props.seatAvatars?.[seatIndex];
+    if (uri)
+      return (
+        <Image
+          source={{ uri }}
+          accessible={false}
+          style={{ width: 24, height: 24, borderRadius: 12 }}
+        />
+      );
+    return (
+      <Text
+        accessibilityLabel={`${name} avatar`}
+        style={{
+          color: "#ffffff",
+          backgroundColor: accent,
+          borderRadius: 12,
+          width: 24,
+          height: 24,
+          textAlign: "center",
+          lineHeight: 24,
+        }}
+      >
+        {(name.trim()[0] ?? "?").toUpperCase()}
+      </Text>
+    );
+  };
 
   return (
     <ScrollView style={{ flex: 1 }} accessibilityLabel="Group chat transcript">
@@ -109,6 +140,21 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
         {error ? <ErrorNotice message={error} /> : null}
         {props.room.scenario ? (
           <Text variant="titleMedium">{props.room.scenario}</Text>
+        ) : null}
+        {props.roomAvatarUri ? (
+          <Image
+            source={{ uri: props.roomAvatarUri }}
+            accessibilityLabel={`Group room avatar for ${
+              props.room.name || "Group chat"
+            }`}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignSelf: "flex-start",
+              marginBottom: 8,
+            }}
+          />
         ) : null}
         {controller.staleRound ? (
           <View accessibilityLabel="Interrupted round notice">
@@ -132,12 +178,28 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
         ) : null}
         {props.entries.map((entry) => (
           <View key={entry.id} style={{ marginBottom: 12 }}>
-            <Text
-              variant="titleSmall"
-              style={{ color: entry.accentColor || theme.colors.primary }}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 4,
+              }}
             >
-              {entry.speakerName}
-            </Text>
+              {entry.speakerSeat >= 0
+                ? seatAvatar(
+                    entry.speakerSeat,
+                    entry.speakerName,
+                    entry.accentColor || theme.colors.primary,
+                  )
+                : null}
+              <Text
+                variant="titleSmall"
+                style={{ color: entry.accentColor || theme.colors.primary }}
+              >
+                {entry.speakerName}
+              </Text>
+            </View>
             <Text>{entry.text}</Text>
           </View>
         ))}
@@ -150,20 +212,11 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
               marginBottom: 12,
             }}
           >
-            <Text
-              accessibilityLabel={`${live.displayName} avatar`}
-              style={{
-                color: "#ffffff",
-                backgroundColor: live.accentColor || theme.colors.primary,
-                borderRadius: 12,
-                width: 24,
-                height: 24,
-                textAlign: "center",
-                lineHeight: 24,
-              }}
-            >
-              {(live.displayName.trim()[0] ?? "?").toUpperCase()}
-            </Text>
+            {seatAvatar(
+              live.seatIndex,
+              live.displayName,
+              live.accentColor || theme.colors.primary,
+            )}
             <Text
               variant="bodySmall"
               style={{ flex: 1 }}
@@ -230,6 +283,11 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
               marginVertical: 4,
             }}
           >
+            {seatAvatar(
+              seatIndex,
+              seat.displayName || `Participant ${seatIndex + 1}`,
+              theme.colors.primary,
+            )}
             <NativeButton
               accessibilityLabel={`Ask ${seat.displayName || "participant"}`}
               disabled={locked || playing}

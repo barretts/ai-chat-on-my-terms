@@ -27,8 +27,11 @@ export function createManagedPersonaAvatarPort(options: {
   /** The storage owner can validate private preview URLs issued by its own registry. */
   isManagedPreviewUri?: (uri: string) => boolean;
   maximumBytes?: number;
+  /** Owner-key guard for pick/preview/release; defaults to UUID persona owners. */
+  validateOwnerId?: (ownerId: string) => void;
 }): PersonaAvatarPort {
   const managedUri = options.isManagedPreviewUri ?? isManagedAvatarUri;
+  const validateOwnerId = options.validateOwnerId ?? EntityIdSchema.parse;
   const maximumBytes = options.maximumBytes ?? 8 * 1024 * 1024;
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes <= 0)
     throw new PersonaAvatarError(
@@ -36,7 +39,7 @@ export function createManagedPersonaAvatarPort(options: {
     );
   return {
     async pick(ownerId, signal) {
-      EntityIdSchema.parse(ownerId);
+      validateOwnerId(ownerId);
       signal?.throwIfAborted();
       let attachment: Awaited<ReturnType<typeof options.pickImage>>;
       try {

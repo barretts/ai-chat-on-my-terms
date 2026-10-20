@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createManagedPersonaAvatarPort } from "./avatar";
+import { PersonaAvatarError, createManagedPersonaAvatarPort } from "./avatar";
 const id = (n: number) =>
   `0195c000-0000-7000-8000-${n.toString().padStart(12, "0")}`;
 
@@ -51,5 +51,40 @@ describe("managed Persona avatar port (native picker fixture)", () => {
     image = undefined;
     expect(await port.pick(id(2))).toBeUndefined();
     expect(released).toEqual([id(1), id(1)]);
+  });
+  it("rejects namespaced chat owners by default and admits them when the composition validates", async () => {
+    const picked: string[] = [];
+    const fixture = {
+      pickImage: async (ownerId: string) => {
+        picked.push(ownerId);
+        return { id: id(1), mimeType: "image/png" as const, byteLength: 8 };
+      },
+      preview: async () => ({
+        uri: "file:///fixture-private/a.png",
+        mimeType: "image/png" as const,
+      }),
+      release: async () => undefined,
+    };
+    // Persona chats keep the UUID-only guard: a scoped chat key must not slip
+    // through the persona port untouched.
+    const personaPort = createManagedPersonaAvatarPort(fixture);
+    await expect(personaPort.pick(`chat-avatar:${id(2)}`)).rejects.toThrow();
+    expect(picked).toEqual([]);
+    const chatPort = createManagedPersonaAvatarPort({
+      ...fixture,
+      validateOwnerId: (ownerId: string) => {
+        if (ownerId === `chat-avatar:${id(2)}`) return;
+        throw new PersonaAvatarError("This chat cannot store an avatar photo.");
+      },
+    });
+    expect(await chatPort.pick(`chat-avatar:${id(2)}`)).toEqual({
+      attachmentId: id(1),
+      uri: "file:///fixture-private/a.png",
+    });
+    expect(picked).toEqual([`chat-avatar:${id(2)}`]);
+    await expect(chatPort.pick("someone-else")).rejects.toThrow(
+      "This chat cannot store an avatar photo.",
+    );
+    expect(picked).toEqual([`chat-avatar:${id(2)}`]);
   });
 });

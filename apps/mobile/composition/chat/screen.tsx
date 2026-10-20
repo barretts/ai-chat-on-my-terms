@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   AppState,
   BackHandler,
+  Image,
   Keyboard,
   Platform,
   Pressable,
@@ -215,7 +216,11 @@ import {
 } from "@locallab/personas-library";
 import { ProviderMemoryExtractor } from "@locallab/memory-extraction";
 import { PersonaScreen } from "../../features/personas/screen";
-import { createManagedPersonaAvatarPort } from "../../features/personas/avatar";
+import {
+  createManagedPersonaAvatarPort,
+  PersonaAvatarError,
+} from "../../features/personas/avatar";
+import { EntityIdSchema } from "@locallab/contracts/identity";
 import { MemoryScreen } from "../../features/memory/screen";
 import { ChatPanels } from "./panels";
 import {
@@ -2409,6 +2414,15 @@ export default function CompleteChatScreen() {
             pickImage: (ownerId, signal) =>
               runtime.intake.pickImage(ownerId, signal),
             preview: (id) => runtime.intake.preview(id),
+            validateOwnerId: (ownerId) => {
+              // Persona owners are UUIDs; chat avatars are namespaced under the conversation id.
+              if (EntityIdSchema.safeParse(ownerId).success) return;
+              const scoped = /^chat-avatar:(.+)$/.exec(ownerId)?.[1];
+              if (scoped && EntityIdSchema.safeParse(scoped).success) return;
+              throw new PersonaAvatarError(
+                "This chat cannot store an avatar photo.",
+              );
+            },
             ...(runtime.intake.isManagedPreviewUri
               ? { isManagedPreviewUri: runtime.intake.isManagedPreviewUri }
               : {}),
@@ -2438,6 +2452,34 @@ export default function CompleteChatScreen() {
     [runtime],
   );
 
+  const [headerAvatarUri, setHeaderAvatarUri] = useState<string | undefined>();
+  useEffect(() => {
+    if (!runtime || !avatarPort) {
+      setHeaderAvatarUri(undefined);
+      return;
+    }
+    const wanted =
+      appearance.avatarAttachmentId ??
+      (persona && persona.id !== DEFAULT_PERSONA_ID
+        ? persona.photoAttachmentId
+        : null);
+    if (!wanted) {
+      setHeaderAvatarUri(undefined);
+      return;
+    }
+    let active = true;
+    void avatarPort
+      .resolve(wanted)
+      .then((uri) => {
+        if (active) setHeaderAvatarUri(uri);
+      })
+      .catch(() => {
+        if (active) setHeaderAvatarUri(undefined);
+      });
+    return () => {
+      active = false;
+    };
+  }, [runtime, avatarPort, appearance, persona]);
   if (error && !runtime)
     return (
       <ScrollView
@@ -2661,7 +2703,13 @@ export default function CompleteChatScreen() {
                 {workspace.layout.chatCollapsed ? "▸" : "▾"}
               </Text>
             </Pressable>
-            {appearance.avatar ? (
+            {headerAvatarUri ? (
+              <Image
+                source={{ uri: headerAvatarUri }}
+                accessibilityLabel={`Conversation avatar photo for ${chatTitle}`}
+                style={{ width: 36, height: 36, borderRadius: 18 }}
+              />
+            ) : appearance.avatar ? (
               <View
                 accessible
                 accessibilityLabel={`Conversation avatar ${appearance.avatar}`}
@@ -3574,6 +3622,12 @@ export default function CompleteChatScreen() {
           onOpenConversation={openFromHistory}
           onDeleteConversation={deleteFromHistory}
           onOpenLibrary={() => setPanel("library")}
+          {...(avatarPort
+            ? {
+                resolveAvatarUri: (attachmentId: string) =>
+                  avatarPort.resolve(attachmentId),
+              }
+            : {})}
           onClose={() => setPanel(null)}
         />
       ) : panel === "archives" && archives ? (
@@ -3650,6 +3704,7 @@ export default function CompleteChatScreen() {
           refreshKey={assistants.length}
           onSettingsChanged={handleSettingsChanged}
           onPendingSettingsWrites={trackSettingsWrites}
+          {...(avatarPort ? { avatarPort } : {})}
           compactActionLabel={
             lastPayload.current && lastUserMessageId.current
               ? "Compact and retry"

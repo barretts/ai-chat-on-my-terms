@@ -17,6 +17,10 @@ export interface HistoryFeatureProps {
   readonly onDeleteConversation: (conversationId: string) => Promise<void>;
   readonly onClose: () => void;
   readonly onOpenLibrary?: () => void;
+  /** Resolves a stored avatar attachment id to a displayable local URI. */
+  readonly resolveAvatarUri?: (
+    attachmentId: string,
+  ) => Promise<string | undefined>;
   readonly now?: () => Date;
 }
 
@@ -27,17 +31,34 @@ export function historyDisplayTitle(conversation: {
 }
 
 const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function startOfDay(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  ).getTime();
 }
 
 /** Short, scannable list date in the device's local time: "9:05 AM", "Yesterday", "Mon", "Sep 27", "Sep 27, 2025". */
-export function formatHistoryDate(iso: string | null | undefined, now: Date): string {
+export function formatHistoryDate(
+  iso: string | null | undefined,
+  now: Date,
+): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -55,8 +76,12 @@ export function formatHistoryDate(iso: string | null | undefined, now: Date): st
     : `${monthDay}, ${date.getFullYear()}`;
 }
 
-export function historyRowDate(conversation: HistoryConversation): string | null {
-  return conversation.lastUsedAt ?? conversation.updatedAt ?? conversation.createdAt;
+export function historyRowDate(
+  conversation: HistoryConversation,
+): string | null {
+  return (
+    conversation.lastUsedAt ?? conversation.updatedAt ?? conversation.createdAt
+  );
 }
 
 /** One sentence VoiceOver reads for a history row. */

@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Switch,
   TextInput,
+  Image,
   View,
 } from "react-native";
 import {
@@ -57,6 +58,7 @@ import type {
   SettingsPresets,
   SettingsScope,
 } from "./index";
+import type { PersonaAvatarPort } from "../personas";
 
 const SCOPES: readonly { id: SettingsScope; label: string }[] = [
   { id: "global", label: "Global" },
@@ -95,6 +97,10 @@ export interface ChatSettingsScreenProps {
   summaryUnavailableReason?: string;
   compactActionLabel?: string;
   contextProgress?: string;
+  /** Managed photo port for the conversation avatar (GR-13). */
+  avatarPort?: PersonaAvatarPort;
+  /** Attachment owner key for the avatar, `chat-avatar:<conversationId>`. */
+  avatarOwnerId?: string;
 }
 
 export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
@@ -134,6 +140,7 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
   const scroll = useRef<ScrollView>(null);
   const presetsRef = useRef<SettingsPresets>(EMPTY_PRESETS);
   const appearanceRef = useRef<ChatAppearance>({});
+  const [avatarUris, setAvatarUris] = useState<Record<string, string>>({});
   const editVersion = useRef(0);
   const pendingWrites = useRef(0);
   const writes = useRef(Promise.resolve());
@@ -182,6 +189,23 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
         const next = { ...EMPTY_PRESETS, ...saved };
         presetsRef.current = next;
         appearanceRef.current = style;
+        if (
+          style.avatarAttachmentId &&
+          props.avatarPort &&
+          !avatarUris[style.avatarAttachmentId]
+        ) {
+          const attachmentId = style.avatarAttachmentId;
+          void props.avatarPort
+            .resolve(attachmentId)
+            .then((uri) => {
+              if (live && uri)
+                setAvatarUris((current) => ({
+                  ...current,
+                  [attachmentId]: uri,
+                }));
+            })
+            .catch(() => undefined);
+        }
         setPresets(next);
         setAppearance(style);
       })
@@ -397,6 +421,61 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       }
     });
   };
+  const chooseAvatarPhoto = () =>
+    void runAction(
+      async () => {
+        if (!props.avatarPort || !props.avatarOwnerId) return;
+        const image = await props.avatarPort.pick(props.avatarOwnerId);
+        if (!image) return;
+        if (!mounted.current) {
+          await props.avatarPort
+            .release(image.attachmentId, props.avatarOwnerId)
+            .catch(() => undefined);
+          return;
+        }
+        const previous = appearanceRef.current.avatarAttachmentId;
+        setAvatarUris((current) => ({
+          ...current,
+          [image.attachmentId]: image.uri,
+        }));
+        void saveAppearance({
+          ...appearanceRef.current,
+          avatarAttachmentId: image.attachmentId,
+        });
+        await writes.current;
+        // Release only after the durable swap; a failed save keeps the old photo and drops the new pick.
+        if (appearanceRef.current.avatarAttachmentId === image.attachmentId) {
+          if (previous && previous !== image.attachmentId)
+            await props.avatarPort
+              .release(previous, props.avatarOwnerId)
+              .catch(() => undefined);
+        } else {
+          await props.avatarPort
+            .release(image.attachmentId, props.avatarOwnerId)
+            .catch(() => undefined);
+        }
+      },
+      "Choose a conversation avatar photo",
+      "Pick another photo or remove the avatar. Your chat and settings are unchanged.",
+    );
+  const removeAvatarPhoto = () =>
+    void runAction(
+      async () => {
+        if (!props.avatarPort || !props.avatarOwnerId) return;
+        const previous = appearanceRef.current.avatarAttachmentId;
+        if (!previous) return;
+        const next = { ...appearanceRef.current };
+        delete next.avatarAttachmentId;
+        void saveAppearance(next);
+        await writes.current;
+        if (appearanceRef.current.avatarAttachmentId !== previous)
+          await props.avatarPort
+            .release(previous, props.avatarOwnerId)
+            .catch(() => undefined);
+      },
+      "Remove the conversation avatar photo",
+      "Choose a new avatar photo. Your chat and settings are unchanged.",
+    );
   const changeTheme = (value: "system" | "light" | "dark") => {
     setError("");
     void setThemePreference(value).catch((cause) => {
@@ -949,6 +1028,51 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
               style={styles.input}
             />
           )}
+          {props.avatarPort ? (
+            <>
+              <Text style={styles.label}>Avatar photo</Text>
+              {appearance.avatarAttachmentId ? (
+                avatarUris[appearance.avatarAttachmentId] ? (
+                  <Image
+                    source={{ uri: avatarUris[appearance.avatarAttachmentId] }}
+                    accessibilityLabel="Conversation avatar photo"
+                    style={styles.avatarPhoto}
+                  />
+                ) : (
+                  <Text style={styles.hint}>
+                    The saved avatar photo is missing on this device. Choose a
+                    new photo to replace it; the rest of this chat still works.
+                  </Text>
+                )
+              ) : null}
+              <View style={styles.row}>
+                <NativeButton
+                  mode="outlined"
+                  accessibilityLabel={
+                    appearance.avatarAttachmentId
+                      ? "Replace conversation avatar photo"
+                      : "Choose conversation avatar photo"
+                  }
+                  disabled={settingsUnavailable || busy}
+                  onPress={chooseAvatarPhoto}
+                >
+                  {appearance.avatarAttachmentId
+                    ? "Replace avatar photo"
+                    : "Choose avatar photo"}
+                </NativeButton>
+                {appearance.avatarAttachmentId ? (
+                  <NativeButton
+                    mode="text"
+                    accessibilityLabel="Remove conversation avatar photo"
+                    disabled={settingsUnavailable || busy}
+                    onPress={removeAvatarPhoto}
+                  >
+                    Remove
+                  </NativeButton>
+                ) : null}
+              </View>
+            </>
+          ) : null}
         </View>
       </SettingsSection>
 
@@ -1335,6 +1459,12 @@ function createStyles(theme: MD3Theme, phone = false) {
       justifyContent: "center",
     },
     avatarText: { fontWeight: "700", color: theme.colors.onPrimaryContainer },
+    avatarPhoto: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignSelf: "flex-start",
+    },
     message: {
       color: theme.colors.onSecondaryContainer,
       padding: phone ? 12 : 9,

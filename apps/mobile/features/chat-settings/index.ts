@@ -169,6 +169,8 @@ export const PARAMETER_CONTROLS: readonly ParameterControl[] = [
 export interface ChatAppearance {
   background?: string;
   avatar?: string;
+  /** Managed attachment backing a custom conversation photo (GR-13). */
+  avatarAttachmentId?: string;
 }
 
 export interface ChatSettingsStore {

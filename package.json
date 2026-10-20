@@ -63,6 +63,7 @@
     "test:embeddings": "pnpm --filter @locallab/embeddings test",
     "test:generation-lifecycle-ios": "pnpm --filter @locallab/generation-lifecycle-ios test",
     "test:chat-settings": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/features/chat-settings/settings.test.mts",
+    "test:personas-avatars": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/features/personas",
     "test:models-integration": "pnpm --filter @locallab/models-integration test",
     "test:chat-composition": "pnpm --filter @locallab/models-imports exec vitest run --root C:/code/cht apps/mobile/composition",
     "test:chat-integration": "pnpm --filter @locallab/chat-integration test",

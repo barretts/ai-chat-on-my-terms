@@ -1,14 +1,33 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   AccessibilityInfo,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
   type AccessibilityActionEvent,
 } from "react-native";
-import { IconButton, Searchbar, SegmentedButtons, Text, useTheme, type MD3Theme } from "react-native-paper";
-import { NativeButton, useWorkspaceLayout } from "@locallab/ui-native-primitives";
+import {
+  IconButton,
+  Icon,
+  Searchbar,
+  SegmentedButtons,
+  Text,
+  useTheme,
+  type MD3Theme,
+} from "react-native-paper";
+import {
+  NativeButton,
+  useWorkspaceLayout,
+} from "@locallab/ui-native-primitives";
 import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
 import {
@@ -41,9 +60,42 @@ export function HistoryScreen(
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [avatarUris, setAvatarUris] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<Notice>(null);
   const [row, dispatch] = useReducer(historyRowReducer, IDLE_ROW);
   const requestVersion = useRef(0);
+  useEffect(() => {
+    if (!props.resolveAvatarUri) return;
+    const wanted = [
+      ...new Set(
+        rows
+          .map(
+            (conversation) =>
+              conversation.avatarAttachmentId ??
+              conversation.personaPhotoAttachmentId,
+          )
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+    if (!wanted.length) return;
+    const resolve = props.resolveAvatarUri;
+    let active = true;
+    void Promise.all(
+      wanted.map(
+        async (id) => [id, await resolve(id).catch(() => undefined)] as const,
+      ),
+    ).then((entries) => {
+      if (!active) return;
+      setAvatarUris((current) => {
+        const next = { ...current };
+        for (const [id, uri] of entries) if (uri) next[id] = uri;
+        return next;
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [rows, props.resolveAvatarUri]);
   const mutationActive = useRef(false);
   useEffect(() => {
     if (phone && error) scroll.current?.scrollTo({ y: 0, animated: true });
@@ -62,10 +114,12 @@ export function HistoryScreen(
       setError("");
     } catch (cause) {
       if (version !== requestVersion.current) return;
-      setError(describeError(cause, {
-        operation: `Load ${view === "archived" ? "archived" : "recent"} chats`,
-        recovery: "Tap Reload chats to read your saved conversations again.",
-      }));
+      setError(
+        describeError(cause, {
+          operation: `Load ${view === "archived" ? "archived" : "recent"} chats`,
+          recovery: "Tap Reload chats to read your saved conversations again.",
+        }),
+      );
     } finally {
       if (version === requestVersion.current) setLoaded(true);
     }
@@ -78,9 +132,14 @@ export function HistoryScreen(
     };
   }, [reload]);
 
-  const say = (text: string) => AccessibilityInfo.announceForAccessibility(text);
+  const say = (text: string) =>
+    AccessibilityInfo.announceForAccessibility(text);
 
-  const mutate = async (work: () => Promise<void>, operation: string, recovery: string) => {
+  const mutate = async (
+    work: () => Promise<void>,
+    operation: string,
+    recovery: string,
+  ) => {
     if (mutationActive.current) return;
     mutationActive.current = true;
     setBusy(true);
@@ -96,43 +155,87 @@ export function HistoryScreen(
       setBusy(false);
     }
   };
+  const rowAvatar = (conversation: HistoryConversation) => {
+    const wanted =
+      conversation.avatarAttachmentId ??
+      (conversation.kind === "solo"
+        ? conversation.personaPhotoAttachmentId
+        : null);
+    const uri = wanted ? avatarUris[wanted] : undefined;
+    if (uri)
+      return (
+        <Image source={{ uri }} style={styles.rowImage} accessible={false} />
+      );
+    if (conversation.kind === "group")
+      return (
+        <View style={styles.rowIcon} accessible={false}>
+          <Icon
+            source="account-group"
+            size={20}
+            color={theme.colors.onSurfaceVariant}
+          />
+        </View>
+      );
+    return (
+      <View style={styles.rowIcon} accessible={false}>
+        <Text style={styles.rowInitial}>
+          {historyDisplayTitle(conversation).slice(0, 1).toUpperCase()}
+        </Text>
+      </View>
+    );
+  };
 
   const archive = (conversation: HistoryConversation) =>
-    mutate(async () => {
-      const title = historyDisplayTitle(conversation);
-      await props.history.archiveConversation(conversation.id, now().toISOString());
-      dispatch({ type: "dismiss" });
-      const text =
-        conversation.id === props.currentConversationId
-          ? `Archived "${title}". It stays open until you switch chats.`
-          : `Archived "${title}". Find it under Archived.`;
-      setNotice({ text, undo: { id: conversation.id, title } });
-      say(text);
-      await reload();
-    }, "Archive a chat", "Reload chats to check its current location, then try Archive again.");
+    mutate(
+      async () => {
+        const title = historyDisplayTitle(conversation);
+        await props.history.archiveConversation(
+          conversation.id,
+          now().toISOString(),
+        );
+        dispatch({ type: "dismiss" });
+        const text =
+          conversation.id === props.currentConversationId
+            ? `Archived "${title}". It stays open until you switch chats.`
+            : `Archived "${title}". Find it under Archived.`;
+        setNotice({ text, undo: { id: conversation.id, title } });
+        say(text);
+        await reload();
+      },
+      "Archive a chat",
+      "Reload chats to check its current location, then try Archive again.",
+    );
 
   const unarchive = (conversationId: string, title: string, fromUndo = false) =>
-    mutate(async () => {
-      await props.history.unarchiveConversation(conversationId);
-      dispatch({ type: "dismiss" });
-      const text = fromUndo
-        ? `"${title}" is back in Recent.`
-        : `Moved "${title}" back to Recent.`;
-      setNotice({ text });
-      say(text);
-      await reload();
-    }, "Move an archived chat back to Recent", "Reload chats to check its current location, then try Move to Recent again.");
+    mutate(
+      async () => {
+        await props.history.unarchiveConversation(conversationId);
+        dispatch({ type: "dismiss" });
+        const text = fromUndo
+          ? `"${title}" is back in Recent.`
+          : `Moved "${title}" back to Recent.`;
+        setNotice({ text });
+        say(text);
+        await reload();
+      },
+      "Move an archived chat back to Recent",
+      "Reload chats to check its current location, then try Move to Recent again.",
+    );
 
   const remove = (conversation: HistoryConversation) =>
-    mutate(async () => {
-      const title = historyDisplayTitle(conversation);
-      await props.onDeleteConversation(conversation.id);
-      dispatch({ type: "dismiss" });
-      const text = `Deleted "${title}".`;
-      setNotice({ text });
-      say(text);
-      await reload();
-    }, "Delete a chat", "Reload chats to check whether it remains, then try Delete again if needed.");
+    mutate(
+      async () => {
+        const title = historyDisplayTitle(conversation);
+        await props.onDeleteConversation(conversation.id);
+        dispatch({ type: "dismiss" });
+        const text = `Deleted "${title}".`;
+        setNotice({ text });
+        say(text);
+        await reload();
+      },
+      "Delete a chat",
+      "Reload chats to check whether it remains, then try Delete again if needed.",
+    );
 
   const switchView = (next: HistoryView) => {
     dispatch({ type: "dismiss" });
@@ -147,17 +250,30 @@ export function HistoryScreen(
       : "No chats yet. Go back to chat and start a new conversation.";
 
   return (
-    <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-      {!phone ? <View style={styles.titleRow}>
-        <Text accessibilityRole="header" variant="titleLarge" style={styles.flex}>
-          Chat history
-        </Text>
-        {!props.hideBackButton ? (
-          <NativeButton accessibilityLabel="Back to chat" onPress={props.onClose}>
-            Back to chat
-          </NativeButton>
-        ) : null}
-      </View> : !props.hideBackButton ? (
+    <ScrollView
+      ref={scroll}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={styles.content}
+    >
+      {!phone ? (
+        <View style={styles.titleRow}>
+          <Text
+            accessibilityRole="header"
+            variant="titleLarge"
+            style={styles.flex}
+          >
+            Chat history
+          </Text>
+          {!props.hideBackButton ? (
+            <NativeButton
+              accessibilityLabel="Back to chat"
+              onPress={props.onClose}
+            >
+              Back to chat
+            </NativeButton>
+          ) : null}
+        </View>
+      ) : !props.hideBackButton ? (
         <NativeButton accessibilityLabel="Back to chat" onPress={props.onClose}>
           Back to chat
         </NativeButton>
@@ -184,31 +300,48 @@ export function HistoryScreen(
             },
           ]}
         />
-      ) : <View accessibilityRole="tablist" style={styles.tabs}>
-        {(["recent", "archived"] as const).map((key) => {
-          const selected = view === key;
-          const label = key === "recent" ? "Recent" : `Archived${archivedCount ? ` (${archivedCount})` : ""}`;
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole="tab"
-              accessibilityLabel={label}
-              accessibilityState={{ selected }}
-              onPress={() => switchView(key)}
-              style={[styles.bevel, styles.tab, selected && styles.tabSelected]}
-              testID={`history-tab-${key}`}
-            >
-              <Text style={[styles.tabText, selected && styles.tabTextSelected]}>{label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>}
+      ) : (
+        <View accessibilityRole="tablist" style={styles.tabs}>
+          {(["recent", "archived"] as const).map((key) => {
+            const selected = view === key;
+            const label =
+              key === "recent"
+                ? "Recent"
+                : `Archived${archivedCount ? ` (${archivedCount})` : ""}`;
+            return (
+              <Pressable
+                key={key}
+                accessibilityRole="tab"
+                accessibilityLabel={label}
+                accessibilityState={{ selected }}
+                onPress={() => switchView(key)}
+                style={[
+                  styles.bevel,
+                  styles.tab,
+                  selected && styles.tabSelected,
+                ]}
+                testID={`history-tab-${key}`}
+              >
+                <Text
+                  style={[styles.tabText, selected && styles.tabTextSelected]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       <Searchbar
         role="searchbox"
-        accessibilityLabel={view === "archived" ? "Search archived chats" : "Search chats"}
+        accessibilityLabel={
+          view === "archived" ? "Search archived chats" : "Search chats"
+        }
         maxLength={500}
-        placeholder={view === "archived" ? "Search archived chats" : "Search chats"}
+        placeholder={
+          view === "archived" ? "Search archived chats" : "Search chats"
+        }
         value={query}
         onChangeText={setQuery}
         style={styles.search}
@@ -264,7 +397,8 @@ export function HistoryScreen(
           const current = conversation.id === props.currentConversationId;
           const archived = conversation.archivedAt !== null;
           const expanded = row.kind !== "idle" && row.id === conversation.id;
-          const confirming = row.kind === "confirm-delete" && row.id === conversation.id;
+          const confirming =
+            row.kind === "confirm-delete" && row.id === conversation.id;
           const toggle = () => {
             dispatch({ type: "toggle-actions", id: conversation.id });
             if (!expanded) say(`Actions for ${title}`);
@@ -275,45 +409,77 @@ export function HistoryScreen(
                 props.onOpenConversation(conversation.id);
                 break;
               case "archive":
-                void (archived ? unarchive(conversation.id, title) : archive(conversation));
+                void (archived
+                  ? unarchive(conversation.id, title)
+                  : archive(conversation));
                 break;
               case "delete":
                 dispatch({ type: "request-delete", id: conversation.id });
-                say(deleteConfirmationText({ title, current, working: !!props.working }));
+                say(
+                  deleteConfirmationText({
+                    title,
+                    current,
+                    working: !!props.working,
+                  }),
+                );
                 break;
             }
           };
           return (
-            <View key={conversation.id} style={[styles.rowCard, current && styles.rowCurrent]}>
+            <View
+              key={conversation.id}
+              style={[styles.rowCard, current && styles.rowCurrent]}
+            >
               <View style={styles.rowMain}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={historyRowLabel(conversation, { current, now: now() })}
+                  accessibilityLabel={historyRowLabel(conversation, {
+                    current,
+                    now: now(),
+                  })}
                   accessibilityHint="Opens this chat"
                   accessibilityActions={[
                     { name: "activate" },
-                    { name: "archive", label: archived ? "Move back to Recent" : "Archive" },
+                    {
+                      name: "archive",
+                      label: archived ? "Move back to Recent" : "Archive",
+                    },
                     { name: "delete", label: "Delete" },
                   ]}
                   onAccessibilityAction={onAction}
                   disabled={busy}
                   onPress={() => props.onOpenConversation(conversation.id)}
                   onLongPress={toggle}
-                  style={({ pressed }) => [styles.rowOpen, pressed && styles.pressed]}
+                  style={({ pressed }) => [
+                    styles.rowOpen,
+                    pressed && styles.pressed,
+                  ]}
                   testID={`history-open-${conversation.id}`}
                 >
-                  <View style={styles.rowHeading}>
-                    <Text numberOfLines={1} style={styles.rowTitle}>
-                      {title}
-                    </Text>
-                    <Text style={styles.rowDate}>
-                      {formatHistoryDate(historyRowDate(conversation), now())}
+                  {rowAvatar(conversation)}
+                  <View style={styles.rowContent}>
+                    <View style={styles.rowHeading}>
+                      <Text numberOfLines={1} style={styles.rowTitle}>
+                        {title}
+                      </Text>
+                      <Text style={styles.rowDate}>
+                        {formatHistoryDate(historyRowDate(conversation), now())}
+                      </Text>
+                    </View>
+                    {current ? (
+                      <Text style={styles.currentTag}>Open now</Text>
+                    ) : null}
+                    <Text
+                      numberOfLines={2}
+                      style={
+                        conversation.preview
+                          ? styles.preview
+                          : styles.previewEmpty
+                      }
+                    >
+                      {conversation.preview ?? "No messages yet"}
                     </Text>
                   </View>
-                  {current ? <Text style={styles.currentTag}>Open now</Text> : null}
-                  <Text numberOfLines={2} style={conversation.preview ? styles.preview : styles.previewEmpty}>
-                    {conversation.preview ?? "No messages yet"}
-                  </Text>
                 </Pressable>
                 {phone ? (
                   <IconButton
@@ -325,18 +491,20 @@ export function HistoryScreen(
                     style={styles.phoneMore}
                     testID={`history-more-${conversation.id}`}
                   />
-                ) : <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`More actions for ${title}`}
-                  accessibilityState={{ expanded }}
-                  disabled={busy}
-                  hitSlop={4}
-                  onPress={toggle}
-                  style={[styles.bevel, styles.more]}
-                  testID={`history-more-${conversation.id}`}
-                >
-                  <Text style={styles.moreText}>{expanded ? "▴" : "⋯"}</Text>
-                </Pressable>}
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`More actions for ${title}`}
+                    accessibilityState={{ expanded }}
+                    disabled={busy}
+                    hitSlop={4}
+                    onPress={toggle}
+                    style={[styles.bevel, styles.more]}
+                    testID={`history-more-${conversation.id}`}
+                  >
+                    <Text style={styles.moreText}>{expanded ? "▴" : "⋯"}</Text>
+                  </Pressable>
+                )}
               </View>
 
               {expanded && !confirming ? (
@@ -364,7 +532,13 @@ export function HistoryScreen(
                     textColor={theme.colors.error}
                     onPress={() => {
                       dispatch({ type: "request-delete", id: conversation.id });
-                      say(deleteConfirmationText({ title, current, working: !!props.working }));
+                      say(
+                        deleteConfirmationText({
+                          title,
+                          current,
+                          working: !!props.working,
+                        }),
+                      );
                     }}
                   >
                     Delete…
@@ -375,10 +549,16 @@ export function HistoryScreen(
               {confirming ? (
                 <View style={styles.confirm}>
                   <Text>
-                    {deleteConfirmationText({ title, current, working: !!props.working })}
+                    {deleteConfirmationText({
+                      title,
+                      current,
+                      working: !!props.working,
+                    })}
                   </Text>
                   {!archived ? (
-                    <Text style={styles.hint}>Only want it out of the way? Archive keeps it.</Text>
+                    <Text style={styles.hint}>
+                      Only want it out of the way? Archive keeps it.
+                    </Text>
                   ) : null}
                   <View style={[styles.actions, styles.confirmActions]}>
                     <NativeButton
@@ -430,7 +610,11 @@ export function HistoryScreen(
 
 const createStyles = (theme: MD3Theme, phone: boolean) =>
   StyleSheet.create({
-    content: { padding: phone ? 20 : 12, gap: phone ? 16 : 10, paddingBottom: 32 },
+    content: {
+      padding: phone ? 20 : 12,
+      gap: phone ? 16 : 10,
+      paddingBottom: 32,
+    },
     flex: { flex: 1 },
     titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     bevel: {
@@ -479,16 +663,46 @@ const createStyles = (theme: MD3Theme, phone: boolean) =>
       borderRadius: phone ? 18 : 0,
       overflow: "hidden",
     },
-    rowCurrent: phone ? {
-      borderColor: theme.colors.primary,
-    } : { borderLeftWidth: 4, borderLeftColor: theme.colors.primary },
+    rowCurrent: phone
+      ? {
+          borderColor: theme.colors.primary,
+        }
+      : { borderLeftWidth: 4, borderLeftColor: theme.colors.primary },
     rowMain: { flexDirection: "row", alignItems: "stretch" },
-    rowOpen: { flex: 1, minHeight: phone ? 88 : 56, paddingHorizontal: phone ? 16 : 12, paddingVertical: phone ? 14 : 8, gap: phone ? 4 : 2 },
+    rowOpen: {
+      flex: 1,
+      minHeight: phone ? 88 : 56,
+      paddingHorizontal: phone ? 16 : 12,
+      paddingVertical: phone ? 14 : 8,
+      gap: phone ? 12 : 10,
+      flexDirection: "row",
+      alignItems: "center",
+    },
     pressed: { backgroundColor: theme.colors.surfaceVariant },
+    rowContent: { flex: 1, gap: phone ? 4 : 2 },
+    rowImage: { width: 40, height: 40, borderRadius: 20 },
+    rowIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.surfaceVariant,
+    },
+    rowInitial: { fontWeight: "700", color: theme.colors.onSurfaceVariant },
     rowHeading: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-    rowTitle: { flex: 1, fontWeight: "700", fontSize: 16, color: theme.colors.onSurface },
+    rowTitle: {
+      flex: 1,
+      fontWeight: "700",
+      fontSize: 16,
+      color: theme.colors.onSurface,
+    },
     rowDate: { fontSize: 12, color: theme.colors.onSurfaceVariant },
-    currentTag: { fontSize: 12, fontWeight: "700", color: theme.colors.primary },
+    currentTag: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: theme.colors.primary,
+    },
     preview: { color: theme.colors.onSurfaceVariant },
     previewEmpty: { color: theme.colors.onSurfaceVariant, fontStyle: "italic" },
     more: {
@@ -499,9 +713,19 @@ const createStyles = (theme: MD3Theme, phone: boolean) =>
       justifyContent: "center",
       margin: 4,
     },
-    moreText: { fontSize: 20, fontWeight: "700", color: theme.colors.onSurface },
+    moreText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: theme.colors.onSurface,
+    },
     phoneMore: { width: 44, height: 44, margin: 8, alignSelf: "center" },
-    actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingBottom: 10 },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingBottom: 10,
+    },
     confirm: {
       gap: 8,
       paddingTop: 10,
