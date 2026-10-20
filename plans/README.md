@@ -1,6 +1,6 @@
 # AI Chat on My Terms: current implementation and verification work
 
-Start with the [remaining work ledger](status/README.md). As of the 2026-10-18 cleanup, **118 unfinished task cards** remain here; **84 integrated implementation records** are in [archived/plans/tasks/](../archived/plans/tasks/). All **202 original task IDs** and the [231-record feature inventory](../docs/lm-mini-features.md) are preserved. Archiving an implementation unit does not certify its device, service or release behavior.
+Start with the [remaining work ledger](status/README.md). As of the 2026-10-18 cleanup, **128 unfinished task cards** remain here (118 original + 10 P12 persona-group-chat cards); **84 integrated implementation records** are in [archived/plans/tasks/](../archived/plans/tasks/). All **202 original task IDs** and the [231-record feature inventory](../docs/lm-mini-features.md) are preserved. Archiving an implementation unit does not certify its device, service or release behavior.
 
 Use the [iPhone installation guide](../docs/iphone-installation.md) for build 21 and the [local UI testing guide](../docs/local-ui-testing.md) for browser checks. A successful signed preview does not establish the full-feature T128 or deep-verified T159 milestone. Missing native bridges, routes, backend startup wiring, platform ports and live proof remain active.
 
@@ -19,6 +19,7 @@ Read [architecture](01-architecture.md), [contracts](02-contracts.md), [executio
 | [P09](phases/P09.md) | Paired phone/Mac UI, live sync, CloudKit, USB and sharing |
 | [P10](phases/P10.md) | Optional services, native automation, workflows and accessibility |
 | [P11](phases/P11.md) | Working builds, platform ports, deep verification and distribution |
+| [P12](phases/P12.md) | Persona group chats: settings/rounds storage, Liquid model, turn controller, Drunk recall, avatars (GR-13) |
 
 P00–P02 and completed units from later phases are in the [archive](../archived/README.md). Original phase indexes, dated status ledgers, research, feasibility notes and implementation receipts remain available there for provenance. The [cleanup audit](../archived/cleanup-2026-10-18.json) records every card's disposition and every moved file's original hash.
 

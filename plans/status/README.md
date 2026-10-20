@@ -167,6 +167,22 @@ Integrated implementation cards are [archived](../../archived/plans/tasks/). The
 | [T168](../../plans/tasks/P11/T168.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 | [T169](../../plans/tasks/P11/T169.md) | Working-build, platform, deep-verification or release acceptance remains outstanding; retain the full card and its evidence requirements. |
 
+
+## P12
+
+| Card | Remaining work |
+| --- | --- |
+| [T170](../../plans/tasks/P12/T170.md) | Queued. Room settings, shared-model binding, Drunk flag, round/run persistence, migrations 0009; start of the GR-13 serial chain. |
+| [T171](../../plans/tasks/P12/T171.md) | Queued. Liquid LFM2.5-2.6B catalog pin, native top_k/penalty_repeat forwarding (llama.rn names verified), publisher defaults. |
+| [T172](../../plans/tasks/P12/T172.md) | Queued; depends T170. Assistant-only engine path, participant_id writes, round record writer, single-action guard. |
+| [T173](../../plans/tasks/P12/T173.md) | Queued; depends T171,T172. Dice/topic-interest ordering, Pass, context modes, Drunk 512-window. |
+| [T174](../../plans/tasks/P12/T174.md) | Queued; depends T170-T172. One shared model context, lease serialization, release discipline. |
+| [T175](../../plans/tasks/P12/T175.md) | Queued; depends T173,T174. Group chat route, Send/Pass/Ask/Stop, presentation modes. |
+| [T176](../../plans/tasks/P12/T176.md) | Queued; depends T175. Group setup v2 settings UI + open-room affordance. |
+| [T177](../../plans/tasks/P12/T177.md) | Queued; depends T170. Conversation avatars across appearance, library, header, transcript. |
+| [T178](../../plans/tasks/P12/T178.md) | Queued; depends T170-T177. Coverage matrix, test:groups wiring, docs truth. |
+| [T179](../../plans/tasks/P12/T179.md) | Queued; physical iPhone 17 Pro Max required — benchmark + Liquid device proof cannot run from Windows. |
+
 > 2026-10-19 desktop note: the T134 feature dependencies T136–T156 are served to the desktop client by the shared Expo web set inside the Tauri shell (T040/T134 amendments, `plans/07`); the desktop smoke exercises onboarding, providers, composer, streaming, diagnostics routing and restart persistence at desktop width, but per-feature desktop-width evidence is still owed by the deep-verification shards. The voice/audio path (T133) is not bridged on desktop and unexercised.
 
 Record new checks with the [evidence template](TEMPLATE.md). Full disposition and move hashes are in the [cleanup audit](../../archived/cleanup-2026-10-18.json).
