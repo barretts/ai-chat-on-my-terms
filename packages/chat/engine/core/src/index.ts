@@ -40,6 +40,8 @@ export interface SendInput {
   attachmentRefs?: readonly string[];
   reasoning?: boolean;
   json?: boolean;
+  /** Group seat attribution copied to every message row this run inserts. */
+  participantId?: string;
 }
 
 export interface ChatRunHandle {
@@ -48,6 +50,39 @@ export interface ChatRunHandle {
   readonly assistantMessageId: string;
   readonly events: AsyncIterable<RunEvent>;
   stop(reason?: string): Promise<void>;
+}
+
+/** Assistant-only run input: no user row, transcript context assembled upstream. */
+export interface AssistantRunInput {
+  conversationId: string;
+  /** Stable group seat attribution written to the assistant message row. */
+  participantId?: string;
+  binding: ChatBinding;
+  parameters?: Readonly<Record<string, unknown>>;
+  permittedTools?: readonly string[];
+  /** Pre-assembled provider context for this speaker's turn. */
+  preparedContext?: readonly { kind: string; value: unknown }[];
+  reasoning?: boolean;
+  json?: boolean;
+}
+
+/** Same durable streaming contract as `ChatRunHandle`, without a user message. */
+export interface AssistantRunHandle {
+  readonly runId: string;
+  readonly assistantMessageId: string;
+  readonly events: AsyncIterable<RunEvent>;
+  stop(reason?: string): Promise<void>;
+}
+
+/** Single-action guard violation: a second action arrived while a group round owned the conversation. */
+export class GroupRoundActiveError extends Error {
+  constructor(
+    readonly code: "group-round-active" | "group-round-required",
+    message: string,
+  ) {
+    super(message);
+    this.name = "GroupRoundActiveError";
+  }
 }
 
 export interface ChatEngineOptions {
@@ -76,6 +111,7 @@ interface ActiveRun {
 /** Durable send/stream/stop orchestration over the shared SQLite schema. */
 export class ChatEngine {
   private readonly active = new Map<string, ActiveRun>();
+  private readonly roundGuard = new Map<string, string>();
   private persistenceWork = Promise.resolve();
   private readonly createId: () => string;
   private readonly now: () => string;
@@ -85,7 +121,30 @@ export class ChatEngine {
     this.now = options.now ?? (() => new Date().toISOString());
   }
 
+  /** Single-action rule: while a group round holds the guard, sends are rejected. */
+  beginGroupRound(conversationId: string, roundId: string): void {
+    if (this.roundGuard.has(conversationId))
+      throw new GroupRoundActiveError(
+        "group-round-active",
+        "This conversation is answering a group round. Stop the current round before starting another.",
+      );
+    this.roundGuard.set(conversationId, roundId);
+  }
+
+  endGroupRound(conversationId: string, roundId: string): void {
+    if (this.roundGuard.get(conversationId) === roundId)
+      this.roundGuard.delete(conversationId);
+  }
+
+  isGroupRoundActive(conversationId: string): boolean {
+    return this.roundGuard.has(conversationId);
+  }
   async send(input: SendInput): Promise<ChatRunHandle> {
+    if (this.roundGuard.has(input.conversationId))
+      throw new GroupRoundActiveError(
+        "group-round-active",
+        "This conversation is answering a group round. Stop the current round before sending a new message.",
+      );
     const runId = this.createId();
     const userMessageId = this.createId();
     const assistantMessageId = this.createId();
@@ -264,6 +323,127 @@ export class ChatEngine {
     };
   }
 
+  /** Assistant-only group seat run: attributed assistant row, no user message. */
+  async beginAssistantRun(
+    input: AssistantRunInput,
+  ): Promise<AssistantRunHandle> {
+    if (!this.roundGuard.has(input.conversationId))
+      throw new GroupRoundActiveError(
+        "group-round-required",
+        "An assistant-only run must be started inside a group round guard.",
+      );
+    const runId = this.createId();
+    const assistantMessageId = this.createId();
+    const createdAt = this.now();
+    const request: RunRequest = RunRequestSchema.parse({
+      runId,
+      conversationId: input.conversationId,
+      messageId: assistantMessageId,
+      providerConnectionId: input.binding.providerConnectionId,
+      modelId: input.binding.modelId,
+      context: input.preparedContext ?? [],
+      parameters: safeParameters(input.parameters ?? {}),
+      permittedTools: [...(input.permittedTools ?? [])],
+      attachmentRefs: [],
+      reasoning: input.reasoning ?? false,
+      json: input.json ?? false,
+    });
+    const controller = new AbortController();
+    const active: ActiveRun = {
+      controller,
+      assistantMessageId,
+      cancellation: undefined,
+    };
+    this.active.set(runId, active);
+    try {
+      await this.beginAssistant(input, {
+        runId,
+        assistantMessageId,
+        createdAt,
+      });
+    } catch (error) {
+      this.active.delete(runId);
+      throw error;
+    }
+    return {
+      runId,
+      assistantMessageId,
+      events: this.durableEvents({
+        input: { binding: input.binding },
+        request,
+        runId,
+        assistantMessageId,
+        createdAt,
+        controller,
+        active,
+      }),
+      stop: async (reason = "Stopped by user") => {
+        await this.stop(runId, reason);
+      },
+    };
+  }
+
+  private async beginAssistant(
+    input: AssistantRunInput,
+    ids: { runId: string; assistantMessageId: string; createdAt: string },
+  ): Promise<void> {
+    const db = this.options.db;
+    await this.serializePersistence(() =>
+      db.withTransactionAsync(async (transaction) => {
+        const scopedDb = transaction ?? db;
+        const exists = await scopedDb.getFirstAsync<{ id: string }>(
+          "SELECT id FROM conversations WHERE id = ?",
+          input.conversationId,
+        );
+        if (!exists) throw new Error("Conversation does not exist");
+        const next = await scopedDb.getFirstAsync<{ n: number }>(
+          "SELECT COALESCE(MAX(sequence) + 1, 0) AS n FROM messages WHERE conversation_id = ?",
+          input.conversationId,
+        );
+        const sequence = next?.n ?? 0;
+        await scopedDb.runAsync(
+          "INSERT INTO runs (id, conversation_id, model_id, status, parameters_json, started_at) VALUES (?, ?, ?, 'running', ?, ?)",
+          ids.runId,
+          input.conversationId,
+          input.binding.modelRecordId,
+          JSON.stringify({
+            parameters: safeParameters(input.parameters ?? {}),
+            binding: storedBinding(input.binding),
+            assistantMessageId: ids.assistantMessageId,
+            ...(input.participantId
+              ? { participantId: input.participantId }
+              : {}),
+            ...(this.options.generationOwner
+              ? {
+                  generationOwner: {
+                    id: this.options.generationOwner.id,
+                    scope: this.options.generationOwner.scope,
+                    platform: this.options.generationOwner.platform,
+                  },
+                }
+              : {}),
+            events: [],
+          }),
+          ids.createdAt,
+        );
+        await scopedDb.runAsync(
+          "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, participant_id, created_at) VALUES (?, ?, 'assistant', '[]', ?, ?, ?, ?)",
+          ids.assistantMessageId,
+          input.conversationId,
+          sequence,
+          ids.runId,
+          input.participantId ?? null,
+          ids.createdAt,
+        );
+        await scopedDb.runAsync(
+          "UPDATE conversations SET updated_at = ? WHERE id = ?",
+          ids.createdAt,
+          input.conversationId,
+        );
+      }),
+    );
+  }
+
   private async begin(
     input: SendInput,
     ids: {
@@ -290,7 +470,7 @@ export class ChatEngine {
         let sequence = next?.n ?? 0;
         if (ids.insertUser !== false) {
           await scopedDb.runAsync(
-            "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, created_at) VALUES (?, ?, 'user', ?, ?, ?, ?)",
+            "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, participant_id, created_at) VALUES (?, ?, 'user', ?, ?, ?, ?, ?)",
             ids.userMessageId,
             input.conversationId,
             JSON.stringify(
@@ -298,6 +478,7 @@ export class ChatEngine {
             ),
             sequence++,
             ids.runId,
+            input.participantId ?? null,
             ids.createdAt,
           );
         }
@@ -325,11 +506,12 @@ export class ChatEngine {
           ids.createdAt,
         );
         await scopedDb.runAsync(
-          "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, created_at) VALUES (?, ?, 'assistant', '[]', ?, ?, ?)",
+          "INSERT INTO messages (id, conversation_id, role, parts_json, sequence, run_id, participant_id, created_at) VALUES (?, ?, 'assistant', '[]', ?, ?, ?, ?)",
           ids.assistantMessageId,
           input.conversationId,
           sequence,
           ids.runId,
+          input.participantId ?? null,
           ids.createdAt,
         );
         await scopedDb.runAsync(
@@ -342,10 +524,10 @@ export class ChatEngine {
   }
 
   private durableEvents(args: {
-    input: SendInput;
+    input: Pick<SendInput, "binding">;
     request: RunRequest;
     runId: string;
-    userMessageId: string;
+    userMessageId?: string;
     assistantMessageId: string;
     createdAt: string;
     controller: AbortController;
@@ -374,10 +556,10 @@ export class ChatEngine {
   }
 
   private async *stream(args: {
-    input: SendInput;
+    input: Pick<SendInput, "binding">;
     request: RunRequest;
     runId: string;
-    userMessageId: string;
+    userMessageId?: string;
     assistantMessageId: string;
     createdAt: string;
     controller: AbortController;

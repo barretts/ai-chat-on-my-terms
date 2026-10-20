@@ -2,6 +2,7 @@ import type { ProviderPort } from "@locallab/contracts/ports";
 import type { RunEvent, RunRequest } from "@locallab/contracts/run-events";
 import {
   ChatEngine,
+  type AssistantRunHandle,
   type ChatBinding,
   type ChatRunHandle,
   type ChatGenerationOwner,
@@ -60,12 +61,29 @@ export interface AdvancedSendInput extends Omit<SendInput, "binding"> {
   readonly systemPrompt?: string;
 }
 
+/** Group assistant turn: context assembled upstream, token budgeting applied here. */
+export interface AdvancedAssistantTurnInput {
+  conversationId: string;
+  /** Stable group seat attribution written to the assistant row. */
+  participantId?: string;
+  readonly binding?: ChatBinding;
+  readonly parameters?: Readonly<Record<string, unknown>>;
+  /** Prepared transcript context; the conversation SELECT is skipped. */
+  readonly preparedMessages: readonly ContextMessage[];
+  /** Messages packContext must never drop; defaults to the last prepared message. */
+  readonly requiredMessageIds?: readonly string[];
+}
+
 export interface ContextUsageSnapshot {
   readonly inputTokens: number;
   readonly tokenBudget: number;
   readonly reservedOutputTokens: number;
   readonly omittedMessageIds: readonly string[];
   readonly compactedMessageIds: readonly string[];
+}
+
+export interface AdvancedAssistantRunHandle extends AssistantRunHandle {
+  readonly contextUsage: ContextUsageSnapshot;
 }
 
 export interface AdvancedChatRunHandle extends ChatRunHandle {
@@ -163,6 +181,71 @@ export class AdvancedChatEngine {
         compactedMessageIds: packed.compactedMessageIds,
       },
     };
+  }
+
+  /**
+   * Assistant-only group seat turn: prepared transcript context packed to the
+   * model window, attributed assistant row, no user message, no titling.
+   */
+  async beginAssistantTurn(
+    input: AdvancedAssistantTurnInput,
+  ): Promise<AdvancedAssistantRunHandle> {
+    await this.ensureInitialized();
+    const conversation = await this.history.getConversation(
+      input.conversationId,
+    );
+    if (!conversation) throw new Error("Conversation does not exist");
+    const binding =
+      input.binding ??
+      (await this.resolveSavedBinding(
+        input.conversationId,
+        conversation.modelId,
+      ));
+    if (input.preparedMessages.length === 0)
+      throw new Error("An assistant turn needs prepared context");
+    const last = input.preparedMessages.at(-1)!;
+    const packed = await packContext({
+      ...this.options.context,
+      messages: input.preparedMessages,
+      requiredMessageIds: [...(input.requiredMessageIds ?? [last.id])],
+    });
+    await this.history.recordModelUse(
+      input.conversationId,
+      binding.modelRecordId,
+      this.now(),
+    );
+    const run = await this.core.beginAssistantRun({
+      conversationId: input.conversationId,
+      ...(input.participantId ? { participantId: input.participantId } : {}),
+      binding: {
+        ...binding,
+        port: contextualPort(retryingPort(binding.port), packed.messages),
+      },
+      ...(input.parameters ? { parameters: input.parameters } : {}),
+    });
+    return {
+      ...run,
+      contextUsage: {
+        inputTokens: packed.estimatedInputTokens,
+        tokenBudget: packed.tokenBudget,
+        reservedOutputTokens: packed.outputReservation,
+        omittedMessageIds: packed.omittedMessageIds,
+        compactedMessageIds: packed.compactedMessageIds,
+      },
+    };
+  }
+
+  /** Single-action guard: the conversation-wide round lock lives at the core seam. */
+  beginGroupRound(conversationId: string, roundId: string): void {
+    this.core.beginGroupRound(conversationId, roundId);
+  }
+
+  endGroupRound(conversationId: string, roundId: string): void {
+    this.core.endGroupRound(conversationId, roundId);
+  }
+
+  isGroupRoundActive(conversationId: string): boolean {
+    return this.core.isGroupRoundActive(conversationId);
   }
 
   getProjection(conversationId: string) {

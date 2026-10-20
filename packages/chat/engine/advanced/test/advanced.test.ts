@@ -271,3 +271,124 @@ describe("advanced chat engine", () => {
     }
   });
 });
+
+describe("assistant-only group turns", () => {
+  const participantId = "018f0000-0000-7000-8000-000000000201";
+  const roundId = "018f0000-0000-7000-8000-000000000202";
+
+  it("packs the prepared transcript, keeps the required instruction, and attributes the seat", async () => {
+    const db = await createDb();
+    try {
+      let captured: RunRequest | undefined;
+      const port = createProvider(async function* (request) {
+        captured = request;
+        yield event(request, "RunStarted", 0);
+        yield event(request, "TextDelta", 1, { text: "hello from Ada" });
+        yield event(request, "RunCompleted", 2);
+      });
+      const engine = new AdvancedChatEngine({
+        db: adapter(db),
+        context: contextOptions,
+        resolveBinding: async () => ({ ...binding, port }),
+      });
+      engine.beginGroupRound(conversationId, roundId);
+      const run = await engine.beginAssistantTurn({
+        conversationId,
+        participantId,
+        preparedMessages: [
+          {
+            id: "seat-1",
+            role: "assistant",
+            parts: [{ type: "text", text: "x".repeat(200) }],
+          },
+          {
+            id: "seat-2",
+            role: "assistant",
+            parts: [{ type: "text", text: "y".repeat(100) }],
+          },
+          {
+            id: "group-instruction",
+            role: "user",
+            parts: [{ type: "text", text: "Ada, reply to the room now." }],
+          },
+        ],
+      });
+      const received: RunEvent[] = [];
+      for await (const value of run.events) received.push(value);
+      assert.equal(received.at(-1)?.type, "RunCompleted");
+      assert.ok(captured);
+      const instruction = captured!.context.at(-1);
+      assert.equal(instruction?.kind, "user");
+      assert.equal(instruction?.value, "Ada, reply to the room now.");
+      assert.ok(
+        run.contextUsage.omittedMessageIds.includes("seat-1"),
+        "oldest filler must be dropped by the token budget",
+      );
+      const assistant = db
+        .prepare(
+          "SELECT role, participant_id, parts_json FROM messages WHERE role='assistant'",
+        )
+        .get() as {
+        role: string;
+        participant_id: string | null;
+        parts_json: string;
+      };
+      assert.equal(assistant.participant_id, participantId);
+      assert.ok(assistant.parts_json.includes("hello from Ada"));
+      const userRows = db
+        .prepare("SELECT COUNT(*) AS n FROM messages WHERE role='user'")
+        .get() as { n: number };
+      assert.equal(userRows.n, 0);
+      engine.endGroupRound(conversationId, roundId);
+      assert.equal(engine.isGroupRoundActive(conversationId), false);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("requires the guard and rejects a second round at the advanced seam", async () => {
+    const db = await createDb();
+    try {
+      const port = createProvider(async function* (request) {
+        yield event(request, "RunStarted", 0);
+        yield event(request, "RunCompleted", 1);
+      });
+      const engine = new AdvancedChatEngine({
+        db: adapter(db),
+        context: contextOptions,
+        resolveBinding: async () => ({ ...binding, port }),
+      });
+      await assert.rejects(
+        () =>
+          engine.beginAssistantTurn({
+            conversationId,
+            participantId,
+            preparedMessages: [
+              {
+                id: "group-instruction",
+                role: "user",
+                parts: [{ type: "text", text: "reply" }],
+              },
+            ],
+          }),
+        /inside a group round guard/,
+      );
+      engine.beginGroupRound(conversationId, roundId);
+      assert.throws(
+        () => engine.beginGroupRound(conversationId, roundId),
+        /group round/,
+      );
+      await assert.rejects(
+        () =>
+          engine.send({
+            conversationId,
+            text: "while guarded",
+            binding: { ...binding, port },
+          }),
+        /group round/,
+      );
+    } finally {
+      db.close();
+    }
+  });
+});

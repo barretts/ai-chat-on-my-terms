@@ -245,9 +245,9 @@ test("core v1 chat migrates to optional records without changing IDs or message 
       "INSERT INTO messages (id, conversation_id, role, parts_json, sequence) VALUES ('message-unchanged', 'c', 'user', '[{\"type\":\"text\",\"text\":\"preserve\"}]', 0)",
     ).run();
 
-    // Chain is 0001-core .. 0008-conversation-archive; see
-    // packages/schema/migrations/test/full.test.ts asserting the full chain is 8.
-    assert.equal(await migrateSQLite(migrationPort(db)), 8);
+    // Chain is 0001-core .. 0009-group-chat; see
+    // packages/schema/migrations/test/full.test.ts asserting the full chain is 9.
+    assert.equal(await migrateSQLite(migrationPort(db)), 9);
     const preserved = db
       .prepare("SELECT id, parts_json FROM messages")
       .get() as {

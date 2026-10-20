@@ -563,3 +563,146 @@ describe("chat engine durable send pipeline", () => {
     }
   });
 });
+
+describe("group round guard and assistant-only runs", () => {
+  const participantId = "018f0000-0000-7000-8000-000000000201";
+
+  it("rejects sends and second rounds while a round owns the conversation", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "chat-guard-"));
+    const path = join(dir, "db.sqlite");
+    const db = await ready(path);
+    try {
+      const engine = new ChatEngine({ db: adapter(db) });
+      await engine.send({
+        conversationId,
+        text: "solo",
+        binding: binding(provider("local"), "local"),
+      });
+      engine.beginGroupRound(conversationId, ids[0]!);
+      assert.equal(engine.isGroupRoundActive(conversationId), true);
+      await assert.rejects(
+        () =>
+          engine.send({
+            conversationId,
+            text: "blocked",
+            binding: binding(provider("local"), "local"),
+          }),
+        /group round/,
+      );
+      assert.throws(
+        () => engine.beginGroupRound(conversationId, ids[1]!),
+        /group round/,
+      );
+      engine.endGroupRound(conversationId, ids[1]!);
+      assert.equal(engine.isGroupRoundActive(conversationId), true);
+      engine.endGroupRound(conversationId, ids[0]!);
+      assert.equal(engine.isGroupRoundActive(conversationId), false);
+      await engine.send({
+        conversationId,
+        text: "free again",
+        binding: binding(provider("local"), "local"),
+      });
+      const sent = db
+        .prepare("SELECT COUNT(*) AS n FROM messages WHERE role='user'")
+        .get() as { n: number };
+      assert.equal(sent.n, 2);
+    } finally {
+      db.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("assistant-only run attributes the seat and inserts no user row", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "chat-assistant-"));
+    const path = join(dir, "db.sqlite");
+    const db = await ready(path);
+    try {
+      const engine = new ChatEngine({ db: adapter(db) });
+      await assert.rejects(
+        () =>
+          engine.beginAssistantRun({
+            conversationId,
+            participantId,
+            binding: binding(provider("local"), "local"),
+          }),
+        /inside a group round guard/,
+      );
+      engine.beginGroupRound(conversationId, ids[0]!);
+      const run = await engine.beginAssistantRun({
+        conversationId,
+        participantId,
+        binding: binding(provider("local"), "local"),
+        parameters: { max_tokens: 64 },
+      });
+      const events: RunEvent[] = [];
+      for await (const event of run.events) events.push(event);
+      assert.equal(events.at(-1)?.type, "RunCompleted");
+      const roles = db
+        .prepare("SELECT role, COUNT(*) AS n FROM messages GROUP BY role")
+        .all() as { role: string; n: number }[];
+      assert.equal(
+        roles.find((row) => row.role === "user")?.n ?? 0,
+        0,
+        "assistant-only must not insert a user row",
+      );
+      const assistant = db
+        .prepare(
+          "SELECT participant_id, parts_json FROM messages WHERE role='assistant'",
+        )
+        .get() as { participant_id: string | null; parts_json: string };
+      assert.equal(assistant.participant_id, participantId);
+      assert.ok(assistant.parts_json.includes("local reply"));
+      const runRow = db
+        .prepare("SELECT status, parameters_json FROM runs WHERE id=?")
+        .get(run.runId) as { status: string; parameters_json: string };
+      assert.equal(runRow.status, "completed");
+      assert.ok(runRow.parameters_json.includes(participantId));
+    } finally {
+      db.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("assistant-only stop cancels once and keeps the attributed row", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "chat-assistant-stop-"));
+    const path = join(dir, "db.sqlite");
+    const db = await ready(path);
+    try {
+      const engine = new ChatEngine({ db: adapter(db) });
+      engine.beginGroupRound(conversationId, ids[0]!);
+      const gate = Promise.withResolvers<void>();
+      const run = await engine.beginAssistantRun({
+        conversationId,
+        participantId,
+        binding: binding(provider("local", gate), "local"),
+      });
+      const collected: RunEvent[] = [];
+      const consuming = (async () => {
+        for await (const event of run.events) collected.push(event);
+      })();
+      await run.stop();
+      gate.resolve();
+      await consuming;
+      assert.equal(collected.at(-1)?.type, "RunCanceled");
+      assert.equal(
+        collected.filter((event) => event.type === "RunCanceled").length,
+        1,
+      );
+      const row = db
+        .prepare("SELECT role, participant_id FROM messages WHERE id = ?")
+        .get(run.assistantMessageId) as {
+        role: string;
+        participant_id: string | null;
+      };
+      assert.equal(row.role, "assistant");
+      assert.equal(row.participant_id, participantId);
+      const runRow = db
+        .prepare("SELECT status FROM runs WHERE id = ?")
+        .get(run.runId) as { status: string };
+      assert.equal(runRow.status, "canceled");
+    } finally {
+      db.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
