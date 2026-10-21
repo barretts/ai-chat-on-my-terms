@@ -14,17 +14,18 @@ bytes, sha256 `6a2d1174c57a4a6d959e8d1c6c6f55b3a58c4f9ed7a91072155cecb7c968c3c4`
 [record](../../../../builds/ios-preview-26.md)), superseded for row 3 by build 27 (manifests record
 `modelNames`; EAS `65cead1f-56fc-48b8-aac2-2f7d0819bfdf`, source commit `7be7c38`, IPA 26,910,812 bytes,
 sha256 `f683b9fde2a2049125f3718909f7f2a62fcef07b6ea572841e59c5e478add09f`,
-[record](../../../../builds/ios-preview-27.md)); remaining row-3 manifests should come from build 27.
+[record](../../../../builds/ios-preview-27.md)), superseded for row 3 by build 28 (T183 grammar guard + T184 starter pack; EAS `9ccc8203-682a-4041-a79e-7be9da186df2`, source commit `11b4886`, IPA 27,000,863 bytes, sha256 `828e20fe81eb6250a56004c02922697e0b0951d49f66bcdf3143296b3bfc7b88`, [record](../../../../builds/ios-preview-28.md)); remaining row-3 manifests should come from build 28.
 Install links: https://expo.dev/accounts/barrett/projects/locallab/builds/63b3ba76-566f-4bd6-905b-67b746a6cb2d (24),
 https://expo.dev/accounts/barrett/projects/locallab/builds/1edf8d93-ba68-4ac0-8ddc-14baa56d1216 (25),
 https://expo.dev/accounts/barrett/projects/locallab/builds/0dc28760-647b-43de-bd25-5f16cdd8853e (26)
-and https://expo.dev/accounts/barrett/projects/locallab/builds/65cead1f-56fc-48b8-aac2-2f7d0819bfdf (27).
+https://expo.dev/accounts/barrett/projects/locallab/builds/65cead1f-56fc-48b8-aac2-2f7d0819bfdf (27)
+and https://expo.dev/accounts/barrett/projects/locallab/builds/9ccc8203-682a-4041-a79e-7be9da186df2 (28).
 
 Expected archive digest (downloaded 2026-10-20 from the artifact URL above, 26,889,815
 bytes): SHA-256 `06b37aec9b2a6acab2ceb16d7c5fda84a8ca7979d0fb4c5c8c03ee30b057baa7` —
 any on-phone install path (Expo link or manual IPA) installs this exact archive.
 
-Known build caveat: preview builds 24-27 have NO Extended Virtual Addressing / Increased Memory
+Known build caveat: preview builds 24-28 have NO Extended Virtual Addressing / Increased Memory
 Limit (the ad hoc profile predates those capabilities; `app.json` has declared them since `f9cd94c`
 but the reused profile strips them); benchmark rows must record memory
 observations against the stock per-app budget.
@@ -34,7 +35,7 @@ Manifest format per row (one block per action):
 ```
 row: <feature id + scenario>
 device: iPhone 17 Pro Max (UDID 00008150-001844EC3C02401C)
-build: 24 (63b3ba76-566f-4bd6-905b-67b746a6cb2d); row 3: 27 (65cead1f-56fc-48b8-aac2-2f7d0819bfdf)
+build: 24 (63b3ba76-566f-4bd6-905b-67b746a6cb2d); row 3: 28 (9ccc8203-682a-4041-a79e-7be9da186df2)
 os: <iOS version at run time>
 model: <display name recorded in the manifest `modelNames` (27+), or catalog id | n/a>
 action: <exact steps taken on device>
