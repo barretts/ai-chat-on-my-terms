@@ -4,6 +4,8 @@ _My phone, my PC, my cloud — I refuse to pick one AI._
 
 Start with the [current work index](plans/README.md) and the [remaining work ledger](plans/status/README.md). The original 202 task records are preserved: 118 unfinished cards remain active and 84 integrated units are [archived](archived/README.md). The [coverage ledger](plans/05-coverage.md) still maps all 231 feature records.
 
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/9304f668-5ff5-4583-b3c5-76b5a882ef4c" />
+
 ## The three routes
 
 The product is defined by choice, not by one deployment target. Every route is real, and the user picks per device, per chat, per Persona:
