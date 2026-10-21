@@ -147,13 +147,38 @@ build: 27 (65cead1f-56fc-48b8-aac2-2f7d0819bfdf)
 os: iOS 26.6
 model: HauhauCS Qwen3.5 2B Aggressive Q4_K_M (blob:01a15b4d-d661-7466-bcf7-139c173a8b7f)
 action: Settings → Developer benchmark → tick model → Run matrix (rounds=2, limit=128); app died at scenario 3/9 (2-seat topic-interest); -partial checkpoint shared after relaunch
-observed: 2-seat rr 27.7-30.2 tok/s (3/4 replies length-capped at 128), rounds 3.8-17.5 s; died entering the first json_object selector — identical to builds 25 (2/18) and 26 (21:57) on this same blob; deterministic, model-specific; suspected native llama.cpp grammar abort via llama.rn response_format json_object
-live: yes — run on physical device by owner at 2026-10-21T03:51Z (airplane-mode confirmation pending)
+observed: 2-seat rr 27.7-30.2 tok/s (3/4 replies length-capped at 128), rounds 3.8-17.5 s; died entering the first json_object selector — identical to builds 25 (2/18) and 26 (21:57) on this same blob; deterministic, model-specific
+live: yes — run on physical device by owner at 2026-10-21T03:51Z (owner confirms airplane mode for the build-27 runs)
 ```
 
-Still open for row 3 completion: airplane/offline confirmation for the build-27 runs; a fix for
-the HauhauCS selector death (or owner excludes that model) so its grid can complete; `.ips` log
-to confirm root cause.
+## Crash root cause (`.ips` logs analyzed 2026-10-21)
+
+Five crash logs from the iPhone, three archived here (`crash-2157-selector.ips` = local
+16:57:52 = 21:57:52Z; `crash-0351-selector.ips` = local 22:51:38 = 03:51:38Z;
+`crash-0349-rerun.ips` = the immediate retry between the two shared checkpoints). All five
+identical: `EXC_CRASH SIGABRT`, termination `SIGNAL 6 Abort trap: 6`, faulting thread =
+llama.rn's native worker:
+
+```
+__cxa_throw → std::__terminate → abort
+rnllama common_sampler_init(llama_model const*, common_params_sampling&)
+rnllama rnllama::llama_rn_slot_manager::process_pending_queue()
+```
+
+A C++ exception thrown inside `common_sampler_init` — the call that builds the sampler chain,
+including the JSON grammar our `response_format: {type:"json_object"}` requests — with no
+try/catch in llama.rn's slot worker, so it becomes `std::terminate` → SIGABRT. Zero memory/jetsam
+signals in any log; not memory pressure. Correlation is second-exact: the 21:57 checkpoint
+manifest `generatedAt 21:57:51.661Z` vs crash 21:57:52; the 03:51 checkpoint
+`03:51:38.002Z` vs crash 03:51:38 — death lands within ~1 s of scenario 3 starting, i.e. in the
+selector's first completion (grammar init). The 14:43/14:45 (build 25) crashes carry the same
+fault. Same llama.cpp failure class as ggml-org/llama.cpp#21571/#23775/#23990 ("Failed to
+initialize samplers" with grammar on specific models) — but llama.rn surfaces it as a process
+abort instead of a request error. Fix belongs in `modules/gguf`: make the native slot manager
+convert the sampler-init throw into a failed run, with a JS fallback that serves topic selection
+as plain text + the existing parse pipeline. Tinman's identical grammar calls succeed —
+vocab/template-specific to the HauhauCS fine-tune, not our grammar string.
+
 
 ## Row status
 
@@ -161,7 +186,7 @@ to confirm root cause.
 | - | -------- | ------ |
 | 1 | Pinned build shipped, build id recorded | done (this directory + build record; commit `8951af8`) |
 | 2 | Both GGUF downloads on device, `assertModelIntegrity` + GGUF magic pass | pending device run |
-| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — Tinman Gemma 4 E4B Companion full grid + HauhauCS Qwen3.5 2B Aggressive deterministic selector death filed above, both models identified via manifest `modelNames`. Outstanding: airplane-mode confirmation; HauhauCS fix-or-exclude; `.ips` root cause. Persona consistency/repetition rows: FAIL (parroting scales with seats). Thermal unobservable (no RN 0.86.3 API); peak RSS not observable in-app |
+| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — Tinman Gemma 4 E4B Companion full grid done offline (owner airplane-confirmed) + HauhauCS Qwen3.5 2B Aggressive dies deterministically at first `json_object` selector; `.ips` analysis above: SIGABRT from uncaught C++ throw in llama.rn `common_sampler_init` (grammar init), not jetsam. Outstanding: fix ships (native slot-manager error conversion + JS fallback), then HauhauCS grid rerun. Persona consistency/repetition rows: FAIL (parroting scales with seats). Thermal unobservable (no RN 0.86.3 API); peak RSS not observable in-app |
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |
