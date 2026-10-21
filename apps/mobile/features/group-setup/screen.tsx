@@ -272,7 +272,10 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
 
   return (
     <ScrollView style={{ flex: 1 }} accessibilityLabel="Group setup panel">
-      <NativeSurface accessibilityLabel="Group setup surface">
+      <NativeSurface
+        accessibilityLabel="Group setup surface"
+        style={{ padding: 16, gap: 12 }}
+      >
         {error ? <ErrorNotice message={error} /> : null}
         {errors.some((problem) => problem.participantIndex === null) ? (
           <ErrorNotice
@@ -297,7 +300,6 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
               flexDirection: "row",
               flexWrap: "wrap",
               gap: 8,
-              marginVertical: 8,
             }}
           >
             {roomChoices.map((room) => (
@@ -401,7 +403,7 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
         />
         {!phone ? <Text variant="titleMedium">Participants</Text> : null}
         {draft.participants.map((seat, index) => (
-          <View key={`${draft.id ?? "new"}-${index}`}>
+          <View key={`${draft.id ?? "new"}-${index}`} style={{ gap: 8 }}>
             <TextInput
               label={`Participant ${index + 1} name`}
               accessibilityLabel={`Participant ${index + 1} name`}
@@ -433,7 +435,6 @@ export function GroupSetupPanel(props: GroupSetupPanelProps) {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 8,
-                marginVertical: 4,
               }}
             >
               <Text variant="bodySmall" style={{ flex: 1 }}>

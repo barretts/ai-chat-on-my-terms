@@ -136,7 +136,10 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
 
   return (
     <ScrollView style={{ flex: 1 }} accessibilityLabel="Group chat transcript">
-      <NativeSurface accessibilityLabel="Group transcript surface">
+      <NativeSurface
+        accessibilityLabel="Group transcript surface"
+        style={{ padding: 16, gap: 12 }}
+      >
         {error ? <ErrorNotice message={error} /> : null}
         {props.room.scenario ? (
           <Text variant="titleMedium">{props.room.scenario}</Text>
@@ -152,7 +155,6 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
               height: 40,
               borderRadius: 20,
               alignSelf: "flex-start",
-              marginBottom: 8,
             }}
           />
         ) : null}
@@ -177,13 +179,12 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
           </Text>
         ) : null}
         {props.entries.map((entry) => (
-          <View key={entry.id} style={{ marginBottom: 12 }}>
+          <View key={entry.id} style={{ gap: 4 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 8,
-                marginBottom: 4,
               }}
             >
               {entry.speakerSeat >= 0
@@ -209,7 +210,6 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
-              marginBottom: 12,
             }}
           >
             {seatAvatar(
@@ -242,7 +242,6 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
             flexDirection: "row",
             flexWrap: "wrap",
             gap: 8,
-            marginVertical: 8,
           }}
         >
           <NativeButton
@@ -273,41 +272,42 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
             : "Replies appear when each participant finishes."}
         </Text>
         <Text variant="titleMedium">Ask a participant</Text>
-        {participants.map((seat, seatIndex) => (
-          <View
-            key={`${seat.displayName}-${seatIndex}`}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              marginVertical: 4,
-            }}
-          >
-            {seatAvatar(
-              seatIndex,
-              seat.displayName || `Participant ${seatIndex + 1}`,
-              theme.colors.primary,
-            )}
-            <NativeButton
-              accessibilityLabel={`Ask ${seat.displayName || "participant"}`}
-              disabled={locked || playing}
-              onPress={() => props.onAsk(seatIndex, draft.trim())}
+        <View style={{ gap: 8 }}>
+          {participants.map((seat, seatIndex) => (
+            <View
+              key={`${seat.displayName}-${seatIndex}`}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}
             >
-              Ask {seat.displayName || `Participant ${seatIndex + 1}`}
-            </NativeButton>
-            <Text variant="bodySmall" style={{ flex: 1 }}>
-              Tools
-            </Text>
-            <Switch
-              accessibilityLabel={`${
-                seat.displayName || "Participant"
-              } tools switch`}
-              value={seat.toolsEnabled}
-              disabled={locked || playing}
-              onValueChange={(value) => toggleSeatTools(seatIndex, value)}
-            />
-          </View>
-        ))}
+              {seatAvatar(
+                seatIndex,
+                seat.displayName || `Participant ${seatIndex + 1}`,
+                theme.colors.primary,
+              )}
+              <NativeButton
+                accessibilityLabel={`Ask ${seat.displayName || "participant"}`}
+                disabled={locked || playing}
+                onPress={() => props.onAsk(seatIndex, draft.trim())}
+              >
+                Ask {seat.displayName || `Participant ${seatIndex + 1}`}
+              </NativeButton>
+              <Text variant="bodySmall" style={{ flex: 1 }}>
+                Tools
+              </Text>
+              <Switch
+                accessibilityLabel={`${
+                  seat.displayName || "Participant"
+                } tools switch`}
+                value={seat.toolsEnabled}
+                disabled={locked || playing}
+                onValueChange={(value) => toggleSeatTools(seatIndex, value)}
+              />
+            </View>
+          ))}
+        </View>
         {participants.map((seat, seatIndex) => {
           const status = statuses.get(seatIndex);
           if (!status || status.kind === "idle") return null;
