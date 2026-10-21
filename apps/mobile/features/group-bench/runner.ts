@@ -46,13 +46,16 @@ import {
   type BenchRunRecord,
 } from "./matrix";
 import { createRecordingPort } from "./recorder";
-import { createMobileChatAttachmentIntake } from "../../composition/chat/attachments";
+import {
+  createExpoChatAttachmentExtraction,
+  createMobileChatAttachmentIntake,
+} from "../../composition/chat/attachments";
 import {
   deleteConversation,
   runConversationCleanups,
   type ConversationCleanupPorts,
 } from "../../composition/chat/conversation-lifecycle";
-
+import { createStarterAvatarAttacher } from "../../platform/starter-avatars";
 /**
  * T180 dev runner: the REAL group runtime (route bootstrap mirrored
  * verbatim) driving the benchmark matrix, so on-device manifests are valid
@@ -146,19 +149,54 @@ export async function createBenchSession(): Promise<BenchSession> {
   await runConversationCleanups(database, cleanupPorts).catch(() => {});
 
   // Stable bench personas: reused across runs, deleted at session teardown.
+  // Older installs (and crashed sessions, which skip teardown) left "Bench X"
+  // rows behind; adopt one by legacy name and rename it instead of creating a
+  // duplicate. Each persona gets its bundled bust as an avatar through the
+  // managed attachment path (owner feedback: the bench rows were unnamed,
+  // avatar-less clutter in the persona picker).
   const personaIds = new Map<string, string>();
   const keyByPersonaId = new Map<string, string>();
+  const attachAvatar = createStarterAvatarAttacher({
+    attachments: intake.attachments,
+    extraction: createExpoChatAttachmentExtraction(),
+  });
   for (const spec of BENCH_PERSONAS) {
-    const existing = (await library.list()).find(
-      (persona) => persona.name === spec.name,
-    );
-    const record =
-      existing ??
-      (await library.create({ name: spec.name, prompt: spec.prompt }));
+    const records = await library.list();
+    const existing =
+      records.find((persona) => persona.name === spec.name) ??
+      (spec.legacyNames ?? [])
+        .map((legacy) => records.find((persona) => persona.name === legacy))
+        .find((persona) => persona !== undefined);
+    let record = existing;
+    if (record) {
+      const patch: Parameters<typeof library.update>[1] = {};
+      if (record.name !== spec.name) patch.name = spec.name;
+      if (record.prompt !== spec.prompt) patch.prompt = spec.prompt;
+      if (record.photoAttachmentId === null) {
+        const avatarId = await attachAvatar({
+          key: `bench-${spec.key}`,
+          id: record.id,
+        });
+        if (avatarId !== null) patch.photoAttachmentId = avatarId;
+      }
+      if (Object.keys(patch).length > 0) {
+        record = await library.update(record.id, patch);
+      }
+    } else {
+      record = await library.create({ name: spec.name, prompt: spec.prompt });
+      const avatarId = await attachAvatar({
+        key: `bench-${spec.key}`,
+        id: record.id,
+      });
+      if (avatarId !== null) {
+        record = await library.update(record.id, {
+          photoAttachmentId: avatarId,
+        });
+      }
+    }
     personaIds.set(spec.key, record.id);
     keyByPersonaId.set(record.id, spec.key);
   }
-
   const capacity = readDeviceCapacity();
   // Surface grammar-quarantine state (T183) in manifests; crash-harvest runs at boot anyway.
   void getGrammarGuard().ready();

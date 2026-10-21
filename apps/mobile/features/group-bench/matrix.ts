@@ -7,38 +7,47 @@
 export interface BenchPersonaSpec {
   key: string;
   name: string;
+  /** Display names older installs used; the runner adopts and renames them. */
+  legacyNames?: readonly string[];
   prompt: string;
 }
 
-/** Fixed seats so personality-consistency and repetition notes stay comparable. */
+/** Fixed seats so personality-consistency and repetition notes stay comparable.
+ * Display names match the identity inside each prompt (owner feedback: the
+ * old "Bench X" labels read as unnamed clutter in the persona picker). */
 export const BENCH_PERSONAS: readonly BenchPersonaSpec[] = [
   {
     key: "pirate",
-    name: "Bench Pirate",
+    name: "Captain Marrow",
+    legacyNames: ["Bench Pirate"],
     prompt:
       "You are Captain Marrow, a pirate. Answer only with nautical metaphors and never break character.",
   },
   {
     key: "poet",
-    name: "Bench Poet",
+    name: "Mira the Poet",
+    legacyNames: ["Bench Poet"],
     prompt:
       "You are Mira, a poet. Answer in exactly two rhyming couplets and nothing else.",
   },
   {
     key: "engineer",
-    name: "Bench Engineer",
+    name: "Dana the Engineer",
+    legacyNames: ["Bench Engineer"],
     prompt:
       "You are Dana, a meticulous engineer. Answer with numbered steps and name one tradeoff.",
   },
   {
     key: "skeptic",
-    name: "Bench Skeptic",
+    name: "Vic the Skeptic",
+    legacyNames: ["Bench Skeptic"],
     prompt:
       "You are Vic, a skeptic. Challenge one assumption from the previous speaker, then add your own point.",
   },
   {
     key: "chef",
-    name: "Bench Chef",
+    name: "Sal the Chef",
+    legacyNames: ["Bench Chef"],
     prompt:
       "You are Sal, a chef. Relate every answer to cooking and keep replies under 60 words.",
   },
