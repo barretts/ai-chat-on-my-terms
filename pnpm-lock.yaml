@@ -163,6 +163,9 @@ importers:
       '@locallab/personas-library':
         specifier: workspace:*
         version: link:../../packages/personas/library
+      '@locallab/personas-starter-pack':
+        specifier: workspace:*
+        version: link:../../packages/personas/starter-pack
       '@locallab/provider-anthropic':
         specifier: workspace:*
         version: link:../../packages/providers/cloud/anthropic
@@ -1448,6 +1451,31 @@ importers:
         specifier: workspace:*
         version: link:../bindings
     devDependencies:
+      '@types/node':
+        specifier: 24.0.10
+        version: 24.0.10
+      tsx:
+        specifier: 4.16.2
+        version: 4.16.2(patch_hash=o23nwp37d4zoftkzbsh2ytrnge)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/personas/starter-pack:
+    dependencies:
+      '@locallab/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@locallab/personas-library':
+        specifier: workspace:*
+        version: link:../library
+      '@locallab/storage-sqlite-core':
+        specifier: workspace:*
+        version: link:../../storage/sqlite/core
+    devDependencies:
+      '@locallab/schema':
+        specifier: workspace:*
+        version: link:../../schema
       '@types/node':
         specifier: 24.0.10
         version: 24.0.10

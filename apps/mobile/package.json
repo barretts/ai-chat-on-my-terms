@@ -40,6 +40,7 @@
     "@locallab/network-http": "workspace:*",
     "@locallab/parameters": "workspace:*",
     "@locallab/personas-library": "workspace:*",
+    "@locallab/personas-starter-pack": "workspace:*",
     "@locallab/provider-anthropic": "workspace:*",
     "@locallab/provider-cloud-compatible": "workspace:*",
     "@locallab/provider-compatible-local": "workspace:*",

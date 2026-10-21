@@ -1,0 +1,26 @@
+{
+  "name": "@locallab/personas-starter-pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@locallab/contracts": "workspace:*",
+    "@locallab/personas-library": "workspace:*",
+    "@locallab/storage-sqlite-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "tsx": "4.16.2",
+    "typescript": "5.9.3",
+    "@locallab/schema": "workspace:*"
+  }
+}

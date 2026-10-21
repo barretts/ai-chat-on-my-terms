@@ -224,9 +224,14 @@ import { EntityIdSchema } from "@locallab/contracts/identity";
 import { MemoryScreen } from "../../features/memory/screen";
 import { ChatPanels } from "./panels";
 import {
+  createExpoChatAttachmentExtraction,
   createMobileChatAttachmentIntake,
   type MobileChatAttachmentIntake,
 } from "./attachments";
+import {
+  ensureStarterTropePack,
+  reloadStarterTropePack,
+} from "./starter-pack-boot";
 import {
   createNativeMobileArchivePorts,
   nativeArchiveFiles,
@@ -668,6 +673,20 @@ export default function CompleteChatScreen() {
           blobs,
           createId: createChatId,
         });
+        // T184: install the shipped starter trope pack once per device
+        // (persona_library_state marker); failures never abort boot.
+        try {
+          await ensureStarterTropePack({
+            library: identities.personas,
+            db: database,
+            attachments: intake.attachments,
+            extraction: createExpoChatAttachmentExtraction(),
+            log: (message) => console.warn(message),
+          });
+        } catch (cause) {
+          console.warn(`starter trope pack seeding failed: ${String(cause)}`);
+        }
+
         // Finish file cleanup for chats deleted before the app last closed.
         void runConversationCleanups(
           database,
@@ -3473,6 +3492,15 @@ export default function CompleteChatScreen() {
             });
           }}
           modelConnections={personaConnections}
+          loadStarterPack={async () => {
+            await reloadStarterTropePack({
+              library: runtime.identities.personas,
+              db: runtime.db,
+              attachments: runtime.intake.attachments,
+              extraction: createExpoChatAttachmentExtraction(),
+              log: (message) => console.warn(message),
+            });
+          }}
           generatePersona={async (idea, signal) => {
             const selected = await runtime.registry.selected(
               runtime.conversationId,

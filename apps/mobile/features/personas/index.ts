@@ -7,9 +7,7 @@ import type {
   PersonaSwitchIntent,
 } from "@locallab/personas-library";
 import type { PersonaModelConnectionOption } from "../persona-bindings";
-import type {
-  PersonaGenerateHandler,
-} from "../persona-generator";
+import type { PersonaGenerateHandler } from "../persona-generator";
 
 export interface PersonaAvatar {
   attachmentId: string;
@@ -50,6 +48,9 @@ export interface PersonaFeatureProps {
   ) => Promise<void> | void;
   /** Saved provider connections offered as Persona model bindings (PE-02). */
   modelConnections?: readonly PersonaModelConnectionOption[];
+  /** Reload the shipped starter trope pack (T184): re-insert deleted or
+   * lost characters, clear their tombstones, and keep user edits intact. */
+  loadStarterPack?: () => Promise<void>;
 }
 
 export interface PersonaEditorDraft {

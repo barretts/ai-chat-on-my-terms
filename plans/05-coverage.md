@@ -111,7 +111,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | PA-07 | Chat overrides take highest precedence. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
 | PA-08 | Reset model preset through Use Global params. | [T046](../archived/plans/tasks/P04/T046.md) | iPhone T128 | T159F |
 
-## PE — Personas (10)
+## PE — Personas (11)
 
 | ID | Behavior | Implementation cards | Working milestone | Deep proof |
 |---|---|---|---|---|
@@ -125,6 +125,7 @@ A feature row is *implemented* when its card and working route pass a bounded sm
 | PE-08 | Kokoro voice speed and custom parameter binding. | [T054](tasks/P05/T054.md) | iPhone T128 | T159B |
 | PE-09 | Attach a ComfyUI workflow to a Persona. | [T054](tasks/P05/T054.md), [T091](../archived/plans/tasks/P08/T091.md) | iPhone T128 | T159B |
 | PE-10 | Start individual chats or add Personas to groups. | [T050](../archived/plans/tasks/P05/T050.md) | iPhone T128 | T159B |
+| PE-11 | Shipped starter trope pack with avatars, re-loadable. | [T184](tasks/P12/T184.md) | iPhone T184 | — |
 
 ## ME — Memory (7)
 

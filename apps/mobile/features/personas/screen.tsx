@@ -27,9 +27,7 @@ import { describeError } from "../diagnostics/errors";
 import { ErrorNotice } from "../diagnostics/error-notice";
 import { PersonaGeneratorForm } from "../persona-generator/screen";
 import { readPersonaMemorySettings } from "@locallab/memory-scope";
-import {
-  DEFAULT_PERSONA_APPEARANCE,
-} from "@locallab/personas-library";
+import { DEFAULT_PERSONA_APPEARANCE } from "@locallab/personas-library";
 import {
   DEFAULT_MODEL_CHOICE,
   personaModelChoices,
@@ -86,7 +84,8 @@ export function PersonaScreen(props: PersonaFeatureProps) {
               await props.avatarPort!.resolve(id).catch((cause) => {
                 const message = describeError(cause, {
                   operation: "Load a persona avatar image",
-                  recovery: "Edit this persona and choose another photo. Its instructions and chats remain available.",
+                  recovery:
+                    "Edit this persona and choose another photo. Its instructions and chats remain available.",
                 });
                 if (alive.current) setError(message);
                 return undefined;
@@ -109,10 +108,12 @@ export function PersonaScreen(props: PersonaFeatureProps) {
     alive.current = true;
     void reload().catch((cause) => {
       if (alive.current)
-        setError(describeError(cause, {
-          operation: "Load persona profiles",
-          recovery: "Tap Reload profiles to read your personas again.",
-        }));
+        setError(
+          describeError(cause, {
+            operation: "Load persona profiles",
+            recovery: "Tap Reload profiles to read your personas again.",
+          }),
+        );
     });
     const port = props.avatarPort;
     const pending = pendingAvatars.current;
@@ -123,7 +124,8 @@ export function PersonaScreen(props: PersonaFeatureProps) {
         void port?.release(id, owner).catch((cause) => {
           describeError(cause, {
             operation: "Clean up an unused persona photo on exit",
-            recovery: "Reopen Personas and edit the profile to retry unused photo cleanup.",
+            recovery:
+              "Reopen Personas and edit the profile to retry unused photo cleanup.",
           });
         });
       pending.clear();
@@ -138,10 +140,13 @@ export function PersonaScreen(props: PersonaFeatureProps) {
       await work();
     } catch (cause) {
       if (alive.current)
-        setError(describeError(cause, {
-          operation,
-          recovery: "Check the profile fields, then try this action again. Reload profiles to check what was saved.",
-        }));
+        setError(
+          describeError(cause, {
+            operation,
+            recovery:
+              "Check the profile fields, then try this action again. Reload profiles to check what was saved.",
+          }),
+        );
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -157,7 +162,8 @@ export function PersonaScreen(props: PersonaFeatureProps) {
           // A committed profile edit stays committed. Retry unused-image cleanup on exit.
           const message = describeError(cause, {
             operation: "Clean up an unused persona photo",
-            recovery: "Your profile edit remains saved. Close and reopen Personas to retry photo cleanup.",
+            recovery:
+              "Your profile edit remains saved. Close and reopen Personas to retry photo cleanup.",
           });
           if (alive.current) setError(message);
         }
@@ -220,30 +226,33 @@ export function PersonaScreen(props: PersonaFeatureProps) {
     });
 
   const save = () =>
-    void perform(editing ? "Save persona profile changes" : "Create a persona profile", async () => {
-      if (!draft) return;
-      const record = editing
-        ? await props.library.update(editing.id, {
-            ...draft,
-            expectedRevision: editing.revision,
-          })
-        : await props.library.create({ ...draft, id: ownerId });
-      await props.onPersonaMemoryPolicy?.(
-        record.id,
-        readPersonaMemorySettings(record.profile).share === true,
-      );
-      // Saved avatars retain their owner; discarded picks and the previous avatar are released.
-      if (record.photoAttachmentId)
-        pendingAvatars.current.delete(record.photoAttachmentId);
-      if (
-        editing?.photoAttachmentId &&
-        editing.photoAttachmentId !== record.photoAttachmentId
-      )
-        pendingAvatars.current.set(editing.photoAttachmentId, editing.id);
-      await discardDraft();
-      await reload();
-      await props.onProfilesChanged?.();
-    });
+    void perform(
+      editing ? "Save persona profile changes" : "Create a persona profile",
+      async () => {
+        if (!draft) return;
+        const record = editing
+          ? await props.library.update(editing.id, {
+              ...draft,
+              expectedRevision: editing.revision,
+            })
+          : await props.library.create({ ...draft, id: ownerId });
+        await props.onPersonaMemoryPolicy?.(
+          record.id,
+          readPersonaMemorySettings(record.profile).share === true,
+        );
+        // Saved avatars retain their owner; discarded picks and the previous avatar are released.
+        if (record.photoAttachmentId)
+          pendingAvatars.current.delete(record.photoAttachmentId);
+        if (
+          editing?.photoAttachmentId &&
+          editing.photoAttachmentId !== record.photoAttachmentId
+        )
+          pendingAvatars.current.set(editing.photoAttachmentId, editing.id);
+        await discardDraft();
+        await reload();
+        await props.onProfilesChanged?.();
+      },
+    );
 
   const remove = (record: PersonaRecord) =>
     void perform("Delete a persona profile", async () => {
@@ -332,9 +341,24 @@ export function PersonaScreen(props: PersonaFeatureProps) {
         ) : null}
       </View>
       <Text>
-        Personas change how the assistant replies. Use one in this chat, start
-        a new chat with it, or create your own instructions.
+        Personas change how the assistant replies. Use one in this chat, start a
+        new chat with it, or create your own instructions.
       </Text>
+      {props.loadStarterPack ? (
+        <NativeButton
+          accessibilityLabel="Load character pack"
+          mode="outlined"
+          disabled={busy}
+          onPress={() =>
+            void perform("Load character pack", async () => {
+              await props.loadStarterPack?.();
+              await reload();
+            })
+          }
+        >
+          Load character pack
+        </NativeButton>
+      ) : null}
       {error ? (
         <View style={{ gap: 8 }}>
           <ErrorNotice message={error} />
@@ -423,61 +447,65 @@ export function PersonaScreen(props: PersonaFeatureProps) {
               disabled={busy}
             />
             <PersonaEditorOptions phone={phone} title="Voice">
-            <NativeDropdown
-              label="Persona voice"
-              value={
-                typeof draft.profile?.speechVoiceId === "string"
-                  ? draft.profile.speechVoiceId
-                  : "default"
-              }
-              options={[
-                { value: "default", label: "Use selected studio voice" },
-                ...speechVoices.map((voice) => ({
-                  value: voice.id,
-                  label: voice.name,
-                  detail: voice.description,
-                })),
-              ]}
-              disabled={busy}
-              onChange={(speechVoiceId) =>
-                setDraft({
-                  ...draft,
-                  profile: { ...draft.profile, speechVoiceId },
-                })
-              }
-            />
-            <NativeDropdown
-              label="Persona voice speed"
-              value={
-                typeof draft.profile?.speechRate === "number"
-                  ? String(draft.profile.speechRate)
-                  : "default"
-              }
-              options={[
-                { value: "default", label: "Use studio speed" },
-                ...[0.75, 1, 1.15, 1.3, 1.5].map((rate) => ({
-                  value: String(rate),
-                  label: `${rate}×`,
-                })),
-              ]}
-              disabled={busy}
-              onChange={(rate) => {
-                const profile = { ...draft.profile };
-                if (rate === "default") profile.speechRate = null;
-                else profile.speechRate = Number(rate);
-                setDraft({ ...draft, profile });
-              }}
-            />
-            <Text>
-              Download the chosen voice pack in Voices before reading aloud.
-            </Text>
+              <NativeDropdown
+                label="Persona voice"
+                value={
+                  typeof draft.profile?.speechVoiceId === "string"
+                    ? draft.profile.speechVoiceId
+                    : "default"
+                }
+                options={[
+                  { value: "default", label: "Use selected studio voice" },
+                  ...speechVoices.map((voice) => ({
+                    value: voice.id,
+                    label: voice.name,
+                    detail: voice.description,
+                  })),
+                ]}
+                disabled={busy}
+                onChange={(speechVoiceId) =>
+                  setDraft({
+                    ...draft,
+                    profile: { ...draft.profile, speechVoiceId },
+                  })
+                }
+              />
+              <NativeDropdown
+                label="Persona voice speed"
+                value={
+                  typeof draft.profile?.speechRate === "number"
+                    ? String(draft.profile.speechRate)
+                    : "default"
+                }
+                options={[
+                  { value: "default", label: "Use studio speed" },
+                  ...[0.75, 1, 1.15, 1.3, 1.5].map((rate) => ({
+                    value: String(rate),
+                    label: `${rate}×`,
+                  })),
+                ]}
+                disabled={busy}
+                onChange={(rate) => {
+                  const profile = { ...draft.profile };
+                  if (rate === "default") profile.speechRate = null;
+                  else profile.speechRate = Number(rate);
+                  setDraft({ ...draft, profile });
+                }}
+              />
+              <Text>
+                Download the chosen voice pack in Voices before reading aloud.
+              </Text>
             </PersonaEditorOptions>
             <PersonaEditorOptions phone={phone} title="Memory">
               <View style={styles.row}>
                 <Text>Save new facts from this Persona's chats</Text>
                 <Switch
                   accessibilityLabel="Persona fact saving switch"
-                  value={memory.extract ?? props.globalMemorySettings?.extract ?? true}
+                  value={
+                    memory.extract ??
+                    props.globalMemorySettings?.extract ??
+                    true
+                  }
                   disabled={busy}
                   onValueChange={(value) => memorySwitch("extract", value)}
                 />
@@ -486,7 +514,9 @@ export function PersonaScreen(props: PersonaFeatureProps) {
                 <Text>Use saved facts when this Persona replies</Text>
                 <Switch
                   accessibilityLabel="Persona fact usage switch"
-                  value={memory.inject ?? props.globalMemorySettings?.inject ?? true}
+                  value={
+                    memory.inject ?? props.globalMemorySettings?.inject ?? true
+                  }
                   disabled={busy}
                   onValueChange={(value) => memorySwitch("inject", value)}
                 />
@@ -535,83 +565,83 @@ export function PersonaScreen(props: PersonaFeatureProps) {
               the profile they started with.
             </Text>
             <PersonaEditorOptions phone={phone} title="Avatar and colors">
-            <View style={styles.row}>
-              <NativeButton
-                accessibilityLabel="Choose Persona avatar"
-                disabled={busy || !props.avatarPort}
-                onPress={chooseAvatar}
-              >
-                Choose avatar
-              </NativeButton>
-              {draft.photoAttachmentId ? (
+              <View style={styles.row}>
                 <NativeButton
-                  accessibilityLabel="Remove Persona avatar"
-                  disabled={busy}
-                  onPress={() =>
-                    setDraft({ ...draft, photoAttachmentId: null })
-                  }
+                  accessibilityLabel="Choose Persona avatar"
+                  disabled={busy || !props.avatarPort}
+                  onPress={chooseAvatar}
                 >
-                  Remove avatar
+                  Choose avatar
                 </NativeButton>
+                {draft.photoAttachmentId ? (
+                  <NativeButton
+                    accessibilityLabel="Remove Persona avatar"
+                    disabled={busy}
+                    onPress={() =>
+                      setDraft({ ...draft, photoAttachmentId: null })
+                    }
+                  >
+                    Remove avatar
+                  </NativeButton>
+                ) : null}
+              </View>
+              {!props.avatarPort ? (
+                <Text>Photo selection is unavailable in this app build.</Text>
               ) : null}
-            </View>
-            {!props.avatarPort ? (
-              <Text>Photo selection is unavailable in this app build.</Text>
-            ) : null}
-            {!phone ? <Text variant="titleMedium">Appearance</Text> : null}
-            <TextInput
-              label="Accent color"
-              accessibilityLabel="Accent color"
-              value={draft.appearance.accentColor}
-              autoCapitalize="characters"
-              maxLength={7}
-              onChangeText={(accentColor) =>
-                setDraft({
-                  ...draft,
-                  appearance: { ...draft.appearance, accentColor },
-                })
-              }
-              disabled={busy}
-            />
-            <TextInput
-              label="Profile background color"
-              accessibilityLabel="Profile background color"
-              value={draft.appearance.backgroundColor}
-              autoCapitalize="characters"
-              maxLength={7}
-              onChangeText={(backgroundColor) =>
-                setDraft({
-                  ...draft,
-                  appearance: { ...draft.appearance, backgroundColor },
-                })
-              }
-              disabled={busy}
-            />
-            <RadioButton.Group
-              value={draft.appearance.avatarShape}
-              onValueChange={(shape) =>
-                setDraft({
-                  ...draft,
-                  appearance: {
-                    ...draft.appearance,
-                    avatarShape: shape === "square" ? "square" : "circle",
-                  },
-                })
-              }
-            >
-              <RadioButton.Item
-                label="Circle avatar"
-                accessibilityLabel={`Circle avatar${draft.appearance.avatarShape === "circle" ? ", selected" : ""}`}
-                value="circle"
+              {!phone ? <Text variant="titleMedium">Appearance</Text> : null}
+              <TextInput
+                label="Accent color"
+                accessibilityLabel="Accent color"
+                value={draft.appearance.accentColor}
+                autoCapitalize="characters"
+                maxLength={7}
+                onChangeText={(accentColor) =>
+                  setDraft({
+                    ...draft,
+                    appearance: { ...draft.appearance, accentColor },
+                  })
+                }
                 disabled={busy}
               />
-              <RadioButton.Item
-                label="Square avatar"
-                accessibilityLabel={`Square avatar${draft.appearance.avatarShape === "square" ? ", selected" : ""}`}
-                value="square"
+              <TextInput
+                label="Profile background color"
+                accessibilityLabel="Profile background color"
+                value={draft.appearance.backgroundColor}
+                autoCapitalize="characters"
+                maxLength={7}
+                onChangeText={(backgroundColor) =>
+                  setDraft({
+                    ...draft,
+                    appearance: { ...draft.appearance, backgroundColor },
+                  })
+                }
                 disabled={busy}
               />
-            </RadioButton.Group>
+              <RadioButton.Group
+                value={draft.appearance.avatarShape}
+                onValueChange={(shape) =>
+                  setDraft({
+                    ...draft,
+                    appearance: {
+                      ...draft.appearance,
+                      avatarShape: shape === "square" ? "square" : "circle",
+                    },
+                  })
+                }
+              >
+                <RadioButton.Item
+                  label="Circle avatar"
+                  accessibilityLabel={`Circle avatar${draft.appearance.avatarShape === "circle" ? ", selected" : ""}`}
+                  value="circle"
+                  disabled={busy}
+                />
+                <RadioButton.Item
+                  label="Square avatar"
+                  accessibilityLabel={`Square avatar${draft.appearance.avatarShape === "square" ? ", selected" : ""}`}
+                  value="square"
+                  disabled={busy}
+                />
+              </RadioButton.Group>
             </PersonaEditorOptions>
             <View style={styles.row}>
               <NativeButton
@@ -624,7 +654,9 @@ export function PersonaScreen(props: PersonaFeatureProps) {
               </NativeButton>
               <NativeButton
                 accessibilityLabel="Cancel Persona profile editing"
-                onPress={() => void perform("Discard a persona profile draft", discardDraft)}
+                onPress={() =>
+                  void perform("Discard a persona profile draft", discardDraft)
+                }
                 disabled={busy}
               >
                 Cancel
@@ -703,35 +735,42 @@ export function PersonaScreen(props: PersonaFeatureProps) {
                   >
                     Start chat
                   </NativeButton>
-                  {!props.groupUnavailableReason ? <NativeButton
-                    accessibilityLabel={`Add ${record.name} to a group`}
-                    disabled={busy || !!props.groupUnavailableReason}
-                    onPress={() =>
-                      void perform("Add a persona to a group chat", async () =>
-                        props.onAddToGroup(
-                          await props.library.groupIntent(
-                            record.id,
-                            props.currentGroupRoomId,
-                          ),
-                        ),
-                      )
-                    }
-                  >
-                    Add to group
-                  </NativeButton> : null}
+                  {!props.groupUnavailableReason ? (
+                    <NativeButton
+                      accessibilityLabel={`Add ${record.name} to a group`}
+                      disabled={busy || !!props.groupUnavailableReason}
+                      onPress={() =>
+                        void perform(
+                          "Add a persona to a group chat",
+                          async () =>
+                            props.onAddToGroup(
+                              await props.library.groupIntent(
+                                record.id,
+                                props.currentGroupRoomId,
+                              ),
+                            ),
+                        )
+                      }
+                    >
+                      Add to group
+                    </NativeButton>
+                  ) : null}
                   {props.currentConversationId ? (
                     <NativeButton
                       accessibilityLabel={`Use ${record.name} in current chat`}
                       disabled={busy || selectedId === record.id}
                       onPress={() =>
-                        void perform("Use a persona in the current chat", async () => {
-                          const intent = await props.library.select(
-                            props.currentConversationId!,
-                            record.id,
-                          );
-                          await props.onSwitch?.(intent);
-                          await reload();
-                        })
+                        void perform(
+                          "Use a persona in the current chat",
+                          async () => {
+                            const intent = await props.library.select(
+                              props.currentConversationId!,
+                              record.id,
+                            );
+                            await props.onSwitch?.(intent);
+                            await reload();
+                          },
+                        )
                       }
                     >
                       Use in current chat
@@ -768,13 +807,13 @@ export function PersonaScreen(props: PersonaFeatureProps) {
             {deleting ? `Delete ${deleting.name}?` : "Delete Persona?"}
           </Dialog.Title>
           <Dialog.ScrollArea style={{ flexShrink: 1 }}>
-            <ScrollView contentContainerStyle={{ gap: 12, paddingVertical: 12 }}>
-            <Text>
-              Existing conversations and responses will stay in your library.
-            </Text>
-            {error ? (
-              <ErrorNotice message={error} />
-            ) : null}
+            <ScrollView
+              contentContainerStyle={{ gap: 12, paddingVertical: 12 }}
+            >
+              <Text>
+                Existing conversations and responses will stay in your library.
+              </Text>
+              {error ? <ErrorNotice message={error} /> : null}
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
