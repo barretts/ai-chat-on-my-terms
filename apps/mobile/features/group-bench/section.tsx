@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { setStringAsync } from "expo-clipboard";
 import { shareAsync } from "expo-sharing";
+import type { GrammarQuarantineEntry } from "@locallab/gguf-ios";
+import { getGrammarGuard } from "../../platform/grammar-guard";
 import { listInstalledModels } from "../../platform/model-download";
 import {
   buildBenchMatrix,
@@ -30,6 +32,16 @@ function nextLimit(current: LimitChoice): LimitChoice {
 }
 
 export function DevBenchSection() {
+  const [quarantine, setQuarantine] = useState<
+    readonly GrammarQuarantineEntry[]
+  >([]);
+  const refreshQuarantine = () => {
+    const guard = getGrammarGuard();
+    void guard.ready().then(() => setQuarantine([...guard.quarantined()]));
+  };
+  useEffect(() => {
+    refreshQuarantine();
+  }, []);
   const [models, setModels] = useState<
     { catalogId: string; blobId: string; name: string }[]
   >([]);
@@ -147,6 +159,7 @@ export function DevBenchSection() {
       );
       setStatus("error");
     } finally {
+      refreshQuarantine();
       await sessionRef.current?.dispose();
       sessionRef.current = null;
       abortRef.current = null;
@@ -186,6 +199,34 @@ export function DevBenchSection() {
           </Pressable>
         ))
       )}
+      {quarantine.length > 0 ? (
+        <View testID="dev-bench-quarantine">
+          <Text style={styles.help}>
+            JSON mode is disabled for {quarantine.length} model
+            {quarantine.length === 1 ? "" : "s"} — a native grammar crash was
+            recorded on restart (T183). Topic selection runs in text mode for
+            them and they never request JSON grammar again:
+          </Text>
+          {quarantine.map((entry) => (
+            <Text key={entry.modelId} style={styles.model}>
+              •{" "}
+              {models.find((model) => `blob:${model.blobId}` === entry.modelId)
+                ?.name ?? entry.modelId}{" "}
+              (since {entry.since.slice(0, 10)}){"  "}
+              <Text
+                style={styles.action}
+                onPress={() =>
+                  void getGrammarGuard()
+                    .resetQuarantine(entry.modelId)
+                    .then(refreshQuarantine)
+                }
+              >
+                Re-enable JSON (unsafe)
+              </Text>
+            </Text>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.controls}>
         <Text style={styles.help}>Rounds/scenario:</Text>
         <TextInput

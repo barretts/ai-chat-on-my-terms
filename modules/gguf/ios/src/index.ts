@@ -600,3 +600,5 @@ function mapError(error: unknown): {
           : "malformed";
   return { code, message, recoverable: code !== "malformed" };
 }
+
+export * from "./grammar-guard";

@@ -21,6 +21,7 @@ import {
 } from "../../platform/generation-session";
 import { openMobileBlobStore } from "../../platform/files";
 import { createLocalChatPort } from "../../platform/local-chat-provider";
+import { getGrammarGuard } from "../../platform/grammar-guard";
 import { readDeviceCapacity } from "../../platform/device-capacity";
 import { createId as createChatId } from "../../platform/crypto";
 import { GroupTurnDriver } from "../../composition/chat/group-driver";
@@ -159,6 +160,8 @@ export async function createBenchSession(): Promise<BenchSession> {
   }
 
   const capacity = readDeviceCapacity();
+  // Surface grammar-quarantine state (T183) in manifests; crash-harvest runs at boot anyway.
+  void getGrammarGuard().ready();
 
   const runStamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13);
   const benchDirectory = () => {
@@ -273,9 +276,16 @@ export async function createBenchSession(): Promise<BenchSession> {
         deviceMemoryBytes: capacity.availableMemoryBytes,
         ...(input.modelNames ? { modelNames: input.modelNames } : {}),
         scenarios: outcome.scenarios,
-        notes: outcome.stopped
-          ? ["Run stopped early; partial matrix.", ...defaultNotes()]
-          : defaultNotes(),
+        notes: [
+          ...getGrammarGuard()
+            .quarantined()
+            .map(
+              (entry) =>
+                `json mode quarantined for ${entry.modelId} — topic selection ran in text mode (${entry.reason})`,
+            ),
+          ...(outcome.stopped ? ["Run stopped early; partial matrix."] : []),
+          ...defaultNotes(),
+        ],
       }),
     writeAndShareManifest: async (manifest) => {
       const saved = writeManifestFile("", manifest);

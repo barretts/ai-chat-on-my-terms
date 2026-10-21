@@ -3,7 +3,9 @@ import type { BlobStore } from "@locallab/storage-blobs";
 import {
   createGgufInferencePort,
   createBlobManagedModelFiles,
+  withGrammarGuard,
 } from "@locallab/gguf-ios";
+import { getGrammarGuard } from "./grammar-guard";
 import { File, Paths } from "expo-file-system";
 import { inspectAssetHeader } from "./asset-integrity";
 
@@ -77,7 +79,10 @@ export function createLocalChatPort(blobs: BlobStore): ProviderPort {
         },
       };
     },
-    startRun: inference.startRun,
+    startRun: (request, signal) =>
+      withGrammarGuard(getGrammarGuard(), request, (guarded) =>
+        inference.startRun(guarded, signal),
+      ),
     dispose: inference.dispose,
   };
 }
