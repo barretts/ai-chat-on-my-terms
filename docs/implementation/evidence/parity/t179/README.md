@@ -44,9 +44,15 @@ live: yes — run on physical device by <name> at <timestamp>
 
 Fixture/web results are never device proof.
 
-## Device runs on build 26 (2026-10-20, owner)
+## Build-26 runs (2026-10-20, owner) — SUPERSEDED: provenance incomplete, kept as leads
 
-Two manifests from the owner's iPhone, archived here:
+Not valid row-3 proof: the owner cannot confirm which models were ticked (the partial's model
+`blob:01a15b4d-…-139c173a8b7f` predates their later model update and is no longer identifiable)
+nor whether either run was offline/airplane. Owner asked to start fresh; authoritative row-3
+evidence will be new build-27 runs (model names auto-recorded in the manifest; airplane mode
+asserted by owner at run time). Files kept for history:
+
+Manifests from the owner's iPhone, archived here:
 
 - `group-bench-20261020T2157-partial.json` — model `blob:01a15b4d-d661-7466-bcf7-139c173a8b7f`.
   Checkpoint written after scenario 2 (2-seat dice): the run stopped at scenario 3 — the FIRST
@@ -93,7 +99,7 @@ model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21
 | - | -------- | ------ |
 | 1 | Pinned build shipped, build id recorded | done (this directory + build record; commit `8951af8`) |
 | 2 | Both GGUF downloads on device, `assertModelIntegrity` + GGUF magic pass | pending device run |
-| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — two build-26 device runs filed above (full 9-scenario grid on one model; the other model stops at its first topic-interest selector — crash log pending). Remaining: airplane-mode confirmation + reruns on build 27 (model names auto-recorded) for the stopped model's grid. Thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
+| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | pending fresh device run on build 27 (model names auto-recorded in manifest; airplane mode asserted by owner at run time). Build-26 runs above are provenance-incomplete leads only. Thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |
