@@ -11,17 +11,22 @@ source commit `e74c177`, IPA 26,905,332 bytes, sha256 `79ae17eb2787cc4624d4be7c7
 section, rerun self-heal for stale `dev-bench-*` allocation rows, per-round progress, per-scenario on-disk
 checkpoint manifests; EAS `0dc28760-647b-43de-bd25-5f16cdd8853e`, source commit `f9cd94c`, IPA 26,910,612
 bytes, sha256 `6a2d1174c57a4a6d959e8d1c6c6f55b3a58c4f9ed7a91072155cecb7c968c3c4`,
-[record](../../../../builds/ios-preview-26.md)); row-3 manifests should come from build 26.
+[record](../../../../builds/ios-preview-26.md)), superseded for row 3 by build 27 (manifests record
+`modelNames`; EAS `65cead1f-56fc-48b8-aac2-2f7d0819bfdf`, source commit `7be7c38`, IPA 26,910,812 bytes,
+sha256 `f683b9fde2a2049125f3718909f7f2a62fcef07b6ea572841e59c5e478add09f`,
+[record](../../../../builds/ios-preview-27.md)); remaining row-3 manifests should come from build 27.
 Install links: https://expo.dev/accounts/barrett/projects/locallab/builds/63b3ba76-566f-4bd6-905b-67b746a6cb2d (24),
-https://expo.dev/accounts/barrett/projects/locallab/builds/1edf8d93-ba68-4ac0-8ddc-14baa56d1216 (25)
-and https://expo.dev/accounts/barrett/projects/locallab/builds/0dc28760-647b-43de-bd25-5f16cdd8853e (26).
+https://expo.dev/accounts/barrett/projects/locallab/builds/1edf8d93-ba68-4ac0-8ddc-14baa56d1216 (25),
+https://expo.dev/accounts/barrett/projects/locallab/builds/0dc28760-647b-43de-bd25-5f16cdd8853e (26)
+and https://expo.dev/accounts/barrett/projects/locallab/builds/65cead1f-56fc-48b8-aac2-2f7d0819bfdf (27).
 
 Expected archive digest (downloaded 2026-10-20 from the artifact URL above, 26,889,815
 bytes): SHA-256 `06b37aec9b2a6acab2ceb16d7c5fda84a8ca7979d0fb4c5c8c03ee30b057baa7` —
 any on-phone install path (Expo link or manual IPA) installs this exact archive.
 
-Known build caveat: preview build 24 has NO Extended Virtual Addressing / Increased Memory
-Limit (the ad hoc profile predates those capabilities); benchmark rows must record memory
+Known build caveat: preview builds 24-27 have NO Extended Virtual Addressing / Increased Memory
+Limit (the ad hoc profile predates those capabilities; `app.json` has declared them since `f9cd94c`
+but the reused profile strips them); benchmark rows must record memory
 observations against the stock per-app budget.
 
 Manifest format per row (one block per action):
@@ -29,9 +34,9 @@ Manifest format per row (one block per action):
 ```
 row: <feature id + scenario>
 device: iPhone 17 Pro Max (UDID 00008150-001844EC3C02401C)
-build: 24 (63b3ba76-566f-4bd6-905b-67b746a6cb2d); row 3: 26 (0dc28760-647b-43de-bd25-5f16cdd8853e)
+build: 24 (63b3ba76-566f-4bd6-905b-67b746a6cb2d); row 3: 27 (65cead1f-56fc-48b8-aac2-2f7d0819bfdf)
 os: <iOS version at run time>
-model: <qwen/qwen3.5-4b-q4_k_m | liquid/lfm2.5-2.6b-q4_k_m | n/a>
+model: <display name recorded in the manifest `modelNames` (27+), or catalog id | n/a>
 action: <exact steps taken on device>
 observed: <what the device actually did/printed/measured>
 live: yes — run on physical device by <name> at <timestamp>
@@ -88,7 +93,7 @@ model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21
 | - | -------- | ------ |
 | 1 | Pinned build shipped, build id recorded | done (this directory + build record; commit `8951af8`) |
 | 2 | Both GGUF downloads on device, `assertModelIntegrity` + GGUF magic pass | pending device run |
-| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — two build-26 device runs filed above (full 9-scenario grid on one model; the other model stops at its first topic-interest selector — crash log pending). Airplane-mode status and model names unconfirmed; thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
+| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — two build-26 device runs filed above (full 9-scenario grid on one model; the other model stops at its first topic-interest selector — crash log pending). Remaining: airplane-mode confirmation + reruns on build 27 (model names auto-recorded) for the stopped model's grid. Thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |
@@ -97,6 +102,6 @@ model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21
 
 DEFERRED, standing decision unchanged: Qwen remains the on-device default. Liquid replaces
 it ONLY if the row-3 device parity shows equal quality AND better speed in-app on the pinned
-device builds (row 3 on build 26);
+device builds (row 3 on build 27);
 record the outcome here with its live manifests. Catalog wording already marks Liquid
 "selectable, not the default" (`packages/models/catalog/src/index.ts:134`).
