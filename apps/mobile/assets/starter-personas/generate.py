@@ -1,4 +1,4 @@
-"""T184 starter-pack avatars: 14 flat 512x512 PNGs, zero third-party deps.
+"""T184 starter-pack + T180 bench avatars: 19 flat 512x512 PNGs, zero deps.
 
 Deterministic: every image is a pure function of this file. From this
 directory run `python generate.py` to regenerate all PNGs + provenance
@@ -7,6 +7,7 @@ sidecars in place. Painter's-algorithm shape layers, 2x supersampling.
 import math
 import os
 import struct
+import sys
 import zlib
 
 W = H = 512
@@ -443,17 +444,161 @@ CHARACTERS.update(
     }
 )
 
+# --- T180 bench personas (the dev-grid characters; owner asked they carry
+# proper names + avatars like the trope pack). Names mirror the identity
+# embedded in the matrix prompts: Captain Marrow, Mira, Dana, Vic, Sal.
+
+
+def bench_pirate():
+    bg, skin = "#0E2A35", "#C9885C"
+    hat, coat = "#263238", "#4E342E"
+    sh = base(bg, skin, coat)
+    smile(sh)
+    eyes(sh)
+    sh.append(("capsule", 138, 232, 330, 196, 10, mix(hat, "#000000", 0.3)))  # patch strap
+    sh.append(("circle", 216, 252, 30, hexc("#141C22")))  # eyepatch
+    sh.append(("capsule", 216, 232, 232, 244, 5, hexc("#546E7A")))  # patch glint
+    sh.append(("capsule", 96, 206, 416, 206, 16, hexc(hat)))  # tricorn brim
+    sh.append(("rect", 180, 116, 332, 198, mix(hat, "#FFFFFF", 0.08)))  # crown
+    sh.append(("rect", 180, 178, 332, 198, hexc("#FFC107")))  # gold band
+    sh.append(("circle", 256, 148, 18, hexc("#ECEFF1")))  # skull disc
+    sh.append(("circle", 249, 145, 4, hexc(INK)))  # skull eyes
+    sh.append(("circle", 263, 145, 4, hexc(INK)))
+    sh.append(("rect", 249, 156, 263, 164, hexc("#ECEFF1")))  # skull jaw
+    sh.append(("circle", 336, 302, 12, hexc("#FFC107")))  # hoop earring
+    sh.append(("circle", 336, 302, 6, mix(skin, "#000000", 0.25)))
+    sh.append(("tri", (256, 402), (186, 330), (226, 336), mix(coat, "#FFFFFF", 0.18)))  # coat lapels
+    sh.append(("tri", (256, 402), (326, 330), (286, 336), mix(coat, "#FFFFFF", 0.18)))
+    return sh
+
+
+def bench_poet():
+    bg, skin = "#F3E5F5", "#F2C9A8"
+    hair = "#4A2C4F"
+    sh = base(bg, skin, "#7E57C2")
+    sh.append(("arc", 256, 258, 122, 52, 195, 345, hexc(hair)))  # flowing hair
+    sh.append(("rect", 152, 132, 360, 176, hexc(hair)))  # fringe
+    sh.append(("rect", 130, 176, 168, 372, hexc(hair)))  # shoulder locks
+    sh.append(("rect", 344, 176, 382, 372, hexc(hair)))
+    blush(sh, "#F48FB1")
+    smile(sh)
+    eyes(sh)
+    brows(sh, hair, 8)
+    for (x, y) in ((150, 186), (168, 152), (196, 128), (230, 112), (282, 112), (316, 128), (344, 152), (362, 186)):
+        sh.append(("circle", x, y, 9, hexc("#66BB6A")))  # laurel leaves
+    for (x, y) in ((182, 166), (256, 106), (330, 166)):
+        sh.append(("circle", x, y, 5, hexc("#FFC107")))  # gold berries
+    sh.append(("capsule", 396, 92, 334, 214, 10, hexc("#FAFAFA")))  # quill
+    sh.append(("capsule", 396, 92, 366, 152, 6, hexc("#CFD8DC")))  # quill spine
+    sh.append(("tri", (322, 236), (330, 204), (348, 212), hexc("#FFC107")))  # nib
+    return sh
+
+
+def bench_engineer():
+    bg, skin = "#ECEFF1", "#D8A176"
+    sh = base(bg, skin, "#455A64")
+    smile(sh)
+    eyes(sh)
+    sh.append(("circle", 256, 138, 98, hexc("#FFB300")))  # hard-hat dome
+    sh.append(("capsule", 256, 60, 256, 128, 10, hexc("#FFA000")))  # dome ridge
+    sh.append(("rect", 126, 192, 386, 224, hexc("#FFA000")))  # brim
+    sh.append(("circle", 208, 148, 36, hexc("#37474F")))  # goggle housings
+    sh.append(("circle", 208, 148, 26, hexc("#B3E5FC")))  # goggle lenses
+    sh.append(("circle", 304, 148, 26, hexc("#B3E5FC")))
+    sh.append(("rect", 238, 140, 274, 156, hexc("#37474F")))  # goggle bridge
+    sh.append(("tri", (256, 404), (240, 368), (272, 368), hexc("#FFB300")))  # collar tab
+    sh.append(("capsule", 176, 452, 256, 420, 8, hexc("#FFEE58")))  # hi-vis vest stripes
+    sh.append(("capsule", 336, 452, 256, 420, 8, hexc("#FFEE58")))
+    return sh
+
+
+def bench_skeptic():
+    bg, skin = "#EFEBE9", "#F6DCC7"
+    tweed = "#5D4037"
+    sh = base(bg, skin, tweed)
+    sh.append(("arc", 256, 258, 124, 44, 200, 340, hexc("#8D6E63")))  # grey top
+    sh.append(("rect", 164, 140, 348, 178, hexc("#8D6E63")))  # receding fringe
+    sh.append(("capsule", 192, 220, 240, 216, 8, hexc("#616161")))  # left brow level
+    sh.append(("capsule", 272, 198, 320, 204, 8, hexc("#616161")))  # right brow raised
+    flat(sh)  # unimpressed mouth
+    eyes(sh)
+    sh.append(("circle", 296, 252, 27, hexc("#FFC107")))  # monocle ring
+    sh.append(("circle", 296, 252, 21, hexc(skin)))  # ring window
+    sh.append(("circle", 296, 252, 10, hexc(INK)))  # pinned eye
+    sh.append(("capsule", 314, 278, 332, 356, 4, hexc("#FFC107")))  # monocle chain
+    sh.append(("tri", (256, 402), (186, 330), (226, 336), mix(tweed, "#FFFFFF", 0.18)))  # tweed lapels
+    sh.append(("tri", (256, 402), (326, 330), (286, 336), mix(tweed, "#FFFFFF", 0.18)))
+    sh.append(("rect", 156, 424, 204, 440, mix(tweed, "#000000", 0.35)))  # elbow patch
+    return sh
+
+
+def bench_chef():
+    bg, skin = "#FFF3E0", "#C08A5E"
+    sh = base(bg, skin, "#FAFAFA")
+    eyes(sh)
+    blush(sh, "#E57373")
+    brows(sh, "#3E2723", 8)
+    sh.append(("capsule", 188, 306, 210, 314, 7, hexc("#3E2723")))  # left handlebar curl
+    sh.append(("capsule", 302, 314, 324, 306, 7, hexc("#3E2723")))  # right handlebar curl
+    sh.append(("capsule", 206, 300, 306, 300, 15, hexc("#3E2723")))  # handlebar moustache
+    sh.append(("circle", 256, 98, 74, hexc("#FFFFFF")))  # toque top puff
+    sh.append(("circle", 190, 120, 46, hexc("#FFFFFF")))
+    sh.append(("circle", 322, 120, 46, hexc("#FFFFFF")))
+    sh.append(("rect", 182, 118, 330, 188, hexc("#FFFFFF")))  # toque body
+    sh.append(("rect", 176, 182, 336, 212, hexc("#E0E0E0")))  # toque band
+    sh.append(("tri", (256, 448), (196, 372), (316, 372), hexc("#D32F2F")))  # neckerchief
+    sh.append(("circle", 256, 380, 16, hexc("#B71C1C")))  # knot
+    sh.append(("circle", 176, 448, 9, hexc("#FBC02D")))  # apron strings
+    sh.append(("circle", 336, 448, 9, hexc("#FBC02D")))
+    return sh
+
+
+CHARACTERS.update(
+    {
+        "bench-pirate": (
+            bench_pirate,
+            "Captain Marrow",
+            "tricorn hat with skull and gold band, eyepatch over the left eye, hoop earring and heavy coat",
+        ),
+        "bench-poet": (
+            bench_poet,
+            "Mira the Poet",
+            "plum locks with a green laurel and gold berries, rose blush, white quill with a gold nib",
+        ),
+        "bench-engineer": (
+            bench_engineer,
+            "Dana the Engineer",
+            "amber hard hat with light-blue goggles pushed up, hi-vis vest stripes on slate",
+        ),
+        "bench-skeptic": (
+            bench_skeptic,
+            "Vic the Skeptic",
+            "grey receding fringe, one raised brow, gold monocle with chain and tweed elbow patch",
+        ),
+        "bench-chef": (
+            bench_chef,
+            "Sal the Chef",
+            "white toque with band, dark moustache, red neckerchief and yellow apron strings",
+        ),
+    }
+)
+
+
+
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
-    for key in sorted(CHARACTERS):
+    keys = sorted(sys.argv[1:]) or sorted(CHARACTERS)
+    for key in keys:
         fn, name, desc = CHARACTERS[key]
         png = os.path.join(here, key + ".png")
         write_png(png, render(fn()))
         with open(os.path.join(here, key + ".prompt.md"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(
-                f"# {name} starter avatar ({key})\n\n"
-                f"Flat vector bust emblem for the shipped starter trope pack (T184): {desc}.\n\n"
+                f"# {name} avatar ({key})\n\n"
+                f"Flat vector bust emblem for the bundled persona avatars "
+                f"(starter trope pack T184, bench characters after owner "
+                f"feedback): {desc}.\n\n"
                 "Fully own-generated: drawn from primitive geometry (circles, rects, "
                 "triangles, arcs, capsules) by `generate.py` in this directory — pure "
                 "Python, no image model, no third-party art. The PNG is a build "

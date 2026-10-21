@@ -10,7 +10,6 @@ import { Asset } from "expo-asset";
 import { File } from "expo-file-system";
 import type { SQLiteChatAttachments } from "@locallab/chat-integration";
 import type { ExtractionPort } from "@locallab/attachments";
-import type { StarterTrope } from "@locallab/personas-starter-pack";
 
 const AVATAR_ASSETS: Record<string, number> = {
   "gruff-mentor": require("../assets/starter-personas/gruff-mentor.png"),
@@ -27,15 +26,26 @@ const AVATAR_ASSETS: Record<string, number> = {
   chuunibyou: require("../assets/starter-personas/chuunibyou.png"),
   "isekai-hero": require("../assets/starter-personas/isekai-hero.png"),
   "magical-girl": require("../assets/starter-personas/magical-girl.png"),
+  "bench-pirate": require("../assets/starter-personas/bench-pirate.png"),
+  "bench-poet": require("../assets/starter-personas/bench-poet.png"),
+  "bench-engineer": require("../assets/starter-personas/bench-engineer.png"),
+  "bench-skeptic": require("../assets/starter-personas/bench-skeptic.png"),
+  "bench-chef": require("../assets/starter-personas/bench-chef.png"),
 };
+
+/** Any stored entity with a `key` naming a bundled avatar and an `id` owner. */
+export interface BundledAvatarOwner {
+  key: string;
+  id: string;
+}
 
 export function createStarterAvatarAttacher(deps: {
   attachments: SQLiteChatAttachments;
   extraction: ExtractionPort;
-}): (trope: StarterTrope) => Promise<string | null> {
-  return async (trope) => {
+}): (owner: BundledAvatarOwner) => Promise<string | null> {
+  return async (owner) => {
     try {
-      const module = AVATAR_ASSETS[trope.key];
+      const module = AVATAR_ASSETS[owner.key];
       if (module === undefined) return null;
       const asset = Asset.fromModule(module);
       await asset.downloadAsync();
@@ -46,20 +56,20 @@ export function createStarterAvatarAttacher(deps: {
       // Owner is the persona id: the avatar's lifecycle rides the persona's.
       const stored = await deps.attachments.importPicked(
         {
-          name: `${trope.key}.png`,
+          name: `${owner.key}.png`,
           mimeType: "image/png",
           byteLength,
           sourceUri: uri,
-          metadata: { source: "starter-pack" },
+          metadata: { source: "bundled-avatar" },
         },
-        trope.id,
+        owner.id,
         deps.extraction,
         {},
       );
       return stored.id;
     } catch (cause) {
       console.warn(
-        `starter-pack avatar import failed for ${trope.key}: ${String(cause)}`,
+        `bundled avatar import failed for ${owner.key}: ${String(cause)}`,
       );
       return null;
     }

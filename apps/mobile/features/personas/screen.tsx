@@ -299,7 +299,7 @@ export function PersonaScreen(props: PersonaFeatureProps) {
     color: string,
   ) => {
     const style = {
-      borderRadius: shape === "circle" ? 28 : 8,
+      borderRadius: shape === "circle" ? 36 : 10,
       backgroundColor: color,
     };
     return photoId && avatarUris[photoId] ? (
@@ -312,7 +312,7 @@ export function PersonaScreen(props: PersonaFeatureProps) {
       />
     ) : (
       <Avatar.Text
-        size={56}
+        size={72}
         label={personaInitials(name)}
         style={style}
         color={contrastText(color)}
@@ -897,6 +897,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   card: { padding: 16, gap: 12 },
   identity: { flex: 1, minWidth: 120 },
-  avatarImage: { width: 56, height: 56 },
+  avatarImage: { width: 72, height: 72 },
   error: { color: "#B3261E" },
 });
