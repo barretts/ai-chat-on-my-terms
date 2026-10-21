@@ -132,8 +132,45 @@ const PASS_NOTE =
   "The user passed without adding a message; continue the conversation as your participant.";
 const ASK_NOTE =
   "The user directed this message to you specifically. Answer as your participant now.";
-const TRANSCRIPT_NOTE =
-  "Earlier room lines are prefixed with their speaker name. Reply only as yourself, with no name prefix.";
+/** Room labels must never render blank; matches the route's transcript fallback. */
+function seatLabel(seat: GroupParticipantDraft): string {
+  return seat.displayName.trim() === "" ? "Participant" : seat.displayName;
+}
+
+/**
+ * The note MUST name which speaker label is "yourself": every seat's line is
+ * role `assistant` carrying only an in-band "<name>: " prefix, so without an
+ * explicit binding a model cannot tell its own lines from other seats' — the
+ * parroting / no-personal-continuity defect (T179 row 3 device runs).
+ */
+function transcriptNote(name: string): string {
+  return (
+    `Earlier room lines are prefixed with their speaker name. ` +
+    `Your name in this room is "${name}": lines prefixed "${name}:" are your ` +
+    `own earlier messages. Reply only as yourself, with no name prefix.`
+  );
+}
+
+/**
+ * Removes a speaker's own transcript prefix echoed at the start of its reply
+ * or at line starts; re-labelling would otherwise compound it every round
+ * (device evidence: doubled "Bench Pirate:" prefixes).
+ */
+export function stripSpeakerPrefix(text: string, name: string): string {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const leading = new RegExp(`^[ \\t]*${escaped}[ \\t]*:[ \\t]*`, "i");
+  const lineStart = new RegExp(
+    `(\\n)[ \\t]*${escaped}[ \\t]*:[ \\t]*`,
+    "gi",
+  );
+  let out = text;
+  for (let guard = 0; guard < 4; guard += 1) {
+    const next = out.replace(leading, "");
+    if (next === out) break;
+    out = next;
+  }
+  return out.replace(lineStart, "\n").trimStart();
+}
 
 /**
  * Runs one group round end to end: exactly one user row per Send/Ask, a
@@ -371,9 +408,9 @@ export class GroupTurnDriver {
         const entry: GroupTranscriptEntry = {
           id: handle.assistantMessageId,
           speakerSeat: seatIndex,
-          speakerName: seat.displayName,
+          speakerName: seatLabel(seat),
           accentColor: seat.accentColor,
-          text,
+          text: stripSpeakerPrefix(text, seatLabel(seat)),
         };
         entries.push(entry);
         options.presenter.onEntry(entry);
@@ -425,7 +462,7 @@ export class GroupTurnDriver {
           .filter((line) => line !== "")
           .join("\n\n");
     const notes = [
-      TRANSCRIPT_NOTE,
+      transcriptNote(seatLabel(seat)),
       options.trigger === "ask" ? ASK_NOTE : "",
       options.trigger === "pass" ? PASS_NOTE : "",
     ].filter((line) => line !== "");

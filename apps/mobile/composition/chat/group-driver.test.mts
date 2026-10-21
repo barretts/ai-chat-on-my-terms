@@ -92,6 +92,8 @@ interface FakeOptions {
   blockedSeatIndex?: number;
   onSeatBegan?: (seatIndex: number) => void;
   failSeatIndex?: number;
+  /** Reply text override; default `Hi from Seat <index>`. */
+  replyText?: (seatIndex: number) => string;
 }
 
 interface Fake {
@@ -200,7 +202,10 @@ function fake(options: FakeOptions = {}): Fake {
           return;
         }
         const name = seatIds.indexOf(input.participantId ?? "");
-        yield textDelta(input.participantId, `Hi from Seat ${name}`);
+        yield textDelta(
+          input.participantId,
+          options.replyText ? options.replyText(name) : `Hi from Seat ${name}`,
+        );
         yield terminal("RunCompleted", input.participantId);
       })();
       return {
@@ -420,6 +425,108 @@ test("seat prompts carry persona text but never ids of any kind", async () => {
         "no entity or attachment ids leak into model prompts",
       );
   }
+});
+
+test("each seat is bound to its own room name as yourself", async () => {
+  const state = fake();
+  const collected = collect();
+  const driver = new GroupTurnDriver({ ...state, createId });
+  const result = await driver.startTurn({
+    room: room(),
+    trigger: "send",
+    userText: "Introductions please.",
+    history: [],
+    binding,
+    presenter: collected.presenter,
+  });
+  assert.equal(result.status, "completed");
+  assert.equal(state.seatTurns.length, 3);
+  state.seatTurns.forEach((turn, index) => {
+    const system = turn.preparedTexts[0] ?? "";
+    assert.ok(
+      system.includes(`Your name in this room is "Seat ${index}"`),
+      `seat ${index}'s system message binds its own speaker label`,
+    );
+    for (const other of [0, 1, 2]) {
+      if (other === index) continue;
+      assert.ok(
+        !system.includes(`Your name in this room is "Seat ${other}"`),
+        `seat ${index} is not bound to another seat's name`,
+      );
+    }
+  });
+});
+
+test("an echoed speaker prefix is stripped so labels never compound", async () => {
+  const state = fake({
+    replyText: (seatIndex) =>
+      seatIndex === 0
+        ? "Seat 0: Seat 0: Hi from Seat 0.\nSeat 0: Second beat."
+        : `Hi from Seat ${seatIndex}`,
+  });
+  const collected = collect();
+  const driver = new GroupTurnDriver({ ...state, createId });
+  const result = await driver.startTurn({
+    room: room(),
+    trigger: "send",
+    userText: "Introductions please.",
+    history: [],
+    binding,
+    presenter: collected.presenter,
+  });
+  assert.equal(result.status, "completed");
+  assert.equal(
+    collected.entries[1]?.text,
+    "Hi from Seat 0.\nSecond beat.",
+    "own echoed prefixes (adjacent repeats and line starts) are removed",
+  );
+  const third = state.seatTurns[2]!;
+  assert.ok(
+    third.preparedTexts.some((text) => text.includes("Seat 0: Hi from Seat 0.")),
+    "the re-labelled row still carries exactly one speaker prefix",
+  );
+  assert.ok(
+    !third.preparedTexts.some((text) => text.includes("Seat 0: Seat 0:")),
+    "prefixes never compound",
+  );
+});
+
+test("a blank seat name labels its lines Participant", async () => {
+  const state = fake();
+  const collected = collect();
+  const driver = new GroupTurnDriver({ ...state, createId });
+  const unnamed: GroupRoomDraft = {
+    ...room(),
+    participants: room().participants.map((participant, index) =>
+      index === 1 ? { ...participant, displayName: "  " } : participant,
+    ),
+  };
+  const result = await driver.startTurn({
+    room: unnamed,
+    trigger: "send",
+    userText: "Introductions please.",
+    history: [],
+    binding,
+    presenter: collected.presenter,
+  });
+  assert.equal(result.status, "completed");
+  assert.equal(
+    collected.entries[2]?.speakerName,
+    "Participant",
+    "blank seat names get the route's fallback label",
+  );
+  assert.ok(
+    (state.seatTurns[2]!.preparedTexts[0] ?? "").includes(
+      'Your name in this room is "Seat 2"',
+    ),
+    "seat 2 keeps its own label binding",
+  );
+  assert.ok(
+    state.seatTurns[2]!.preparedTexts.some((text) =>
+      text.includes("Participant: Hi from Seat 1"),
+    ),
+    "the blank seat's line never renders as an empty label",
+  );
 });
 
 test("Pass adds zero user messages and seats keep answering", async () => {
