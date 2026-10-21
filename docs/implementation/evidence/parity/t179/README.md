@@ -90,8 +90,70 @@ observed: run 2 full-grid latencies/throughput as above; run 1 checkpoint preser
 live: yes — run on physical device by owner at 2026-10-20T21:57Z (partial) and 2026-10-20T22:28Z (full)
 ```
 
-Still open for row 3: model display names; whether either run was airplane/offline; the
-model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21:57 stop.
+Model identities (settled 2026-10-21 by the build-27 manifests' `modelNames`):
+`blob:01a15b64-…-726346747095` = **Tinman Gemma 4 E4B Companion Q4_K_M** (retroactively names the
+22:22 run — same blob), `blob:01a15b4d-…-139c173a8b7f` = **HauhauCS Qwen3.5 2B Aggressive
+Q4_K_M** (same blob as the 21:57 partial; the owner's model update did not replace this file).
+Still open for the lead runs: whether either was airplane/offline; `.ips` crash log for 21:57.
+
+## Fresh runs on build 27 (2026-10-21, owner)
+
+`group-bench-20261021T0342.json` — **Tinman Gemma 4 E4B Companion Q4_K_M**
+(`blob:01a15b64-…-726346747095`, auto-recorded in `modelNames`). Full 9-scenario grid, 2 rounds
+each, limit 128; every reply AND every selector `finishReason: stop` — the 5-seat selector ran
+clean (284 tokens, no truncation). Airplane/offline status pending owner confirmation.
+
+Per-scenario (median reply duration / median tok/s; round durations; selector cost):
+
+- 2-seat: rr 3.0 s / 12.1 (rounds 5.7–10.4 s); dice 2.7 s / 12.0 (5.0–5.4 s); topic 4.1 s /
+  13.1 (rounds 15.6–16.8 s; selectors 7.5–8.2 s)
+- 3-seat: rr 3.7 s / 11.7 (10.6–13.3 s); dice 3.9 s / 12.0 (11.3–12.2 s); topic 7.0 s / 13.3
+  (31.0–35.3 s; selectors 11.3–11.5 s)
+- 5-seat: rr 6.7 s / 11.7 (31.6–38.4 s); dice 3.2 s / 9.3 (15.2–17.3 s); topic 5.4 s / 10.1
+  (44.2–51.3 s; selectors 19.3–20.0 s)
+
+Quality: the parroting defect reproduces and scales with room size — exact-duplicate reply
+pairs 0–1 per 6 (2-seat), 3/3/6 per 15 (3-seat), 4/16/7 per 45 (5-seat); replies quote the
+transcript's `Bench <seat>:` prefixes verbatim. Persona-differentiation/repetition rows: FAIL.
+
+`group-bench-20261021T0350-partial.json` — **HauhauCS Qwen3.5 2B Aggressive Q4_K_M**
+(`blob:01a15b4d-…-139c173a8b7f`). Deterministic stop at exactly the same place as build 26's
+21:57 partial: completed 2-seat rr (median 3.9 s/reply, 30.2 tok/s, 3/4 replies at the 128-token
+cap; rounds 14.2–17.5 s) and 2-seat dice (median 2.1 s, 27.7 tok/s; rounds 3.8–4.6 s), then died
+entering scenario 3 (2-seat topic-interest) — its first `json_object` selector call. Third
+consecutive identical death across builds 25/26/27 and the model file never changed:
+deterministic, model-specific. The json path maps to llama.rn 0.12.4
+`response_format: { type: "json_object" }` (`modules/gguf/ios/src/index.ts:253`), i.e. native
+llama.cpp grammar — a C++ abort there kills the process with nothing for JS to catch, which fits
+the symptom (no error UI, app simply gone, checkpoint intact). Jetsam remains the weaker
+hypothesis: the run was mid-stride on a ~240-token prompt. `.ips` crash log still requested to
+confirm.
+
+```
+row: T179 row 3 — fresh full-grid benchmark, Tinman Gemma 4 E4B Companion Q4_K_M
+device: iPhone 17 Pro Max (UDID 00008150-001844EC3C02401C)
+build: 27 (65cead1f-56fc-48b8-aac2-2f7d0819bfdf)
+os: iOS 26.6
+model: Tinman Gemma 4 E4B Companion Q4_K_M (blob:01a15b64-bb8b-7cf7-8c43-726346747095)
+action: Settings → Developer benchmark → tick model → Run matrix (rounds=2, limit=128); manifest shared
+observed: 9/9 scenarios; all replies + selectors finishReason stop; 9.3-13.3 tok/s medians, reply medDur 2.7-6.7 s, topic rounds 15.6-51.3 s; selector clean at 5 seats; persona echo/parroting FAIL (up to 16/45 exact-duplicate pairs at 5 seats)
+live: yes — run on physical device by owner at 2026-10-21T03:48Z (airplane-mode confirmation pending)
+```
+
+```
+row: T179 row 3 — HauhauCS Qwen3.5 2B Aggressive Q4_K_M, deterministic stop at first json_object selector
+device: iPhone 17 Pro Max (UDID 00008150-001844EC3C02401C)
+build: 27 (65cead1f-56fc-48b8-aac2-2f7d0819bfdf)
+os: iOS 26.6
+model: HauhauCS Qwen3.5 2B Aggressive Q4_K_M (blob:01a15b4d-d661-7466-bcf7-139c173a8b7f)
+action: Settings → Developer benchmark → tick model → Run matrix (rounds=2, limit=128); app died at scenario 3/9 (2-seat topic-interest); -partial checkpoint shared after relaunch
+observed: 2-seat rr 27.7-30.2 tok/s (3/4 replies length-capped at 128), rounds 3.8-17.5 s; died entering the first json_object selector — identical to builds 25 (2/18) and 26 (21:57) on this same blob; deterministic, model-specific; suspected native llama.cpp grammar abort via llama.rn response_format json_object
+live: yes — run on physical device by owner at 2026-10-21T03:51Z (airplane-mode confirmation pending)
+```
+
+Still open for row 3 completion: airplane/offline confirmation for the build-27 runs; a fix for
+the HauhauCS selector death (or owner excludes that model) so its grid can complete; `.ips` log
+to confirm root cause.
 
 ## Row status
 
@@ -99,7 +161,7 @@ model-identity of the stopped run's full grid; iOS crash log (`.ips`) for the 21
 | - | -------- | ------ |
 | 1 | Pinned build shipped, build id recorded | done (this directory + build record; commit `8951af8`) |
 | 2 | Both GGUF downloads on device, `assertModelIntegrity` + GGUF magic pass | pending device run |
-| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | pending fresh device run on build 27 (model names auto-recorded in manifest; airplane mode asserted by owner at run time). Build-26 runs above are provenance-incomplete leads only. Thermal unobservable (no RN 0.86.3 API); peak RSS still not observable in-app |
+| 3 | Benchmark matrix offline/airplane: 2 models x {2,3,5}-persona rooms x {round-robin, dice, topic-interest}; latency, round duration, peak memory, thermal, personality consistency, repetition | in progress — Tinman Gemma 4 E4B Companion full grid + HauhauCS Qwen3.5 2B Aggressive deterministic selector death filed above, both models identified via manifest `modelNames`. Outstanding: airplane-mode confirmation; HauhauCS fix-or-exclude; `.ips` root cause. Persona consistency/repetition rows: FAIL (parroting scales with seats). Thermal unobservable (no RN 0.86.3 API); peak RSS not observable in-app |
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |

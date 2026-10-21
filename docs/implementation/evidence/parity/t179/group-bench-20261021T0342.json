@@ -1,0 +1,1179 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-21T03:48:33.187Z",
+  "device": "iPhone",
+  "iosVersion": "26.6",
+  "appVersion": "0.1.0",
+  "buildNumber": "27",
+  "roundsPerScenario": 2,
+  "responseLimitTokens": 128,
+  "deviceMemoryBytes": 6744162304,
+  "modelNames": {
+    "blob:01a15b64-bb8b-7cf7-8c43-726346747095": "Tinman Gemma 4 E4B Companion Q4_K_M"
+  },
+  "scenarios": [
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15c8d-8aa4-73df-8f7e-0eb76e523b97",
+      "conversationId": "01a15c8d-8aa0-7755-8bb3-4e33e0640b9e",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 10404,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8d-8aad-7b0f-b654-6478277101a7",
+              "durationMs": 7310,
+              "inputTokens": 118,
+              "outputTokens": 38,
+              "tokensPerSec": 5.2,
+              "finishReason": "stop",
+              "text": "Captain Marrow: The finest treasure on the horizon would be a campfire beneath the starry canopy. But a squall of worry would be the tempestuous moods of the little sea-dogs."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8d-a745-760f-bdaf-5469ea540d5e",
+              "durationMs": 3073,
+              "inputTokens": 210,
+              "outputTokens": 41,
+              "tokensPerSec": 13.34,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: The finest treasure on the horizon would be a campfire beneath the starry canopy. But a squall of worry would be the tempestuous moods of the little sea-dogs."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 5748,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8d-b357-771e-b472-1fb33b584892",
+              "durationMs": 2721,
+              "inputTokens": 191,
+              "outputTokens": 34,
+              "tokensPerSec": 12.5,
+              "finishReason": "stop",
+              "text": "The finest treasure on the horizon would be a campfire beneath the starry canopy. But a squall of worry would be the tempestuous moods of the little sea-dogs."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8d-bdfd-754e-be35-7bb6a2e1c61e",
+              "durationMs": 3005,
+              "inputTokens": 269,
+              "outputTokens": 35,
+              "tokensPerSec": 11.65,
+              "finishReason": "stop",
+              "text": "The finest treasure on the horizon would be a campfire beneath the starry canopy;\nBut a squall of worry would be the tempestuous moods of the little sea-dogs."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "dice",
+      "diceSeed": 1001,
+      "roomId": "01a15c8d-c9d5-7785-b23c-b85d1309de1a",
+      "conversationId": "01a15c8d-c9d2-71ba-889c-16902c11d94c",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 4974,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8d-c9db-776c-8c68-16d1c808f487",
+              "durationMs": 2288,
+              "inputTokens": 118,
+              "outputTokens": 29,
+              "tokensPerSec": 12.67,
+              "finishReason": "stop",
+              "text": "Stay close to the house, let the kids roam,\nBut don't leave their toys, they'll be too much to comb."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8d-d2d0-74ad-b1bc-04ccb812aea7",
+              "durationMs": 2671,
+              "inputTokens": 192,
+              "outputTokens": 32,
+              "tokensPerSec": 11.98,
+              "finishReason": "stop",
+              "text": "Bench Poet: Stay close to the house, let the kids roam,\nBut don't leave their toys, they'll be too much to comb."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 5414,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8d-dd4b-7e44-b5c5-49d22a85e8c0",
+              "durationMs": 2647,
+              "inputTokens": 173,
+              "outputTokens": 32,
+              "tokensPerSec": 12.09,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Stay close to the house, let the kids roam,\nBut don't leave their toys, they'll be too much to comb."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8d-e7aa-7472-b055-3bc293924c23",
+              "durationMs": 2748,
+              "inputTokens": 247,
+              "outputTokens": 32,
+              "tokensPerSec": 11.64,
+              "finishReason": "stop",
+              "text": "Bench Poet: Stay close to the house, let the kids roam,\nBut don't leave their toys, they'll be too much to comb."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 2,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15c8d-f279-7ad7-9326-6a27df44a5fc",
+      "conversationId": "01a15c8d-f277-7a09-b3a8-525ea45ec223",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 15584,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8e-0fba-71ec-9250-c2f2269221b0",
+              "durationMs": 3848,
+              "inputTokens": 118,
+              "outputTokens": 55,
+              "tokensPerSec": 14.29,
+              "finishReason": "stop",
+              "text": "By the cut of my jib, the finest idea is to set up a makeshift pirate ship on the lawn. But I fear we'll be becalmed by a sudden gust of wind, and the children'll be left stranded upon the sandy shores of their dreams."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-1ec9-7a02-9e8c-a77675449d66",
+              "durationMs": 4238,
+              "inputTokens": 244,
+              "outputTokens": 58,
+              "tokensPerSec": 13.69,
+              "finishReason": "stop",
+              "text": "Bench Pirate: By the cut of my jib, the finest idea is to set up a makeshift pirate ship on the lawn. But I fear we'll be becalmed by a sudden gust of wind, and the children'll be left stranded upon the sandy shores of their dreams."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 16814,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-4f45-7161-bb1c-872ee953de17",
+              "durationMs": 4015,
+              "inputTokens": 225,
+              "outputTokens": 50,
+              "tokensPerSec": 12.45,
+              "finishReason": "stop",
+              "text": "Bench Poet: By the cut of my jib, the finest plan is to set up a makeshift pirate ship on the lawn. But I fear the wind will be at our backs, and the children will be stranded on the sandy shores of their dreams."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8e-5efb-76f7-b28e-c47202ece150",
+              "durationMs": 4618,
+              "inputTokens": 335,
+              "outputTokens": 55,
+              "tokensPerSec": 11.91,
+              "finishReason": "stop",
+              "text": "Bench Poet: By the stars above, the most dandy idea is to set up a pirate ship on the lawn. But I worry we'll be becalmed by a sudden gust of wind, and the kids will be stranded on the sandy shores of their dreams."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15c8d-f27d-755f-bfd9-059f18c67af8",
+          "messageId": "01a15c8d-f27d-7260-ab56-e9cb3cce11dd",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554168958,
+          "inputTokens": 237,
+          "outputTokens": 121,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554176436,
+          "durationMs": 7478
+        },
+        {
+          "runId": "01a15c8e-2f5f-7685-be67-a43d7f675b72",
+          "messageId": "01a15c8e-2f5f-7b97-a7c8-77eafbc5af2b",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554184544,
+          "inputTokens": 237,
+          "outputTokens": 121,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554192704,
+          "durationMs": 8160
+        }
+      ]
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15c8e-7118-7d74-b24a-ef64b92f6df1",
+      "conversationId": "01a15c8e-7115-74dd-b893-3cf26676eb88",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 10621,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8e-711e-7629-8daa-b788a45250fc",
+              "durationMs": 3048,
+              "inputTokens": 118,
+              "outputTokens": 40,
+              "tokensPerSec": 13.12,
+              "finishReason": "stop",
+              "text": "A night on the kraken's back, where the stars are like doubloons! But mind ye, the tide may turn, and the tide of worry may strike like a cannonball."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-7d0b-7fd4-8c1f-afc65995b99f",
+              "durationMs": 3602,
+              "inputTokens": 214,
+              "outputTokens": 43,
+              "tokensPerSec": 11.94,
+              "finishReason": "stop",
+              "text": "Bench Pirate: A night on the kraken's back, where the stars are like doubloons! But mind ye, the tide may turn, and the tide of worry may strike like a cannonball."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8e-8b22-79f3-9fc6-1c2fd167b59a",
+              "durationMs": 3951,
+              "inputTokens": 308,
+              "outputTokens": 43,
+              "tokensPerSec": 10.88,
+              "finishReason": "stop",
+              "text": "Bench Pirate: A night on the kraken's back, where the stars are like doubloons! But mind ye, the tide may turn, and the tide of worry may strike like a cannonball."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2
+          ],
+          "durationMs": 13303,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8e-9a9c-700e-adfd-af56f89f5de2",
+              "durationMs": 2618,
+              "inputTokens": 243,
+              "outputTokens": 26,
+              "tokensPerSec": 9.93,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Aye, but mind ye, the tide may turn, and the tide of worry may strike like a cannonball."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-a4dc-7280-b7a1-5cd85a79705e",
+              "durationMs": 3725,
+              "inputTokens": 305,
+              "outputTokens": 43,
+              "tokensPerSec": 11.54,
+              "finishReason": "stop",
+              "text": "Bench Pirate: A night on the kraken's back, where the stars are like doubloons! But mind ye, the tide may turn, and the tide of worry may strike like a cannonball."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8e-b370-7eb6-bb94-3b985a83a7cc",
+              "durationMs": 6938,
+              "inputTokens": 399,
+              "outputTokens": 96,
+              "tokensPerSec": 13.84,
+              "finishReason": "stop",
+              "text": "1. Set up a cozy tent in the backyard, complete with twinkle lights and some good ol' campfire s'mores.\n2. Let the kids choose the meal for the trip, whether it's their favorite pizza or hot dog stand eats.\n3. Spend the evening stargazing and telling silly stories around the fire.\n\nTradeoff: The tradeoff here is between a simple, budget-friendly campout and a more elaborate, cost-effective camping experience."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "dice",
+      "diceSeed": 1004,
+      "roomId": "01a15c8e-ce9c-7dd6-b991-6d23b1817e2c",
+      "conversationId": "01a15c8e-ce9a-71a7-8d5f-71a9aaf34191",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            0
+          ],
+          "durationMs": 11325,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-cea3-793e-9c30-0b418b13aee0",
+              "durationMs": 3383,
+              "inputTokens": 118,
+              "outputTokens": 46,
+              "tokensPerSec": 13.6,
+              "finishReason": "stop",
+              "text": "The best idea, my friend, is to pitch your tent in the yard,\nThe one thing to worry about is the kids might get scared or feel bored or want to go out to play in the dark of the night."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8e-dbe2-7f21-8dbe-14d6e2051d22",
+              "durationMs": 3834,
+              "inputTokens": 224,
+              "outputTokens": 49,
+              "tokensPerSec": 12.78,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea, my friend, is to pitch your tent in the yard,\nThe one thing to worry about is the kids might get scared or feel bored or want to go out to play in the dark of the night."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8e-eae1-7860-98cf-1a53108524d0",
+              "durationMs": 4085,
+              "inputTokens": 334,
+              "outputTokens": 49,
+              "tokensPerSec": 12,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea, my friend, is to pitch your tent in the yard,\nThe one thing to worry about is the kids might get scared or feel bored or want to go out to play in the dark of the night."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            0
+          ],
+          "durationMs": 12169,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8e-fae1-7630-995f-731352aed51c",
+              "durationMs": 4055,
+              "inputTokens": 261,
+              "outputTokens": 49,
+              "tokensPerSec": 12.08,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea, my friend, is to pitch your tent in the yard,\nThe one thing to worry about is the kids might get scared or feel bored or want to go out to play in the dark of the night."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8f-0abe-7453-adb9-65433d114ad1",
+              "durationMs": 3478,
+              "inputTokens": 367,
+              "outputTokens": 37,
+              "tokensPerSec": 10.64,
+              "finishReason": "stop",
+              "text": "Bench Engineer: The best idea is to have a campfire in the backyard, with s'mores and roasted veggies. The tradeoff is the potential for a fire to spread to your house."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8f-185a-7c92-a817-82b1495dcdbc",
+              "durationMs": 4615,
+              "inputTokens": 453,
+              "outputTokens": 53,
+              "tokensPerSec": 11.48,
+              "finishReason": "stop",
+              "text": "Captain Marrow: The best idea, matey, is to set up a treasure trove of games and toys in the yard. The only thing to fret about is the kids might get bored with all the fun, or worse, they might get lost at sea!"
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 3,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15c8f-2a72-7731-8e40-fa75bbff8c00",
+      "conversationId": "01a15c8f-2a70-708d-89d4-fdf1fde8db12",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            2,
+            1,
+            0
+          ],
+          "durationMs": 30986,
+          "replies": [
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8f-56b4-7c6b-ab3a-64656519fba0",
+              "durationMs": 5873,
+              "inputTokens": 116,
+              "outputTokens": 90,
+              "tokensPerSec": 15.32,
+              "finishReason": "stop",
+              "text": "1. Use a tent with a built-in lantern for easy illumination at night.\n2. Set up a bonfire around the tent for warmth and ambiance.\n3. Provide s'mores ingredients and marshmallows for a cozy campfire treat.\n4. Have a bucket of water handy for potential fire extinguishing.\nTradeoff: The convenience of a tent with a built-in lantern might increase the risk of electrical hazards if not properly set up."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8f-6dab-72d2-a21f-f3dbf5a535f7",
+              "durationMs": 6681,
+              "inputTokens": 316,
+              "outputTokens": 94,
+              "tokensPerSec": 14.07,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Use a tent with a built-in lantern for easy illumination at night.\n2. Set up a bonfire around the tent for warmth and ambiance.\n3. Provide s'mores ingredients and marshmallows for a cozy campfire treat.\n4. Have a bucket of water handy for potential fire extinguishing.\nTradeoff: The convenience of a tent with a built-in lantern might increase the risk of electrical hazards if not properly set up."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c8f-87ca-7988-b27c-e7a17474dc64",
+              "durationMs": 7086,
+              "inputTokens": 514,
+              "outputTokens": 94,
+              "tokensPerSec": 13.27,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Use a tent with a built-in lantern for easy illumination at night.\n2. Set up a bonfire around the tent for warmth and ambiance.\n3. Provide s'mores ingredients and marshmallows for a cozy campfire treat.\n4. Have a bucket of water handy for potential fire extinguishing.\nTradeoff: The convenience of a tent with a built-in lantern might increase the risk of electrical hazards if not properly set up."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            2,
+            1,
+            0
+          ],
+          "durationMs": 35293,
+          "replies": [
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c8f-d05f-7e72-805c-9d117b25cbd6",
+              "durationMs": 6997,
+              "inputTokens": 394,
+              "outputTokens": 94,
+              "tokensPerSec": 13.43,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Use a tent with a built-in lantern for easy illumination at night.\n2. Set up a bonfire around the tent for warmth and ambiance.\n3. Provide s'mores ingredients and marshmallows for a cozy campfire treat.\n4. Have a bucket of water handy for potential fire extinguishing.\nTradeoff: The convenience of a tent with a built-in lantern might increase the risk of electrical hazards if not properly set up."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c8f-ebba-7544-b1fc-421d9af79d86",
+              "durationMs": 7524,
+              "inputTokens": 594,
+              "outputTokens": 94,
+              "tokensPerSec": 12.49,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Use a tent with a built-in lantern for easy illumination at night.\n2. Set up a bonfire around the tent for warmth and ambiance.\n3. Provide s'mores ingredients and marshmallows for a cozy campfire treat.\n4. Have a bucket of water handy for potential fire extinguishing.\nTradeoff: The convenience of a tent with a built-in lantern might increase the risk of electrical hazards if not properly set up."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c90-0923-77f8-870c-69e80a5f05bc",
+              "durationMs": 9268,
+              "inputTokens": 792,
+              "outputTokens": 116,
+              "tokensPerSec": 12.52,
+              "finishReason": "stop",
+              "text": "Bench Captain: 1. Equip your vessel with a high-powered lantern for easy navigation under the stars.\n2. Conjure a mighty bonfire to provide both warmth and a beacon for any distant sails.\n3. Stock your stores with s'mores essentials and marshmallows for a sweet, sugary treasure to be enjoyed around the fire.\n4. Keep a reserve of water ready to extinguish any rogue flames.\nTradeoff: The very convenience of a tent with a built-in lantern might just be the cause of a watery doom if not properly anchored to the earth."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15c8f-2a76-7414-857f-3e6dc58f0bdd",
+          "messageId": "01a15c8f-2a76-748d-be7b-2badf03228ac",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554248823,
+          "inputTokens": 301,
+          "outputTokens": 177,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554260140,
+          "durationMs": 11317
+        },
+        {
+          "runId": "01a15c8f-a388-714d-aa88-1a08cb317a7c",
+          "messageId": "01a15c8f-a388-79aa-a90f-625858810cb7",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554279817,
+          "inputTokens": 301,
+          "outputTokens": 177,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554291290,
+          "durationMs": 11473
+        }
+      ]
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15c90-2d6a-71e9-9b3f-690bc474880a",
+      "conversationId": "01a15c90-2d68-715b-b6b7-a38ca117b61b",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 31624,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c90-2d71-75d8-8049-eb98e76730f2",
+              "durationMs": 5303,
+              "inputTokens": 118,
+              "outputTokens": 77,
+              "tokensPerSec": 14.52,
+              "finishReason": "stop",
+              "text": "Captain Marrow: Our single best idea for your little sea dogs is to set up a makeshift treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c90-422e-7782-a54b-f98907b76f69",
+              "durationMs": 5989,
+              "inputTokens": 288,
+              "outputTokens": 80,
+              "tokensPerSec": 13.36,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a makeshift treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c90-5998-7b66-842a-875856ce968f",
+              "durationMs": 6276,
+              "inputTokens": 456,
+              "outputTokens": 79,
+              "tokensPerSec": 12.59,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c90-7223-74b2-a84a-28b6a83495ac",
+              "durationMs": 6720,
+              "inputTokens": 628,
+              "outputTokens": 80,
+              "tokensPerSec": 11.9,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a makeshift treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c90-8c68-73c7-87d5-6419853cd8d6",
+              "durationMs": 7304,
+              "inputTokens": 801,
+              "outputTokens": 80,
+              "tokensPerSec": 10.95,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a makeshift treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "durationMs": 38435,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c90-a8fb-7366-a668-0eecb7c7cab1",
+              "durationMs": 6635,
+              "inputTokens": 524,
+              "outputTokens": 79,
+              "tokensPerSec": 11.91,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c90-c2ed-70b9-954e-e81b31c2710c",
+              "durationMs": 7185,
+              "inputTokens": 692,
+              "outputTokens": 82,
+              "tokensPerSec": 11.41,
+              "finishReason": "stop",
+              "text": "Bench Poet: Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c90-df04-7208-a81a-8a3d1e7dc3e0",
+              "durationMs": 6599,
+              "inputTokens": 864,
+              "outputTokens": 66,
+              "tokensPerSec": 10,
+              "finishReason": "stop",
+              "text": "1. Set up a treasure hunt in your backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all.\n2. Worry about a squall of illness striking your little privateers.\nTradeoff: You're trading convenience for a more exciting adventure."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c90-f8d1-7199-b85e-1f18e42351e0",
+              "durationMs": 9424,
+              "inputTokens": 1012,
+              "outputTokens": 107,
+              "tokensPerSec": 11.35,
+              "finishReason": "stop",
+              "text": "Bench Skeptic: Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers.\nPoint: The idea of illness is just a matter of luck. There's no scientific basis for your fears."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c91-1da8-7d7e-a11b-d2da9b03a6b3",
+              "durationMs": 8557,
+              "inputTokens": 1239,
+              "outputTokens": 82,
+              "tokensPerSec": 9.58,
+              "finishReason": "stop",
+              "text": "Bench Pirate: Bench Pirate: Captain Marrow: Our single best idea for your little sea dogs is to set up a treasure hunt in your own backyard. Bury some doubloon-like trinkets and have the kids use their wits and sharp eyes to find them all. As for the thing that makes my heart sink to my boots, it would be a squall of illness striking your little privateers."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "dice",
+      "diceSeed": 1007,
+      "roomId": "01a15c91-3f28-7fa9-92d8-7aba56f56483",
+      "conversationId": "01a15c91-3f25-7919-957d-3bb3fabc7233",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            3,
+            0,
+            4
+          ],
+          "durationMs": 15209,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c91-3f2f-70e6-bfdf-235831140f6d",
+              "durationMs": 2489,
+              "inputTokens": 118,
+              "outputTokens": 27,
+              "tokensPerSec": 10.85,
+              "finishReason": "stop",
+              "text": "The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c91-48ed-7268-8fef-9c99554f43a4",
+              "durationMs": 2931,
+              "inputTokens": 186,
+              "outputTokens": 30,
+              "tokensPerSec": 10.24,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c91-5467-78c3-8cb9-c8996f1a7623",
+              "durationMs": 3044,
+              "inputTokens": 260,
+              "outputTokens": 30,
+              "tokensPerSec": 9.86,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c91-6052-7a9a-9be9-5ffc687f41cc",
+              "durationMs": 3229,
+              "inputTokens": 330,
+              "outputTokens": 30,
+              "tokensPerSec": 9.29,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c91-6cf5-7c09-9f69-297bd171b2a0",
+              "durationMs": 3483,
+              "inputTokens": 403,
+              "outputTokens": 30,
+              "tokensPerSec": 8.61,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            2,
+            3,
+            0,
+            4
+          ],
+          "durationMs": 17274,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c91-7a9a-70d5-bd15-f8ead6a9bfa4",
+              "durationMs": 3200,
+              "inputTokens": 275,
+              "outputTokens": 30,
+              "tokensPerSec": 9.38,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c91-8720-7867-9893-4a4aaedf7aa7",
+              "durationMs": 3254,
+              "inputTokens": 343,
+              "outputTokens": 30,
+              "tokensPerSec": 9.22,
+              "finishReason": "stop",
+              "text": "Bench Engineer: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c91-93dc-74d8-8382-505727381cb3",
+              "durationMs": 3343,
+              "inputTokens": 417,
+              "outputTokens": 27,
+              "tokensPerSec": 8.08,
+              "finishReason": "stop",
+              "text": "The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c91-a0f2-75db-909a-9119df928999",
+              "durationMs": 3570,
+              "inputTokens": 481,
+              "outputTokens": 30,
+              "tokensPerSec": 8.4,
+              "finishReason": "stop",
+              "text": "Bench Pirate: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c91-aee9-7570-8104-4dc9d553ca03",
+              "durationMs": 3872,
+              "inputTokens": 554,
+              "outputTokens": 30,
+              "tokensPerSec": 7.75,
+              "finishReason": "stop",
+              "text": "Bench Poet: The best idea is to bring a tent to the yard,\nBut we must also make sure that there isn't a pest."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+      "seats": 5,
+      "policy": "topic-interest",
+      "diceSeed": 0,
+      "roomId": "01a15c91-be20-73c3-89a1-5476a1728e0c",
+      "conversationId": "01a15c91-be1c-79b3-979b-cb33c60796d3",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            2,
+            3,
+            4,
+            0,
+            1
+          ],
+          "durationMs": 44224,
+          "replies": [
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c92-0972-78b0-aee8-96295bb74d15",
+              "durationMs": 3959,
+              "inputTokens": 116,
+              "outputTokens": 50,
+              "tokensPerSec": 12.63,
+              "finishReason": "stop",
+              "text": "1. Set up a campfire and roast marshmallows.\n2. Sleep in tents in the backyard.\n3. Read books or tell stories around the campfire.\n\nTradeoff: The campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c92-18ef-7fca-afd7-214634c14ef0",
+              "durationMs": 5366,
+              "inputTokens": 238,
+              "outputTokens": 68,
+              "tokensPerSec": 12.67,
+              "finishReason": "stop",
+              "text": "Bench Engineer: What do you mean by \"single best idea\"? There could be many ways to have a good time outdoors, depending on the kids' interests or the weather. Also, why does the idea have to be just one thing? Maybe we should do something else if the weather is bad or if the kids get bored of fire."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c92-2deb-7042-8a61-c4f6b5fbd79e",
+              "durationMs": 5101,
+              "inputTokens": 387,
+              "outputTokens": 54,
+              "tokensPerSec": 10.59,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Set up a campfire and roast marshmallows.\n2. Sleep in tents in the backyard.\n3. Read books or tell stories around the campfire.\n\nTradeoff: The campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c92-41dd-7e6c-b84c-922cb916620e",
+              "durationMs": 5168,
+              "inputTokens": 502,
+              "outputTokens": 54,
+              "tokensPerSec": 10.45,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Set up a campfire and roast marshmallows.\n2. Sleep in tents in the backyard.\n3. Read books or tell stories around the campfire.\n\nTradeoff: The campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c92-5615-7774-acf9-aa5f5c47cc62",
+              "durationMs": 5321,
+              "inputTokens": 620,
+              "outputTokens": 51,
+              "tokensPerSec": 9.58,
+              "finishReason": "stop",
+              "text": "Bench Engineer: Set up a campfire and roast marshmallows,\nSleep in tents in the backyard, it's quite marvelous.\nRead books or tell stories around the campfire,\nBut the campfire could scare the kids if they are too close to it."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            3,
+            2,
+            0,
+            1,
+            4
+          ],
+          "durationMs": 51252,
+          "replies": [
+            {
+              "seatIndex": 3,
+              "personaKey": "skeptic",
+              "displayName": "Bench Skeptic",
+              "replyMessageId": "01a15c92-b8e5-7f68-9486-2b98833c05ee",
+              "durationMs": 6106,
+              "inputTokens": 408,
+              "outputTokens": 69,
+              "tokensPerSec": 11.3,
+              "finishReason": "stop",
+              "text": "Bench Skeptic: What do you mean by \"single best idea\"? There could be many ways to have a good time outdoors, depending on the kids' interests or the weather. Also, why does the idea have to be just one thing? Maybe we should do something else if the weather is bad or if the kids get bored of fire."
+            },
+            {
+              "seatIndex": 2,
+              "personaKey": "engineer",
+              "displayName": "Bench Engineer",
+              "replyMessageId": "01a15c92-d0c5-7a71-8894-8e41e5546db0",
+              "durationMs": 5531,
+              "inputTokens": 554,
+              "outputTokens": 54,
+              "tokensPerSec": 9.76,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Set up a campfire and roast marshmallows.\n2. Sleep in tents in the backyard.\n3. Read books or tell stories around the campfire.\n\nTradeoff: The campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c92-e666-7b75-9f09-68795611d457",
+              "durationMs": 5848,
+              "inputTokens": 674,
+              "outputTokens": 54,
+              "tokensPerSec": 9.23,
+              "finishReason": "stop",
+              "text": "Bench Engineer: 1. Set up a campfire and roast marshmallows.\n2. Sleep in tents in the backyard.\n3. Read books or tell stories around the campfire.\n\nTradeoff: The campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c92-fd43-7453-879f-884f974cb25b",
+              "durationMs": 6242,
+              "inputTokens": 792,
+              "outputTokens": 54,
+              "tokensPerSec": 8.65,
+              "finishReason": "stop",
+              "text": "Bench Poet: Bench Engineer: Set up a campfire and roast marshmallows,\nSleep in tents in the backyard, it's quite marvelous.\nRead books or tell stories around the campfire,\nBut the campfire could scare the kids if they are too close to it."
+            },
+            {
+              "seatIndex": 4,
+              "personaKey": "chef",
+              "displayName": "Bench Chef",
+              "replyMessageId": "01a15c93-15ab-7ce4-9a2f-68ad98527253",
+              "durationMs": 7526,
+              "inputTokens": 913,
+              "outputTokens": 69,
+              "tokensPerSec": 9.17,
+              "finishReason": "stop",
+              "text": "Bench Skeptic: What do you mean by \"single best idea\"? There could be many ways to have a good time outdoors, depending on the kids' interests or the weather. Also, why does the idea have to be just one thing? Maybe we should do something else if the weather is bad or if the kids get bored of fire."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": [
+        {
+          "runId": "01a15c91-be24-7f31-9198-7910105aea12",
+          "messageId": "01a15c91-be24-7a08-93b8-a0f8ab62ea19",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554417701,
+          "inputTokens": 434,
+          "outputTokens": 284,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554436971,
+          "durationMs": 19270
+        },
+        {
+          "runId": "01a15c92-6ae6-7859-85e3-4e868d038445",
+          "messageId": "01a15c92-6ae6-778c-8a10-872e6b1a8687",
+          "modelId": "blob:01a15b64-bb8b-7cf7-8c43-726346747095",
+          "jsonSelector": true,
+          "startedAtMs": 1792554461928,
+          "inputTokens": 434,
+          "outputTokens": 284,
+          "finishReason": "stop",
+          "canceled": false,
+          "endedAtMs": 1792554481888,
+          "durationMs": 19960
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Latencies are wall-clock per run at the provider port.",
+    "Peak RSS is not observable from the app; thermal state is recorded live.",
+    "memoryBytes fields repeat the static onboarding fit estimate (55% of Device.totalMemory), not free RAM."
+  ]
+}

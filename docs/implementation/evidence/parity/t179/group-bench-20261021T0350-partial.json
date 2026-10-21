@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-21T03:51:38.002Z",
+  "device": "iPhone",
+  "iosVersion": "26.6",
+  "appVersion": "0.1.0",
+  "buildNumber": "27",
+  "roundsPerScenario": 2,
+  "responseLimitTokens": 128,
+  "deviceMemoryBytes": 6744162304,
+  "modelNames": {
+    "blob:01a15b4d-d661-7466-bcf7-139c173a8b7f": "HauhauCS Qwen3.5 2B Aggressive Q4_K_M"
+  },
+  "scenarios": [
+    {
+      "modelId": "blob:01a15b4d-d661-7466-bcf7-139c173a8b7f",
+      "seats": 2,
+      "policy": "round-robin",
+      "diceSeed": 0,
+      "roomId": "01a15c95-680d-7284-98a4-e467491cb696",
+      "conversationId": "01a15c95-6809-7605-993f-d520c128a3d9",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 14209,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c95-6815-778b-9adc-e17c3e77edae",
+              "durationMs": 3537,
+              "inputTokens": 275,
+              "outputTokens": 128,
+              "tokensPerSec": 36.19,
+              "finishReason": "length",
+              "text": "\"Ah, a mere backyard campout? You dream of the stars, but the stars are just distant moonbeams reflected in the water. I propose we build a **tropical fortress** from the deadwood of the trees, with a **whalebone bed** that can float in the lagoon if the breeze gets too strong. It is the ultimate safety, a place where the sun never sets, only turns into a golden sunset that paints the sky in hues of amber and crimson.\n\nAs for my greatest worry? Oh, I know your heart is set on the stars, but I fear the **starless night**.\"The starless night is merely a shadow cast by the clouds upon the moonless sky, a temporary darkness that will soon be dispelled by the **solar flare** of a full moon. My greatest worry, however, is not the night itself, but the **midnight chill** creeping in through the **cracked shutters** that keep the **wind** out. I fear the **cold** will seep into our **crops** and turn the **harvest** to ash before the **sun** rises, leaving us with nothing but **dust** and **dried** **leaves** to **sc"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c95-82ed-747b-bd5d-7387ffbab692",
+              "durationMs": 3463,
+              "inputTokens": 806,
+              "outputTokens": 103,
+              "tokensPerSec": 29.74,
+              "finishReason": "stop",
+              "text": "Bench Pirate: \"Ah, a mere backyard campout? You dream of the stars, but the stars are just distant moonbeams reflected in the water. I propose we build a **tropical fortress** from the deadwood of the trees, with a **whalebone bed** that can float in the lagoon if the breeze gets too strong. It is the ultimate safety, a place where the sun never sets, only turns into a golden sunset that paints the sky in hues of amber and crimson.\n\nAs for my greatest worry? Oh, I know your heart is set on the stars, but I fear the **Bench Pirate: \"As for my greatest worry? Oh, I know your heart is set on the stars, but I fear the **midnight chill** creeping in through the **cracked shutters** that keep the **wind** out. I fear the **cold** will seep into our **crops** and turn the **harvest** to ash before the **sun** rises, leaving us with nothing but **dust** and **dried** **leaves** to **sc**"
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            0,
+            1
+          ],
+          "durationMs": 17537,
+          "replies": [
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c95-9f97-78d4-bfbe-11be7bcfb212",
+              "durationMs": 4186,
+              "inputTokens": 763,
+              "outputTokens": 128,
+              "tokensPerSec": 30.58,
+              "finishReason": "length",
+              "text": "Bench Poet: \"Ah, a mere backyard campout? You dream of the stars, but the stars are just distant moonbeams reflected in the water. I propose we build a **tropical fortress** from the deadwood of the trees, with a **whalebone bed** that can float in the lagoon if the breeze gets too strong. It is the ultimate safety, a place where the sun never sets, only turns into a golden sunset that paints the sky in hues of amber and crimson.\n\nAs for my greatest worry? Oh, I know your heart is set on the stars, but I fear theThe starless night is merely a shadow cast by the clouds upon the moonless sky, a temporary darkness that will soon be dispelled by the solar flare of a full moon. My greatest worry, however, is not the night itself, but the midnight chill creeping in through the cracked shutters that keep the wind out. I fear the cold will seep into our crops and turn the harvest to ash before the sun rises, leaving us with nothing but dust and dried leaves to scum our nets with.\n\nOr perhaps, since you have no children, you are just a pirate in a ship with no crew, drifting in the night"
+            },
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c95-bf09-7872-85f6-6fca52dc621b",
+              "durationMs": 4811,
+              "inputTokens": 1290,
+              "outputTokens": 128,
+              "tokensPerSec": 26.61,
+              "finishReason": "length",
+              "text": "Bench Pirate: \"Ah, a mere backyard campout? You dream of the stars, but the stars are just distant moonbeams reflected in the water. I propose we build a **tropical fortress** from the deadwood of the trees, with a **whalebone bed** that can float in the lagoon if the breeze gets too strong. It is the ultimate safety, a place where the sun never sets, only turns into a golden sunset that paints the sky in hues of amber and crimson.\n\nAs for my greatest worry? Oh, I know your heart is set on the stars, but I fear the **The starless night is merely a shadow cast by the clouds upon the moonless sky, a temporary darkness that will soon be dispelled by the solar flare of a full moon. My greatest worry, however, is not the night itself, but the midnight chill creeping in through the cracked shutters that keep the wind out. I fear the cold will seep into our crops and turn the harvest to ash before the sun rises, leaving us with nothing but dust and dried leaves to scum our nets with.\n\nOr perhaps, since you have no children, you are just a pirate in a ship with no crew, drifting in the night"
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    },
+    {
+      "modelId": "blob:01a15b4d-d661-7466-bcf7-139c173a8b7f",
+      "seats": 2,
+      "policy": "dice",
+      "diceSeed": 1001,
+      "roomId": "01a15c95-e420-7333-a8c2-93726c0b4e7e",
+      "conversationId": "01a15c95-e41d-7c28-b920-c29cc74f8dee",
+      "thermalBefore": "unknown",
+      "thermalAfter": "unknown",
+      "memoryBytesBefore": 6744162304,
+      "memoryBytesAfter": 6744162304,
+      "rounds": [
+        {
+          "trigger": "send",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 3815,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c95-e428-7227-b908-35ca9d53b5c2",
+              "durationMs": 1775,
+              "inputTokens": 121,
+              "outputTokens": 53,
+              "tokensPerSec": 29.86,
+              "finishReason": "stop",
+              "text": "We'll build a blanket fort inside the back fence,\nSo the two kids can laugh and play until dawn breaks.\nI'd worry about the wind, which might blow our fort down,\nAnd leave them shivering with a cold heart in their bones."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c95-eb1d-7d54-aca7-67f0daa10a86",
+              "durationMs": 2025,
+              "inputTokens": 252,
+              "outputTokens": 58,
+              "tokensPerSec": 28.64,
+              "finishReason": "stop",
+              "text": "Bench Poet: We'll build a blanket fort inside the back fence,\nSo the two kids can laugh and play until dawn breaks.\nI'd worry about the wind, which might blow our fort down,\nAnd leave them shivering with a cold heart in their bones."
+            }
+          ]
+        },
+        {
+          "trigger": "pass",
+          "status": "completed",
+          "frozenOrder": [
+            1,
+            0
+          ],
+          "durationMs": 4607,
+          "replies": [
+            {
+              "seatIndex": 1,
+              "personaKey": "poet",
+              "displayName": "Bench Poet",
+              "replyMessageId": "01a15c95-f30f-7b39-81db-328421fac3e4",
+              "durationMs": 2172,
+              "inputTokens": 240,
+              "outputTokens": 58,
+              "tokensPerSec": 26.7,
+              "finishReason": "stop",
+              "text": "Bench Poet: We'll build a blanket fort inside the back fence,\nSo the two kids can laugh and play until dawn breaks.\nI'd worry about the wind, which might blow our fort down,\nAnd leave them shivering with a cold heart in their bones."
+            },
+            {
+              "seatIndex": 0,
+              "personaKey": "pirate",
+              "displayName": "Bench Pirate",
+              "replyMessageId": "01a15c95-fb91-7d98-bbcc-97014d9bdcd9",
+              "durationMs": 2421,
+              "inputTokens": 383,
+              "outputTokens": 62,
+              "tokensPerSec": 25.61,
+              "finishReason": "stop",
+              "text": "Bench Poet: Bench Poet: We'll build a blanket fort inside the back fence,\nSo the two kids can laugh and play until dawn breaks.\nI'd worry about the wind, which might blow our fort down,\nAnd leave them shivering with a cold heart in their bones."
+            }
+          ]
+        }
+      ],
+      "selectorRuns": []
+    }
+  ],
+  "notes": [
+    "Latencies are wall-clock per run at the provider port.",
+    "Peak RSS is not observable from the app; thermal state is recorded live.",
+    "memoryBytes fields repeat the static onboarding fit estimate (55% of Device.totalMemory), not free RAM."
+  ]
+}
