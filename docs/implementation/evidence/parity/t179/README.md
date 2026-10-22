@@ -191,6 +191,8 @@ vocab/template-specific to the HauhauCS fine-tune, not our grammar string.
 | 4 | Lifecycle: background mid-round release; foreground reopen no auto-resume; Stop mid-round; model switch mid-session; memory pressure | pending device run |
 | 5 | Liquid: load, template sanity, top_k/penalty_repeat A/B, structured topic-interest selection parse, incompatibility error path (never substitutes Qwen) | pending device run |
 | 6 | Avatars: pick/replace/remove in-app, list rows, history retention across replacement | pending device run |
+| 7 | Starter pack busts on-device: fresh install seeds 14 tropes each with its 72px bundled bust (regression guard for the native attacher after the shared `starter-avatars.assets.ts` refactor); "Load character pack" revives deleted tropes without re-attaching or overwriting existing busts | pending device run (web equivalent proven: `tests/ui/personas-starter-avatars.spec.ts` + `docs/evidence/personas-avatars-web.png`) |
+| 8 | Build-29 continuity rerun on device: room replies render WITHOUT the `Name:` self-prefix (stripSpeakerPrefix), bench rows self-name correctly, group screens show the 16px/12px NativeSurface spacing | pending device run (unit: `pnpm test:group-features` 19/19; web spacing + gate: `tests/ui/group-setup-spacing.spec.ts`; parrot fixture: `pnpm test:fake-model`) |
 
 ## Default-model decision (card evidence bullet 2)
 
