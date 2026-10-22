@@ -49,6 +49,19 @@ test("phone group setup keeps 16px spacing, saves a room, and the room gates web
     .getByRole("button", { name: "Choose Sable Nyx" })
     .dispatchEvent("click");
   await page.getByRole("button", { name: "Close Add participant" }).click();
+  // The serving bundle may offer the dev-only "Dev harness" model
+  // (EXPO_PUBLIC_DEV_GROUP_HTTP, hermetic lane docs). The setup screen
+  // auto-defaults the shared model to the first choice, which would bind
+  // this room to the harness and hide the gate the spec must observe. Pin
+  // "No shared model" explicitly so the gate assertion holds on servers
+  // both with and without the harness.
+  await page.getByRole("button", { name: "Shared model", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Choose No shared model (each seat uses its own)",
+    })
+    .dispatchEvent("click");
+  await page.getByRole("button", { name: "Close Shared model" }).click();
   await page.getByRole("button", { name: "Validate and save group" }).click();
   await expect(page).toHaveURL(/\/group-chat\?roomId=/);
   // The setup panel's hidden "No shared model" dropdown option also matches
