@@ -263,3 +263,45 @@ test("fixed ids stay stable across reload and the seed marker records installati
     .get(TROPE_PACK_SEED_KEY);
   assert.equal((marker as { value: string }).value, "installed");
 });
+
+test("explicit reload backfills missing avatars; existing photos and edits win", async () => {
+  const database = await open();
+  const library = libraryOf(database);
+  await library.initialize();
+  const photoOf = (
+    records: Awaited<ReturnType<typeof library.list>>,
+    key: string,
+  ) => records.find((record) => record.id === tropeId(key))!.photoAttachmentId;
+  // Seed with a failing avatar import: personas exist but are photo-less.
+  const seeded = await seedTropePack({
+    library,
+    db: adapter(database),
+    attachAvatar: async () => null,
+  });
+  assert.equal(seeded.inserted.length, 14);
+  assert.equal(photoOf(await library.list(), "sunbeam"), null);
+  // Explicit reload repairs every photo-less trope.
+  const backfilled: string[] = [];
+  await loadTropePack({
+    library,
+    db: adapter(database),
+    attachAvatar: async (trope) => {
+      backfilled.push(trope.key);
+      return tropeId(trope.key);
+    },
+  });
+  assert.equal(backfilled.length, 14, "every photo-less trope backfilled");
+  assert.equal(photoOf(await library.list(), "sunbeam"), tropeId("sunbeam"));
+  // A second reload must not re-attach or overwrite user-chosen photos.
+  let again = 0;
+  await loadTropePack({
+    library,
+    db: adapter(database),
+    attachAvatar: async () => {
+      again += 1;
+      return "replaced";
+    },
+  });
+  assert.equal(again, 0, "personas with avatars are never re-attached");
+  assert.equal(photoOf(await library.list(), "sunbeam"), tropeId("sunbeam"));
+});

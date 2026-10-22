@@ -116,6 +116,35 @@ async function install(
   }
 }
 
+/**
+ * Explicit-reload only: a bundled trope that already exists but has no
+ * avatar (e.g. it was seeded on a platform whose avatar import failed) gets
+ * its bust attached. Personas that already have an avatar are left alone.
+ */
+async function backfillAvatar(
+  trope: StarterTrope,
+  options: TropeSeedOptions,
+): Promise<void> {
+  const { db, attachAvatar, log = () => undefined } = options;
+  if (!attachAvatar) return;
+  const row = await db.getFirstAsync<Record<string, unknown>>(
+    "SELECT photo_attachment_id FROM persona_profiles WHERE persona_id=?",
+    trope.id,
+  );
+  if (!row || row.photo_attachment_id) return; // has an avatar (or no profile)
+  try {
+    const attachmentId = await attachAvatar(trope);
+    if (attachmentId)
+      await options.library.update(trope.id, {
+        photoAttachmentId: attachmentId,
+      });
+  } catch (cause) {
+    log(
+      `starter-pack avatar backfill failed for ${trope.key}: ${String(cause)}`,
+    );
+  }
+}
+
 /** Boot seeding: install-all-once behind the marker; deleted tropes stay deleted. */
 export async function seedTropePack(
   options: TropeSeedOptions,
@@ -154,8 +183,10 @@ export async function loadTropePack(
   const { db } = options;
   const result = { inserted: [] as string[], restored: [] as string[] };
   for (const trope of STARTER_TROPES) {
-    if (await hasRow(db, "SELECT id FROM personas WHERE id=?", trope.id))
-      continue; // present stays untouched: user edits win
+    if (await hasRow(db, "SELECT id FROM personas WHERE id=?", trope.id)) {
+      await backfillAvatar(trope, options); // edits win; a missing bust is repaired
+      continue;
+    }
     const tombstoned = await hasRow(
       db,
       "SELECT entity_id FROM persona_tombstones WHERE entity_id=?",

@@ -11,28 +11,7 @@ import { File } from "expo-file-system";
 import type { SQLiteChatAttachments } from "@locallab/chat-integration";
 import type { ExtractionPort } from "@locallab/attachments";
 
-const AVATAR_ASSETS: Record<string, number> = {
-  "gruff-mentor": require("../assets/starter-personas/gruff-mentor.png"),
-  sunbeam: require("../assets/starter-personas/sunbeam.png"),
-  butler: require("../assets/starter-personas/butler.png"),
-  "noir-detective": require("../assets/starter-personas/noir-detective.png"),
-  schemer: require("../assets/starter-personas/schemer.png"),
-  archivist: require("../assets/starter-personas/archivist.png"),
-  "hype-buddy": require("../assets/starter-personas/hype-buddy.png"),
-  oracle: require("../assets/starter-personas/oracle.png"),
-  tsundere: require("../assets/starter-personas/tsundere.png"),
-  kuudere: require("../assets/starter-personas/kuudere.png"),
-  genki: require("../assets/starter-personas/genki.png"),
-  chuunibyou: require("../assets/starter-personas/chuunibyou.png"),
-  "isekai-hero": require("../assets/starter-personas/isekai-hero.png"),
-  "magical-girl": require("../assets/starter-personas/magical-girl.png"),
-  "bench-pirate": require("../assets/starter-personas/bench-pirate.png"),
-  "bench-poet": require("../assets/starter-personas/bench-poet.png"),
-  "bench-engineer": require("../assets/starter-personas/bench-engineer.png"),
-  "bench-skeptic": require("../assets/starter-personas/bench-skeptic.png"),
-  "bench-chef": require("../assets/starter-personas/bench-chef.png"),
-};
-
+import { AVATAR_ASSETS } from "./starter-avatars.assets";
 /** Any stored entity with a `key` naming a bundled avatar and an `id` owner. */
 export interface BundledAvatarOwner {
   key: string;
