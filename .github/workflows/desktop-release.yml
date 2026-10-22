@@ -61,7 +61,7 @@ jobs:
   # T166 (Linux). These jobs will fail fast with a pointer until those cards
   # land; the release gate then adds signing/notarization.
   desktop-macos-installer:
-    name: macOS installer (blocked: T164 sidecars)
+    name: "macOS installer (blocked: T164 sidecars)"
     runs-on: macos-latest
     timeout-minutes: 10
     steps:
@@ -76,7 +76,7 @@ jobs:
           exit 1
 
   desktop-linux-installer:
-    name: Linux installer (blocked: T166 sidecars)
+    name: "Linux installer (blocked: T166 sidecars)"
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
