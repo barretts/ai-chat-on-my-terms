@@ -40,6 +40,7 @@ import {
 import { isDesktopBridge } from "../../platform/desktop/bridge";
 import { openConnectionCatalog } from "./connection-catalog";
 import { seedDefaultChatConnection } from "./default-chat-connection";
+import { devGroupLabBaseUrl, devGroupLabChoice } from "./dev-group-lab";
 import {
   discoverRegisteredModelContext,
   modelContextKey,
@@ -452,15 +453,19 @@ export default function CompleteChatScreen() {
     let active = true;
     void listInstalledModels()
       .then((installed) => {
-        if (active)
-          setRoomModelChoices(
-            groupModelChoices(
-              installed.map((model) => ({
-                blobId: model.blobId,
-                name: model.name,
-              })),
-            ),
+        if (active) {
+          const choices = groupModelChoices(
+            installed.map((model) => ({
+              blobId: model.blobId,
+              name: model.name,
+            })),
           );
+          // Dev-only harness room model (see ./dev-group-lab); null unless
+          // the dev env is set on a `__DEV__` bundle.
+          const devLabUrl = devGroupLabBaseUrl();
+          if (devLabUrl !== null) choices.push(devGroupLabChoice(devLabUrl));
+          setRoomModelChoices(choices);
+        }
       })
       .catch(() => {});
     return () => {

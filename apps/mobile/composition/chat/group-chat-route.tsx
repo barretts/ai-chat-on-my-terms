@@ -46,6 +46,13 @@ import {
   resolveSharedRoomBinding,
   type RoomModelBinding,
 } from "./group-runtime";
+import {
+  DEV_GROUP_LAB_MODEL_ID,
+  DEV_GROUP_LAB_PROVIDER_ID,
+  createDevGroupLabPort,
+  devGroupLabBaseUrl,
+  ensureDevGroupLabModel,
+} from "./dev-group-lab";
 
 /**
  * Room screen (`/group-chat?roomId=…`, T175). Loads the saved room, its
@@ -260,6 +267,21 @@ export default function GroupChatRoute() {
             modelId,
           });
         }
+        // Dev-only harness model (hermetic UI lane): a room bound to a
+        // developer-run OpenAI-compatible server drives the SAME driver,
+        // lease, and transcript path as a GGUF room. `devGroupLabBaseUrl`
+        // returns null unless this is a `__DEV__` bundle with the env set.
+        const devLabUrl = devGroupLabBaseUrl();
+        if (devLabUrl !== null) {
+          roomModels.push({
+            providerConnectionId: DEV_GROUP_LAB_PROVIDER_ID,
+            modelRecordId: await ensureDevGroupLabModel(
+              database,
+              DEV_GROUP_LAB_MODEL_ID,
+            ),
+            modelId: DEV_GROUP_LAB_MODEL_ID,
+          });
+        }
         const shared = resolveSharedRoomBinding(
           saved.settings.sharedModelId,
           roomModels,
@@ -273,11 +295,20 @@ export default function GroupChatRoute() {
             );
           } else {
             bindingRef.current = createProviderBinding({
-              connectionId: LOCAL_GGUF_PROVIDER_ID,
-              providerId: LOCAL_GGUF_PROVIDER_ID,
+              ...(shared.modelId === DEV_GROUP_LAB_MODEL_ID &&
+              devLabUrl !== null
+                ? {
+                    connectionId: DEV_GROUP_LAB_PROVIDER_ID,
+                    providerId: DEV_GROUP_LAB_PROVIDER_ID,
+                    port: createDevGroupLabPort(devLabUrl),
+                  }
+                : {
+                    connectionId: LOCAL_GGUF_PROVIDER_ID,
+                    providerId: LOCAL_GGUF_PROVIDER_ID,
+                    port: createLocalChatPort(blobs),
+                  }),
               modelRecordId: shared.modelRecordId,
               modelId: shared.modelId,
-              port: createLocalChatPort(blobs),
             });
             const modelRuntime = new GroupModelRuntime({
               registry: new ModelLeaseRegistry(),
