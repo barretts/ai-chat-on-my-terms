@@ -47,7 +47,10 @@ try {
     artifacts: [],
   });
 }
-const languages = { python: ["python3", "prog.py"], javascript: ["node", "prog.mjs"] };
+const languages = {
+  python: ["python3", "prog.py"],
+  javascript: ["node", "prog.mjs"],
+};
 const runtime = languages[job.language];
 if (!runtime || typeof job.code !== "string" || job.code.trim() === "") {
   emit({
@@ -76,19 +79,20 @@ let stderrBytes = 0;
 let out = "";
 let err = "";
 let timedOut = false;
-const timer = setTimeout(() => {
-  timedOut = true;
-  child.kill("SIGKILL");
-}, Math.min(timeoutMs, 120_000));
+const timer = setTimeout(
+  () => {
+    timedOut = true;
+    child.kill("SIGKILL");
+  },
+  Math.min(timeoutMs, 120_000),
+);
 child.stdout.on("data", (chunk) => {
   stdoutBytes += chunk.length;
-  if (Buffer.byteLength(out, "utf8") < maxOutput)
-    out += chunk.toString("utf8");
+  if (Buffer.byteLength(out, "utf8") < maxOutput) out += chunk.toString("utf8");
 });
 child.stderr.on("data", (chunk) => {
   stderrBytes += chunk.length;
-  if (Buffer.byteLength(err, "utf8") < maxOutput)
-    err += chunk.toString("utf8");
+  if (Buffer.byteLength(err, "utf8") < maxOutput) err += chunk.toString("utf8");
 });
 if (typeof job.stdin === "string") child.stdin.end(job.stdin);
 else child.stdin.end();
@@ -102,7 +106,8 @@ clearTimeout(timer);
 if (timedOut) {
   emit({
     status: "timeout",
-    message: "The sandbox program exceeded its wall-clock limit and was killed.",
+    message:
+      "The sandbox program exceeded its wall-clock limit and was killed.",
     stdout: out,
     stderr: err,
     exitCode: closed.code,
@@ -133,7 +138,11 @@ if (Array.isArray(job.artifactNames)) {
 }
 
 const status =
-  closed.code === 0 ? "ok" : closed.signal === "SIGKILL" ? "quota" : "runtime-error";
+  closed.code === 0
+    ? "ok"
+    : closed.signal === "SIGKILL"
+      ? "quota"
+      : "runtime-error";
 emit({
   status,
   ...(status === "runtime-error"
