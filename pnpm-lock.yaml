@@ -730,6 +730,10 @@ importers:
         version: 5.9.3
 
   packages/backup:
+    dependencies:
+      '@locallab/archives':
+        specifier: workspace:*
+        version: link:../archives
     devDependencies:
       '@types/node':
         specifier: 24.0.10

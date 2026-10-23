@@ -10,6 +10,7 @@ test("store profile uses store signing without preview defaults", () => {
   assert.equal(profile.autoIncrement, true);
   assert.equal(profile.env.APP_STORE_BUILD, "1");
   assert.equal(profile.extends, undefined);
+  assert.equal(profile.ios.image, "macos-tahoe-26.6-xcode-27.1");
 });
 
 test("store config rejects injected developer credentials and endpoints", () => {
@@ -47,6 +48,32 @@ test("local-model entitlements are visible before native prebuild", () => {
     assert.equal(
       expo.ios.entitlements[`com.apple.developer.kernel.${capability}`],
       true,
+    );
+  }
+});
+
+test("iPhone rotation excludes upside-down; iPad preserves multitasking", () => {
+  const { expo } = require("../../apps/mobile/app.json");
+  assert.equal(expo.orientation, "default");
+  assert.equal(expo.ios.supportsTablet, true);
+  const orientations = [
+    "UIInterfaceOrientationPortrait",
+    "UIInterfaceOrientationLandscapeLeft",
+    "UIInterfaceOrientationLandscapeRight",
+  ];
+  for (const key of [
+    "UISupportedInterfaceOrientations",
+    "UISupportedInterfaceOrientations~ipad",
+  ]) {
+    assert.deepEqual(
+      expo.ios.infoPlist[key],
+      key.endsWith("~ipad")
+        ? [
+            orientations[0],
+            "UIInterfaceOrientationPortraitUpsideDown",
+            ...orientations.slice(1),
+          ]
+        : orientations,
     );
   }
 });

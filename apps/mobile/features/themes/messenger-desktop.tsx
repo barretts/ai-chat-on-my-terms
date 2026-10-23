@@ -55,36 +55,6 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           ? "Welcome"
           : "Messenger";
   const desktop = theme.dark ? "#123638" : "#267a7c";
-  if (layout.phone) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          minHeight: 0,
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        {destination !== "Messenger" && destination !== "Welcome" ? (
-          <Appbar.Header
-            statusBarHeight={0}
-            mode="small"
-            style={{ backgroundColor: theme.colors.background }}
-          >
-            <Appbar.BackAction
-              accessibilityLabel="Back to chat"
-              style={{ width: 44, height: 44, margin: 4 }}
-              onPress={() => router.navigate("/chat")}
-            />
-            <Appbar.Content
-              title={destination}
-              titleStyle={{ fontSize: 18, fontWeight: "600" }}
-            />
-          </Appbar.Header>
-        ) : null}
-        <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
-      </View>
-    );
-  }
   return (
     <View
       style={[
@@ -92,79 +62,103 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
         layout.compact && Platform.OS === "web"
           ? { padding: 6, paddingBottom: 0 }
           : undefined,
-        { backgroundColor: desktop },
+        { backgroundColor: layout.phone ? theme.colors.background : desktop },
       ]}
     >
       <Animated.View
         style={[
-          styles.window,
+          layout.phone ? styles.phoneWindow : styles.window,
           {
-            opacity,
+            opacity: layout.phone ? 1 : opacity,
             backgroundColor: theme.colors.surface,
             borderColor: theme.dark ? "#68737f" : "#f9f6ea",
           },
         ]}
       >
-        <View
-          style={[
-            styles.titlebar,
-            (layout.compact || collapsed) && { minHeight: 44, padding: 6 },
-          ]}
-        >
-          <View style={styles.appIcon}>
-            <Text style={{ color: "#2f5fa8", fontWeight: "900", fontSize: 17 }}>
-              L
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text numberOfLines={1} style={styles.title}>
-              AI Chat Messenger
-            </Text>
-            {!layout.compact && !collapsed ? (
-              <Text style={styles.subtitle}>
-                {destination} · A little nostalgia. A lot of possibility.
-              </Text>
+        {layout.phone ? (
+          <>
+            {destination !== "Messenger" && destination !== "Welcome" ? (
+              <Appbar
+                mode="small"
+                style={{ backgroundColor: theme.colors.background }}
+              >
+                <Appbar.BackAction
+                  accessibilityLabel="Back to chat"
+                  style={{ width: 44, height: 44, margin: 4 }}
+                  onPress={() => router.navigate("/chat")}
+                />
+                <Appbar.Content
+                  title={destination}
+                  titleStyle={{ fontSize: 18, fontWeight: "600" }}
+                />
+              </Appbar>
             ) : null}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              focused ? "Show all controls" : "Focus conversation"
-            }
-            accessibilityState={{ expanded: !focused }}
-            onPress={() => {
-              setMenu(false);
-              void settings
-                .setLayoutPreferences({
-                  windowCollapsed: !focused,
-                  chatCollapsed: !focused,
-                  composerCollapsed: !focused,
-                })
-                .catch(() => {});
-            }}
-            style={styles.focusButton}
+          </>
+        ) : null}
+        {!layout.phone ? (
+          <View
+            style={[
+              styles.titlebar,
+              (layout.compact || collapsed) && { minHeight: 44, padding: 6 },
+            ]}
           >
-            <Text style={{ color: "white", fontSize: 16 }}>
-              {focused ? "▤" : "▣"}
-            </Text>
-          </Pressable>
-          {layout.keyboardVisible ? (
+            <View style={styles.appIcon}>
+              <Text
+                style={{ color: "#2f5fa8", fontWeight: "900", fontSize: 17 }}
+              >
+                L
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text numberOfLines={1} style={styles.title}>
+                AI Chat Messenger
+              </Text>
+              {!layout.phone && !layout.compact && !collapsed ? (
+                <Text style={styles.subtitle}>
+                  {destination} · A little nostalgia. A lot of possibility.
+                </Text>
+              ) : null}
+            </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Hide keyboard"
-              onPress={() => Keyboard.dismiss()}
-              style={{
-                minHeight: 44,
-                minWidth: 44,
-                justifyContent: "center",
-                alignItems: "center",
+              accessibilityLabel={
+                focused ? "Show all controls" : "Focus conversation"
+              }
+              accessibilityState={{ expanded: !focused }}
+              onPress={() => {
+                setMenu(false);
+                void settings
+                  .setLayoutPreferences({
+                    windowCollapsed: !focused,
+                    chatCollapsed: !focused,
+                    composerCollapsed: !focused,
+                  })
+                  .catch(() => {});
               }}
+              style={styles.focusButton}
             >
-              <Text style={{ color: "white", fontSize: 20 }}>▾</Text>
+              <Text style={{ color: "white", fontSize: 16 }}>
+                {focused ? "▤" : "▣"}
+              </Text>
             </Pressable>
-          ) : null}
-        </View>
-        {!layout.keyboardVisible && !collapsed ? (
+            {layout.keyboardVisible ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Hide keyboard"
+                onPress={() => Keyboard.dismiss()}
+                style={{
+                  minHeight: 44,
+                  minWidth: 44,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 20 }}>▾</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        {!layout.phone && !layout.keyboardVisible && !collapsed ? (
           <View
             style={[
               styles.menuBar,
@@ -184,7 +178,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
             </Pressable>
           </View>
         ) : null}
-        {menu && !layout.keyboardVisible && !collapsed ? (
+        {!layout.phone && menu && !layout.keyboardVisible && !collapsed ? (
           <View
             style={{
               padding: 10,
@@ -220,8 +214,10 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
             ))}
           </View>
         ) : null}
-        <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
-        {!layout.compact && !collapsed ? (
+        <View key="route-content" style={{ flex: 1, minHeight: 0 }}>
+          {children}
+        </View>
+        {!layout.phone && !layout.compact && !collapsed ? (
           <View
             style={[
               styles.status,
@@ -233,7 +229,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
           </View>
         ) : null}
       </Animated.View>
-      {!layout.keyboardVisible && !collapsed ? (
+      {!layout.phone && !layout.keyboardVisible && !collapsed ? (
         <View
           style={[styles.taskbar, { backgroundColor: theme.colors.surface }]}
         >
@@ -286,6 +282,7 @@ export function MessengerDesktop({ children }: { children: ReactNode }) {
   );
 }
 const styles = StyleSheet.create({
+  phoneWindow: { flex: 1, minHeight: 0 },
   desktop: {
     flex: 1,
     padding: Platform.OS === "web" ? 12 : 0,

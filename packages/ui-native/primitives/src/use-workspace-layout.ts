@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { Keyboard, Platform, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /** Preserve space for content on short screens and while the native keyboard is open. */
 export function useWorkspaceLayout() {
   const { width, height, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentWidth = width - insets.left - insets.right;
+  const contentHeight = height - insets.top - insets.bottom;
   const touchLayout =
     Platform.OS !== "web" ||
     (typeof window !== "undefined" &&
@@ -29,9 +33,9 @@ export function useWorkspaceLayout() {
   return {
     width,
     fontScale,
-    phone: width < 600 || (height < 600 && touchLayout),
-    compact: height < 700 || fontScale > 1.3 || keyboardVisible,
+    phone: contentWidth < 600 || (contentHeight < 600 && touchLayout),
+    compact: contentHeight < 700 || fontScale > 1.3 || keyboardVisible,
     keyboardVisible,
-    showClock: width >= 360 && fontScale <= 1.3,
+    showClock: contentWidth >= 360 && fontScale <= 1.3,
   };
 }

@@ -264,7 +264,10 @@ import {
 } from "./selection";
 import { ForegroundRunAdmission } from "./foreground";
 import { useAppTheme } from "../../features/themes/provider";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { webAccessFetch } from "../../platform/web-access";
 import { braveSearchFetch } from "../../platform/brave-search-fetch";
 import {
@@ -2570,8 +2573,7 @@ export default function CompleteChatScreen() {
         ]}
       >
         {layout.phone ? (
-          <Appbar.Header
-            statusBarHeight={0}
+          <Appbar
             mode="small"
             style={{ backgroundColor: theme.colors.background }}
           >
@@ -2693,7 +2695,7 @@ export default function CompleteChatScreen() {
                 }}
               />
             )}
-          </Appbar.Header>
+          </Appbar>
         ) : (
           <View style={styles.titleRow}>
             <Pressable
@@ -4114,6 +4116,7 @@ function ChatControlsShell({
   children: ReactNode;
 }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   if (!phone) return visible ? <>{children}</> : null;
   return (
     <Portal>
@@ -4122,7 +4125,13 @@ function ChatControlsShell({
         visible={visible}
         onDismiss={onClose}
         overlayAccessibilityLabel="Dismiss chat menu"
-        style={{ marginTop: 0, marginBottom: 0, alignItems: "flex-start" }}
+        style={{
+          marginTop: 0,
+          marginBottom: 0,
+          marginLeft: insets.left,
+          marginRight: insets.right,
+          alignItems: "flex-start",
+        }}
         contentContainerStyle={{
           height: "100%",
           width: "88%",
@@ -4135,7 +4144,7 @@ function ChatControlsShell({
       >
         <SafeAreaView
           testID="phone-navigation-safe-area"
-          edges={["top", "bottom", "left", "right"]}
+          edges={["top", "bottom"]}
           style={{ flex: 1 }}
         >
           <View

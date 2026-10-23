@@ -5,7 +5,7 @@
     "scheme": "locallab",
     "version": "0.1.0",
     "icon": "./assets/locallab-icon.png",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "web": {
       "bundler": "metro",
@@ -25,7 +25,18 @@
           "NSAllowsLocalNetworking": true
         },
         "NSCameraUsageDescription": "AI Chat on My Terms uses the camera when you choose to take a photo to attach to a chat.",
-        "NSPhotoLibraryUsageDescription": "AI Chat on My Terms accesses photos you choose to attach to a chat."
+        "NSPhotoLibraryUsageDescription": "AI Chat on My Terms accesses photos you choose to attach to a chat.",
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
       },
       "entitlements": {
         "com.apple.developer.kernel.extended-virtual-addressing": true,
@@ -56,7 +67,8 @@
           "forceCxx20": true,
           "enableOpenCLAndHexagon": false
         }
-      ]
+      ],
+      "./plugins/with-ios-scenes.cjs"
     ],
     "experiments": {
       "typedRoutes": true

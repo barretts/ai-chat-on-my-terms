@@ -875,7 +875,7 @@ export function ProviderSetupPanel(props: {
                   value: "openrouter",
                   label: "OpenRouter",
                   disabled: busy,
-                  style: { minHeight: 44 },
+                  style: { minHeight: 44, flex: 1.4 },
                 },
                 {
                   value: "custom",

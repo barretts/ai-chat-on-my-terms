@@ -13,5 +13,8 @@
     "@types/node": "24.0.10",
     "tsx": "4.16.2",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@locallab/archives": "workspace:*"
   }
 }
