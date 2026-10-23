@@ -48,7 +48,11 @@ test("phone group setup keeps 16px spacing, saves a room, and the room gates web
   await page
     .getByRole("button", { name: "Choose Sable Nyx" })
     .dispatchEvent("click");
-  await page.getByRole("button", { name: "Close Add participant" }).click();
+  // Same window-scroll hazard as the persona rows above: once the sheet
+  // re-scrolls, hit-testing can miss the close button, so dispatch on it.
+  await page
+    .getByRole("button", { name: "Close Add participant" })
+    .dispatchEvent("click");
   // The serving bundle may offer the dev-only "Dev harness" model
   // (EXPO_PUBLIC_DEV_GROUP_HTTP, hermetic lane docs). The setup screen
   // auto-defaults the shared model to the first choice, which would bind

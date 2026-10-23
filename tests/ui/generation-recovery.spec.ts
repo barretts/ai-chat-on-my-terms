@@ -30,7 +30,7 @@ async function setup(page: Page) {
   await expect(
     page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })

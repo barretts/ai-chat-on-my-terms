@@ -70,18 +70,38 @@ async function openConnectionsPanel(page: Page, phone: boolean) {
   if (phone) {
     await page.getByRole("button", { name: "Choose chat connection" }).click();
   } else {
-    await page.getByRole("button", { name: "Providers", exact: true }).click();
+    await page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .click();
   }
   await expect(heading.first()).toBeVisible();
 }
 
 async function backToChat(page: Page, phone: boolean) {
-  if (await page.getByRole("button", { name: "Add provider" }).count()) {
-    if (phone) {
-      await page.getByRole("button", { name: "Return to conversation" }).click();
-    } else {
-      await page.getByRole("button", { name: "Back to chat" }).click();
-    }
+  if (phone) {
+    // "Save provider to list" leaves the editor mounted until the async
+    // provider reload lands and swaps the panel to the list view, so a bare
+    // "Add provider" snapshot can miss the still-open panel. Treat the
+    // editor region as open too; the header back action closes either.
+    const openPanel = page
+      .getByRole("button", { name: "Add provider" })
+      .or(page.getByRole("region", { name: "Provider connection editor" }))
+      .first();
+    if (await openPanel.isVisible().catch(() => false))
+      await page
+        .getByRole("button", { name: "Return to conversation" })
+        .click();
+  } else {
+    // Desktop: "Save to list" keeps the editor open over the list while an
+    // async reload may still close it; "Use saved provider" can instead
+    // auto-close to chat. "Back to chat" renders in both panel and editor
+    // views only, so let the view settle briefly, then close it if open.
+    const back = page.getByRole("button", { name: "Back to chat" });
+    const open = await back
+      .waitFor({ state: "visible", timeout: 8_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (open) await back.click();
   }
   await expect(
     page.getByRole("button", { name: "Add provider" }).first(),
@@ -91,7 +111,10 @@ async function backToChat(page: Page, phone: boolean) {
 async function ensureEditorFields(page: Page) {
   // On phone the editor hides its fields behind a "Connection settings"
   // accordion until the provider-name textbox appears.
-  const name = page.getByRole("textbox", { name: "Provider name", exact: true });
+  const name = page.getByRole("textbox", {
+    name: "Provider name",
+    exact: true,
+  });
   if (!(await name.count()))
     await page.getByRole("button", { name: "Connection settings" }).click();
   await expect(name).toBeVisible();
@@ -142,12 +165,18 @@ async function addProvider(
   },
 ) {
   await page.getByRole("button", { name: "Add provider" }).click();
-  if (phone) await page.getByRole("button", { name: "Other", exact: true }).click();
+  if (phone)
+    await page.getByRole("button", { name: "Other", exact: true }).click();
   await ensureEditorFields(page);
   if (fields.providerType) {
-    await page.getByRole("button", { name: "Provider type", exact: true }).click();
     await page
-      .getByRole("button", { name: `Choose ${fields.providerType}`, exact: true })
+      .getByRole("button", { name: "Provider type", exact: true })
+      .click();
+    await page
+      .getByRole("button", {
+        name: `Choose ${fields.providerType}`,
+        exact: true,
+      })
       .click();
   }
   await page
@@ -181,7 +210,10 @@ async function providerOrder(page: Page) {
 
 async function openFolderManagement(page: Page, phone: boolean) {
   // Phone folds folder creation, tiles, and rename/delete behind an accordion.
-  const field = page.getByRole("textbox", { name: "New folder name", exact: true });
+  const field = page.getByRole("textbox", {
+    name: "New folder name",
+    exact: true,
+  });
   if (phone && !(await field.count()))
     await page.getByRole("button", { name: "Manage folders" }).click();
   await expect(field).toBeVisible();
@@ -210,7 +242,10 @@ test("connection CRUD, endpoint validation, header replacement, and favorite ord
   await saveToList(page);
   await savedStatus(page, "Primary server");
   await expect(
-    page.getByRole("button", { name: "Edit provider Primary server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Primary server",
+      exact: true,
+    }),
   ).toHaveCount(1);
 
   // Re-saving through the editor must not create a duplicate row.
@@ -219,7 +254,10 @@ test("connection CRUD, endpoint validation, header replacement, and favorite ord
   await saveToList(page);
   await savedStatus(page, "Primary server");
   await expect(
-    page.getByRole("button", { name: "Edit provider Primary server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Primary server",
+      exact: true,
+    }),
   ).toHaveCount(1);
 
   // Test connection hits the mock /v1/models endpoint with the saved model.
@@ -232,25 +270,37 @@ test("connection CRUD, endpoint validation, header replacement, and favorite ord
   expect(seenHeaders.at(-1)).toBeNull();
 
   // Custom headers: save, replace, and verify only one ref persists.
-  await page.getByRole("textbox", { name: "Custom header name", exact: true }).fill("X-Test-Header");
-  await page.getByRole("textbox", { name: "Custom header value", exact: true }).fill("first-test-value");
+  await page
+    .getByRole("textbox", { name: "Custom header name", exact: true })
+    .fill("X-Test-Header");
+  await page
+    .getByRole("textbox", { name: "Custom header value", exact: true })
+    .fill("first-test-value");
   await saveToList(page);
   await savedStatus(page, "Primary server");
   await openEditor(page, "Primary server");
   await revealMoreActions(page, phone);
-  await expect(page.getByText("1 custom header(s) saved.", { exact: true })).toBeVisible();
-  await page.getByRole("textbox", { name: "Custom header name", exact: true }).fill("X-Test-Header");
-  await page.getByRole("textbox", { name: "Custom header value", exact: true }).fill("replacement-test-value");
+  await expect(
+    page.getByText("1 custom header(s) saved.", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Custom header name", exact: true })
+    .fill("X-Test-Header");
+  await page
+    .getByRole("textbox", { name: "Custom header value", exact: true })
+    .fill("replacement-test-value");
   await saveToList(page);
   await savedStatus(page, "Primary server");
   await openEditor(page, "Primary server");
   await revealMoreActions(page, phone);
-  await expect(page.getByText("1 custom header(s) saved.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("1 custom header(s) saved.", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Test connection" }).click();
-  await expect
-    .poll(() => seenHeaders.at(-1))
-    .toBe("replacement-test-value");
-  await expect(page.getByText("replacement-test-value", { exact: true })).toHaveCount(0);
+  await expect.poll(() => seenHeaders.at(-1)).toBe("replacement-test-value");
+  await expect(
+    page.getByText("replacement-test-value", { exact: true }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel connection edit" }).click();
 
   // Second provider; favoriting moves it above the unfavorited row, and the
@@ -263,7 +313,12 @@ test("connection CRUD, endpoint validation, header replacement, and favorite ord
   await revealMoreActions(page, phone);
   await saveToList(page);
   await savedStatus(page, "Backup server");
-  await page.getByRole("button", { name: "Favorite provider Backup server", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Favorite provider Backup server",
+      exact: true,
+    })
+    .click();
   await expect(
     page.getByRole("button", {
       name: "Edit provider Backup server",
@@ -320,30 +375,49 @@ test("connection CRUD, endpoint validation, header replacement, and favorite ord
   await saveToList(page);
   await savedStatus(page, "Renamed server");
   await expect(
-    page.getByRole("button", { name: "Edit provider Primary server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Primary server",
+      exact: true,
+    }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Edit provider Renamed server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Renamed server",
+      exact: true,
+    }),
   ).toHaveCount(1);
 
   // Removal needs confirmation and persists across reload.
-  await page.getByRole("button", { name: "Remove provider Backup server", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Remove provider Backup server", exact: true })
+    .click();
   await expect(
     page.getByRole("region", { name: "Confirm provider removal" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Confirm remove provider" }).click();
   await expect(
-    page.getByRole("button", { name: "Edit provider Backup server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Backup server",
+      exact: true,
+    }),
   ).toHaveCount(0);
   await page.reload();
   await openConnectionsPanel(page, phone);
   await expect(
-    page.getByRole("button", { name: "Edit provider Backup server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Backup server",
+      exact: true,
+    }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Edit provider Renamed server", exact: true }),
+    page.getByRole("button", {
+      name: "Edit provider Renamed server",
+      exact: true,
+    }),
   ).toHaveCount(1);
-  await expect(page.getByText("replacement-test-value", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("replacement-test-value", { exact: true }),
+  ).toHaveCount(0);
   await page.screenshot({
     path: `${testInfo.outputDir}/connections-crud.png`,
     fullPage: true,
@@ -366,14 +440,17 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
     route.fulfill({ json: { data: [{ id: "local-coder" }] } }),
   );
   let updatedRequest: { model?: string } | undefined;
-  await page.route("https://models-a2-ui-fixture.test/v1/chat/completions", async (route) => {
-    updatedRequest = route.request().postDataJSON() as { model?: string };
-    await route.fulfill({
-      status: 200,
-      headers: { "content-type": "text/event-stream" },
-      body: 'data: {"choices":[{"delta":{"content":"Updated connection used."},"finish_reason":null}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
-    });
-  });
+  await page.route(
+    "https://models-a2-ui-fixture.test/v1/chat/completions",
+    async (route) => {
+      updatedRequest = route.request().postDataJSON() as { model?: string };
+      await route.fulfill({
+        status: 200,
+        headers: { "content-type": "text/event-stream" },
+        body: 'data: {"choices":[{"delta":{"content":"Updated connection used."},"finish_reason":null}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
+      });
+    },
+  );
 
   await openChat(page);
   await openConnectionsPanel(page, phone);
@@ -382,11 +459,11 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
     endpoint: "https://models-a-ui-fixture.test",
   });
   await page.getByRole("button", { name: "Load endpoint models" }).click();
-  await expect(
-    page.getByText(/Found 2 models on your endpoint/),
-  ).toBeVisible();
+  await expect(page.getByText(/Found 2 models on your endpoint/)).toBeVisible();
   await page.getByRole("button", { name: "Chat model", exact: true }).click();
-  await page.getByRole("button", { name: "Choose second-coder", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Choose second-coder", exact: true })
+    .click();
   await revealMoreActions(page, phone);
   await saveToList(page);
   await savedStatus(page, "Server A");
@@ -396,9 +473,7 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
     endpoint: "https://models-b-ui-fixture.test",
   });
   await page.getByRole("button", { name: "Load endpoint models" }).click();
-  await expect(
-    page.getByText(/Found 1 models on your endpoint/),
-  ).toBeVisible();
+  await expect(page.getByText(/Found 1 models on your endpoint/)).toBeVisible();
   // A single available model is auto-selected for the chat model dropdown.
   await expect(
     page.getByRole("button", { name: "Chat model", exact: true }),
@@ -421,14 +496,23 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   await expect(
     page.getByRole("heading", { name: "Models", exact: true }).first(),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Model connection", exact: true }).click();
-  await page.getByRole("button", { name: "Choose Server A", exact: true }).click();
-  await expect(page.getByText("Server: Server A", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Model connection", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Choose Server A", exact: true })
+    .click();
+  await expect(
+    page.getByText("Server: Server A", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Server model local-coder", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("region", { name: "Server model second-coder", exact: true }),
+    page.getByRole("region", {
+      name: "Server model second-coder",
+      exact: true,
+    }),
   ).toBeVisible();
   await page.getByRole("searchbox", { name: "Search models" }).fill("second");
   await expect(
@@ -438,24 +522,37 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   await expect(
     page.getByRole("region", { name: "Server model local-coder", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Select local-coder", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Select local-coder", exact: true })
+    .click();
   await expect(
     page.getByText("Change saved model choice?", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Cancel model action" }).click();
   await expect(
-    page.getByRole("region", { name: "Server model second-coder", exact: true }),
+    page.getByRole("region", {
+      name: "Server model second-coder",
+      exact: true,
+    }),
   ).toContainText("Selected");
-  await page.getByRole("button", { name: "Select local-coder", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Select local-coder", exact: true })
+    .click();
   await page.getByRole("button", { name: "Confirm model action" }).click();
   await expect(
     page.getByRole("region", { name: "Server model local-coder", exact: true }),
   ).toContainText("Selected");
 
   // Switching servers shows that server's inventory.
-  await page.getByRole("button", { name: "Model connection", exact: true }).click();
-  await page.getByRole("button", { name: "Choose Server B", exact: true }).click();
-  await expect(page.getByText("Server: Server B", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Model connection", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Choose Server B", exact: true })
+    .click();
+  await expect(
+    page.getByText("Server: Server B", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Server model local-coder", exact: true }),
   ).toContainText("Selected");
@@ -466,14 +563,18 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   await expect(
     page.getByRole("region", { name: "Saved provider Server A" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Use saved provider Server A" }).click();
+  await page
+    .getByRole("button", { name: "Use saved provider Server A" })
+    .click();
   await expect(page.getByText("Server A").first()).toBeVisible();
 
   // Rename plus endpoint change: the next message hits the new endpoint.
   await backToChat(page, phone);
   await openConnectionsPanel(page, phone);
   await openEditor(page, "Server A");
-  await page.getByRole("textbox", { name: "Provider name", exact: true }).fill("Renamed A");
+  await page
+    .getByRole("textbox", { name: "Provider name", exact: true })
+    .fill("Renamed A");
   await page
     .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
     .fill("https://models-a2-ui-fixture.test");
@@ -482,7 +583,9 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   await savedStatus(page, "Renamed A");
   await backToChat(page, phone);
   await expect(page.getByText("Renamed A").first()).toBeVisible();
-  await page.getByRole("textbox", { name: "Message", exact: true }).fill("Check the updated endpoint");
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .fill("Check the updated endpoint");
   await page.getByTestId("advanced-composer-send").click();
   await expect(
     page.getByText("Updated connection used.", { exact: true }),
@@ -496,19 +599,27 @@ test("model inventory, exact model choices, renames, and chat use of an updated 
   await page
     .getByRole("button", { name: "Use saved provider Server B" })
     .click();
+  // Selecting the provider can close the panel asynchronously once the
+  // reload lands; wait for the chat chip, then reopen the panel with a
+  // bounded retry so a late close cannot strand the row click.
+  await expect(
+    page.getByText("Server B", { exact: true }).first(),
+  ).toBeVisible();
   await openConnectionsPanel(page, phone);
   const removeRenamed = page.getByRole("button", {
     name: "Remove provider Renamed A",
     exact: true,
   });
-  try {
-    await expect(removeRenamed).toBeVisible({ timeout: 4000 });
-  } catch {
-    // Selecting Server B can close the panel asynchronously; reopen it.
-    await openConnectionsPanel(page, phone);
-    await expect(removeRenamed).toBeVisible();
+  let clicked = false;
+  for (let attempt = 0; attempt < 3 && !clicked; attempt++) {
+    if (await removeRenamed.isVisible().catch(() => false)) {
+      clicked = await removeRenamed
+        .click({ timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    if (!clicked) await openConnectionsPanel(page, phone);
   }
-  await removeRenamed.click();
   await expect(
     page.getByRole("region", { name: "Confirm provider removal" }),
   ).toBeVisible();
@@ -538,13 +649,16 @@ test("library folders, saved message search, reopening and delete confirmation p
   const phone = testInfo.project.name === "phone";
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.route("https://library-ui-fixture.test/v1/responses", async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { "content-type": "text/event-stream" },
-      body: 'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"Coffee answer saved for library search."}\n\nevent: response.completed\ndata: {"type":"response.completed","response":{"usage":{"input_tokens":8,"output_tokens":6}}}\n\n',
-    });
-  });
+  await page.route(
+    "https://library-ui-fixture.test/v1/responses",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { "content-type": "text/event-stream" },
+        body: 'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"Coffee answer saved for library search."}\n\nevent: response.completed\ndata: {"type":"response.completed","response":{"usage":{"input_tokens":8,"output_tokens":6}}}\n\n',
+      });
+    },
+  );
   const title = "Coffee question for durable library search";
   const openLibrary = async () => {
     if (phone) {
@@ -598,13 +712,19 @@ test("library folders, saved message search, reopening and delete confirmation p
   await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
   await page.getByLabel("Search conversations", { exact: true }).fill("");
   await openFolderManagement(page, phone);
-  await page.getByRole("textbox", { name: "New folder name", exact: true }).fill("Research");
+  await page
+    .getByRole("textbox", { name: "New folder name", exact: true })
+    .fill("Research");
   await page.getByRole("button", { name: "Create folder" }).click();
   await expect(
     page.getByRole("button", { name: /^Open folder Research(?:, selected)?$/ }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "All conversations", exact: true }).click();
-  const conversationRegion = page.getByRole("region", { name: `Conversation ${title}` });
+  await page
+    .getByRole("button", { name: "All conversations", exact: true })
+    .click();
+  const conversationRegion = page.getByRole("region", {
+    name: `Conversation ${title}`,
+  });
   if (phone) {
     // On phone rows are flat list items; the Organize accordion is a
     // sibling of the row, not inside a labelled region.
@@ -625,13 +745,19 @@ test("library folders, saved message search, reopening and delete confirmation p
   await expect(
     page.getByRole("button", { name: "Remove from folder", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Rename Research", exact: true }).click();
-  await page.getByRole("textbox", { name: "Folder name", exact: true }).fill("Notes");
+  await page
+    .getByRole("button", { name: "Rename Research", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Folder name", exact: true })
+    .fill("Notes");
   await page.getByRole("button", { name: "Save folder name" }).click();
   await expect(
     page.getByRole("button", { name: /^Open folder Notes(?:, selected)?$/ }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Set Notes color Teal", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Set Notes color Teal", exact: true })
+    .click();
   if (phone) {
     await expect(
       page.getByRole("region", { name: "Folder Notes", exact: true }),
@@ -664,9 +790,7 @@ test("library folders, saved message search, reopening and delete confirmation p
   await openLibrary();
   if (phone) {
     await openFolderManagement(page, phone);
-    await page
-      .getByRole("button", { name: `Organize ${title}` })
-      .click();
+    await page.getByRole("button", { name: `Organize ${title}` }).click();
   }
   await expect(
     page.getByRole("button", { name: "Remove from folder", exact: true }),
@@ -689,31 +813,56 @@ test("library folders, saved message search, reopening and delete confirmation p
   await expect(
     page.getByRole("button", { name: `Open ${title}`, exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: `Open ${title}`, exact: true }).click();
+  await page
+    .getByRole("button", { name: `Open ${title}`, exact: true })
+    .click();
   await expect(
     page.getByText("Coffee answer saved for library search.", { exact: true }),
   ).toBeVisible();
 
   if (phone) {
     await page.getByRole("button", { name: "Open chat menu" }).click();
-    await page.getByRole("button", { name: "Search chats", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Search chats", exact: true })
+      .click();
   } else {
-    await page.getByRole("button", { name: "Search", exact: true }).click();
+    // Beginner rail hides "Search chats" behind "More tools" (mirrors the
+    // helper in search-panel.spec.ts); the rail label is the panel title,
+    // not the old bare "Search".
+    const railSearch = page.getByRole("button", {
+      name: /^(Search|Search chats)$/,
+    });
+    if (!(await railSearch.count()))
+      await page
+        .getByRole("button", { name: "More tools", exact: true })
+        .click();
+    await railSearch.first().click();
   }
   // The Search panel hides (rather than disables) Semantic mode when no
   // embedding provider is configured in the fixture environment.
   await expect(
     page.getByRole("button", { name: "Semantic", exact: true }),
   ).toHaveCount(0);
-  await page.getByLabel("Search saved conversations", { exact: true }).fill("coffee");
+  await page
+    .getByLabel("Search saved conversations", { exact: true })
+    .fill("coffee");
   await expect(
-    page.getByRole("button", { name: `Open ${title}, user message`, exact: true }),
+    page.getByRole("button", {
+      name: `Open ${title}, user message`,
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: `Open ${title}, assistant message`, exact: true }),
+    page.getByRole("button", {
+      name: `Open ${title}, assistant message`,
+      exact: true,
+    }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: `Open ${title}, assistant message`, exact: true })
+    .getByRole("button", {
+      name: `Open ${title}, assistant message`,
+      exact: true,
+    })
     .click();
   await expect(
     page.getByText("Coffee answer saved for library search.", { exact: true }),
@@ -771,12 +920,17 @@ test("Ollama lifecycle controls cancel pending pulls and confirm server deletion
   await page.route("https://ollama-ui-fixture.test/api/ps", (route) =>
     route.fulfill({ json: { models: [] } }),
   );
-  await page.route("https://ollama-ui-fixture.test/api/delete", async (route) => {
-    expect(route.request().postDataJSON()).toEqual({ model: "fixture:latest" });
-    deletes++;
-    installed = false;
-    await route.fulfill({ status: 200, body: "" });
-  });
+  await page.route(
+    "https://ollama-ui-fixture.test/api/delete",
+    async (route) => {
+      expect(route.request().postDataJSON()).toEqual({
+        model: "fixture:latest",
+      });
+      deletes++;
+      installed = false;
+      await route.fulfill({ status: 200, body: "" });
+    },
+  );
   await page.route("https://ollama-ui-fixture.test/api/pull", async (route) => {
     pullBody = route.request().postDataJSON();
     await heldPull;
@@ -805,31 +959,52 @@ test("Ollama lifecycle controls cancel pending pulls and confirm server deletion
     await expect(
       page.getByRole("heading", { name: "Models", exact: true }).first(),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Model connection", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Model connection", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "Choose Ollama fixture", exact: true })
       .click();
-    await expect(page.getByText("Server: Ollama fixture", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Server model fixture:latest", exact: true }),
+      page.getByText("Server: Ollama fixture", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", {
+        name: "Server model fixture:latest",
+        exact: true,
+      }),
     ).toContainText("Downloaded");
-    await page.getByRole("button", { name: "Delete fixture:latest", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Delete fixture:latest", exact: true })
+      .click();
     await page.getByRole("button", { name: "Cancel model action" }).click();
     expect(deletes).toBe(0);
-    await page.getByRole("button", { name: "Delete fixture:latest", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Delete fixture:latest", exact: true })
+      .click();
     await page.getByRole("button", { name: "Confirm model action" }).click();
     await expect(
-      page.getByRole("region", { name: "Server model fixture:latest", exact: true }),
+      page.getByRole("region", {
+        name: "Server model fixture:latest",
+        exact: true,
+      }),
     ).toHaveCount(0);
     expect(deletes).toBe(1);
     await page
-      .getByRole("textbox", { name: "Exact Ollama model ID to download", exact: true })
+      .getByRole("textbox", {
+        name: "Exact Ollama model ID to download",
+        exact: true,
+      })
       .fill("new-fixture:exact-tag");
-    await page.getByRole("button", { name: "Download exact Ollama model" }).click();
-    await expect.poll(() => pullBody).toEqual({
-      model: "new-fixture:exact-tag",
-      stream: true,
-    });
+    await page
+      .getByRole("button", { name: "Download exact Ollama model" })
+      .click();
+    await expect
+      .poll(() => pullBody)
+      .toEqual({
+        model: "new-fixture:exact-tag",
+        stream: true,
+      });
     await expect(
       page.getByRole("button", { name: "Cancel download" }),
     ).toBeVisible();

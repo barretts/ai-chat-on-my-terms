@@ -376,6 +376,9 @@ export default function CompleteChatScreen() {
   );
   const [phoneMenuOpen, setPhoneMenuOpen] = useState(false);
   useEffect(() => {
+    // react-native-web throws on BackHandler ("not supported on web");
+    // browser history is the back affordance there.
+    if (Platform.OS === "web") return;
     const listener = BackHandler.addEventListener("hardwareBackPress", () => {
       if (phoneMenuOpen) {
         setPhoneMenuOpen(false);

@@ -35,7 +35,7 @@ test("real local server setup, streamed reply, stop, reload and new chat", async
   await expect(
     page.getByRole("heading", { name: "AI Chat on My Terms", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
@@ -188,7 +188,7 @@ test("real local server setup, streamed reply, stop, reload and new chat", async
   await expect(
     page.getByText(`OxCoder · llama.cpp - ${model}`, { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await expect(
     page.getByRole("button", {
       name: `OxCoder · llama.cpp · ${model}`,

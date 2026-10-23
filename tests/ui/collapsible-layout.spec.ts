@@ -61,9 +61,7 @@ for (const size of [
     await page.goto("/");
     if (size.width === 440) await page.addStyleTag({ content: safeAreaStyle });
     await button("Continue without a model").click();
-    await page
-      .getByRole("button", { name: "Choose chat connection" })
-      .click();
+    await page.getByRole("button", { name: "Choose chat connection" }).click();
     await expect(
       page.getByRole("heading", { name: "Your connections", exact: true }),
     ).toBeVisible();
@@ -212,7 +210,7 @@ test("desktop focus controls still persist", async ({ page }) => {
     .getByRole("button", { name: "Show chat controls", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Providers", exact: true }),
+    page.getByRole("button", { name: /^(Providers|Connections)$/ }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Hide chat controls", exact: true })
@@ -228,6 +226,6 @@ test("desktop focus controls still persist", async ({ page }) => {
     .getByRole("button", { name: "Show all controls", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Providers", exact: true }),
+    page.getByRole("button", { name: /^(Providers|Connections)$/ }),
   ).toBeVisible();
 });

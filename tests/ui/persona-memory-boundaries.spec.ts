@@ -181,7 +181,12 @@ test("System theme follows browser color scheme and cleared initials stay absent
     const back = page.getByRole("button", {
       name: /^(Return to (conversation|chat)|Back to (conversation|chat))$/,
     });
-    if (await back.first().isVisible().catch(() => false))
+    if (
+      await back
+        .first()
+        .isVisible()
+        .catch(() => false)
+    )
       await back.first().click();
     const menu = page.getByRole("button", {
       name: "Open chat menu",
@@ -193,7 +198,9 @@ test("System theme follows browser color scheme and cleared initials stay absent
   };
   await openSettings();
   await system.click();
-  await expect(system).toHaveAccessibleName(/^Use system app theme(, selected)?$/);
+  await expect(system).toHaveAccessibleName(
+    /^Use system app theme(, selected)?$/,
+  );
   const background = () =>
     page
       .getByRole("heading", { level: 1 })
@@ -245,9 +252,15 @@ test("System theme follows browser color scheme and cleared initials stay absent
   const closeSettings = page.getByRole("button", {
     name: /^(Return to conversation|Return to chat|Back to (conversation|chat))$/,
   });
-  if (await closeSettings.first().isVisible().catch(() => false))
+  if (
+    await closeSettings
+      .first()
+      .isVisible()
+      .catch(() => false)
+  )
     await closeSettings.first().click();
-  else await page.getByRole("button", { name: "Settings", exact: true }).click();
+  else
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
   // The conversation avatar renders only in the desktop chat header; the
   // phone app bar omits it (product behavior gap, reported).
   if (((await page.viewportSize()?.width) ?? 0) > 600)
@@ -260,20 +273,26 @@ test("System theme follows browser color scheme and cleared initials stay absent
   await expect(
     page.getByText(/^(Changes saved|Settings loaded)$/).first(),
   ).toBeVisible();
-  if (await closeSettings.first().isVisible().catch(() => false))
+  if (
+    await closeSettings
+      .first()
+      .isVisible()
+      .catch(() => false)
+  )
     await closeSettings.first().click();
-  else await page.getByRole("button", { name: "Settings", exact: true }).click();
+  else
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(
     page.getByLabel("Conversation avatar BC", { exact: true }),
   ).toHaveCount(0);
   await page.reload();
-  await expect(
-    page.getByRole("heading", { level: 1 }).first(),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   await expect.poll(background).toBe(light);
   await expect(page.getByLabel(/^Conversation avatar /)).toHaveCount(0);
   await openSettings();
-  await expect(system).toHaveAccessibleName(/^Use system app theme(, selected)?$/);
+  await expect(system).toHaveAccessibleName(
+    /^Use system app theme(, selected)?$/,
+  );
   if (await appearance.count()) await appearance.click();
   await expect(initials).toHaveValue("");
   await page.emulateMedia({ colorScheme: "dark" });
@@ -311,7 +330,12 @@ test("Avatar cancellation preserves saved bytes while replacement and removal co
     const back = page.getByRole("button", {
       name: /^(Return to (conversation|chat)|Back to (conversation|chat))$/,
     });
-    if (await back.first().isVisible().catch(() => false))
+    if (
+      await back
+        .first()
+        .isVisible()
+        .catch(() => false)
+    )
       await back.first().click();
     const menu = page.getByRole("button", {
       name: "Open chat menu",
@@ -458,7 +482,12 @@ test("Memory search treats percent and underscore as literal saved text", async 
     const back = page.getByRole("button", {
       name: /^(Return to conversation|Back to chat)$/,
     });
-    if (await back.first().isVisible().catch(() => false))
+    if (
+      await back
+        .first()
+        .isVisible()
+        .catch(() => false)
+    )
       await back.first().click();
     const menu = page.getByRole("button", {
       name: "Open chat menu",
@@ -558,7 +587,7 @@ test("Real extracted Memory remains editable and opens its exact source from a d
     });
   });
   await openChat(page);
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })

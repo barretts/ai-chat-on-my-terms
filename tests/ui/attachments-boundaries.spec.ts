@@ -60,22 +60,24 @@ async function fixtureProvider(page: Page) {
     name: "Your connections",
     exact: true,
   });
-  const rail = page.getByRole("button", { name: "Providers", exact: true });
+  const rail = page.getByRole("button", { name: /^(Providers|Connections)$/ });
   const appbar = page.getByRole("button", {
     name: "Choose chat connection",
   });
   if (await appbar.count()) await appbar.click();
   else await rail.first().click();
-  await heading
-    .waitFor({ state: "visible", timeout: 8000 })
-    .catch(() => {});
+  await heading.waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
   const add = page.getByRole("button", { name: "Add provider" });
   const editor = page.getByRole("region", {
     name: "Provider connection editor",
   });
   for (let attempt = 0; attempt < 4; attempt++) {
     if (await editor.isVisible().catch(() => false)) break;
-    if (await add.count()) await add.first().click().catch(() => {});
+    if (await add.count())
+      await add
+        .first()
+        .click()
+        .catch(() => {});
     if (
       await editor
         .waitFor({ state: "visible", timeout: 2500 })
@@ -370,7 +372,12 @@ test("chooser cancel, sequential originals, removal and aggregate text shortenin
   const backSettings = page.getByRole("button", {
     name: /^(Return to conversation|Back to (conversation|chat))$/,
   });
-  if (await backSettings.first().isVisible().catch(() => false))
+  if (
+    await backSettings
+      .first()
+      .isVisible()
+      .catch(() => false)
+  )
     await backSettings.first().click();
   else {
     const menu = page.getByRole("button", {

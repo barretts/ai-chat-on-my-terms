@@ -52,7 +52,10 @@ async function openConnectionsFromChat(page: Page) {
     name: "Choose chat connection",
   });
   if (await appbar.count()) await appbar.click();
-  else await page.getByRole("button", { name: "Providers", exact: true }).click();
+  else
+    await page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .click();
   await expect(heading.first()).toBeVisible();
 }
 
@@ -473,9 +476,9 @@ test("OpenRouter key, authentication, missing-model and empty discovery errors r
   });
 });
 
-test(
-  "leaving the OpenRouter preset clears its key and preserves compatible local setup",
-  async ({ page }, testInfo) => {
+test("leaving the OpenRouter preset clears its key and preserves compatible local setup", async ({
+  page,
+}, testInfo) => {
   const headers: Record<string, string>[] = [];
   await fixtureOpenRouter(page, (route) => route.abort());
   await page.route(

@@ -60,7 +60,12 @@ async function openPanel(page: Page, panelName: string, probe: Locator) {
   const back = page.getByRole("button", {
     name: /^(Return to (conversation|chat)|Back to (conversation|chat))$/,
   });
-  if (await back.first().isVisible().catch(() => false))
+  if (
+    await back
+      .first()
+      .isVisible()
+      .catch(() => false)
+  )
     await back.first().click();
   const menu = page.getByRole("button", {
     name: "Open chat menu",
@@ -93,11 +98,19 @@ async function closePanel(page: Page, panelName: string) {
   const back = page.getByRole("button", {
     name: /^(Return to (conversation|chat)|Back to (conversation|chat))$/,
   });
-  if (await back.first().isVisible().catch(() => false)) {
+  if (
+    await back
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
     // "Use … in current chat" auto-closes the phone panel asynchronously
     // while we click; a swallowed click followed by the hidden check covers
     // both the manual and the auto-closed path.
-    await back.first().click({ timeout: 2_000 }).catch(() => {});
+    await back
+      .first()
+      .click({ timeout: 2_000 })
+      .catch(() => {});
     await expect(back.first()).toBeHidden({ timeout: 5_000 });
     return;
   }
@@ -119,8 +132,11 @@ async function closePanel(page: Page, panelName: string) {
     .click();
 }
 
-
-async function expandSettingsSection(page: Page, title: string, content?: Locator) {
+async function expandSettingsSection(
+  page: Page,
+  title: string,
+  content?: Locator,
+) {
   const section = page.getByRole("button", { name: title, exact: true });
   if (!(await section.count())) return;
   // When a content probe is given, skip the toggle if the section is
@@ -162,6 +178,24 @@ async function expectControlInherited(
   if (!(await control.isVisible().catch(() => false))) return;
   if (role === "textbox") {
     await expect(control).toHaveAttribute("placeholder", "Inherited");
+    // A settings load still in flight disables the field, so a single
+    // read-only snapshot during that window would misread an editable
+    // control as capability gating (and an enabled control never renders
+    // the explanation). Poll until the field settles either way.
+    await expect
+      .poll(async () => {
+        const settled = await control
+          .evaluate((element) => !(element as HTMLInputElement).readOnly)
+          .catch(() => false);
+        if (settled) return "editable";
+        const hinted = await page
+          .getByText(/confirmed for this model/i)
+          .first()
+          .isVisible()
+          .catch(() => false);
+        return hinted ? "gated" : "loading";
+      })
+      .not.toBe("loading");
     const editable = await control
       .evaluate((element) => !(element as HTMLInputElement).readOnly)
       .catch(() => false);
@@ -951,7 +985,10 @@ test("Settings permit normal digit typing without rewriting partial input", asyn
     page
       .getByText(/^(Changes saved|Settings loaded)$/)
       .or(
-        page.getByText("Context settings changed. Reload model context to apply them.", { exact: true }),
+        page.getByText(
+          "Context settings changed. Reload model context to apply them.",
+          { exact: true },
+        ),
       )
       .first(),
   ).toBeVisible();
@@ -1044,7 +1081,7 @@ test("Real local replies preserve Persona history and extract sourced memory aft
     requests.push({ target, body, extraction });
   });
   await openChat(page);
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })

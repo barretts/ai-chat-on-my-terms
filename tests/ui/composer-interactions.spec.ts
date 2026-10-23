@@ -86,7 +86,10 @@ async function openConnectionsPanel(page: Page) {
     name: "Choose chat connection",
   });
   if (await appbar.count()) await appbar.click();
-  else await page.getByRole("button", { name: "Providers", exact: true }).click();
+  else
+    await page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .click();
   await expect(heading.first()).toBeVisible();
 }
 
@@ -134,7 +137,9 @@ async function useFixtureProvider(page: Page, hold?: Promise<void>) {
   });
   if (!(await nameBox.count()))
     await page.getByRole("button", { name: "Connection settings" }).click();
-  await page.getByRole("button", { name: "Provider type", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Provider type", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Choose OpenAI", exact: true })
     .click();
@@ -142,9 +147,7 @@ async function useFixtureProvider(page: Page, hold?: Promise<void>) {
   await page
     .getByRole("textbox", { name: "Provider endpoint URL", exact: true })
     .fill("https://composer-fixture.test/v1/responses");
-  await page
-    .getByRole("button", { name: "Enter custom model ID" })
-    .click();
+  await page.getByRole("button", { name: "Enter custom model ID" }).click();
   await page
     .getByRole("textbox", { name: "Exact chat model ID", exact: true })
     .fill("composer-fixture");
@@ -327,9 +330,10 @@ test("Copy preserves fenced Markdown, exposes denied permission, and Attach is d
   }
   // On phone the Copy action sits beside (not inside) the response text
   // node, so scope to the enclosing message row.
-  const responseRow = testInfo.project.name === "phone"
-    ? page.getByTestId("assistant-response-text").locator("..")
-    : page.getByTestId("assistant-response-text");
+  const responseRow =
+    testInfo.project.name === "phone"
+      ? page.getByTestId("assistant-response-text").locator("..")
+      : page.getByTestId("assistant-response-text");
   const copy = responseRow.getByRole("button", {
     name: "Copy Markdown",
     exact: true,
@@ -382,7 +386,7 @@ test("a real model's fenced code reply copies its exact streamed Markdown", asyn
     origin: "http://localhost:8081",
   });
   await openPowerChat(page);
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })

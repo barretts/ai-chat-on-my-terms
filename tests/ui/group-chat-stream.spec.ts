@@ -57,7 +57,14 @@ test("phone group room streams both seats from the dev harness without gate or p
   // EXPO_PUBLIC_DEV_GROUP_HTTP set (see the header comment).
   await page.getByRole("button", { name: "Shared model", exact: true }).click();
   const harnessRow = page.getByRole("button", { name: /Choose Dev harness/ });
-  const enabled = (await harnessRow.count()) > 0;
+  // The sheet mounts asynchronously after its open animation; a bare
+  // count() can race it and skip a harness-enabled server, so give the
+  // row a bounded settle window before deciding.
+  const enabled = await harnessRow
+    .first()
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false);
   if (!enabled) {
     await page.getByRole("button", { name: "Close Shared model" }).click();
   }
@@ -66,7 +73,12 @@ test("phone group room streams both seats from the dev harness without gate or p
   // scrolled (RN-web scrolls the window, not the ScrollView); dispatch on
   // the resolved node like the persona rows below.
   await harnessRow.dispatchEvent("click");
-  await page.getByRole("button", { name: "Close Shared model" }).click();
+  // Sheet closes dispatch like the persona rows: after a pick the window
+  // re-scrolls mid-animation and the backdrop intermittently intercepts a
+  // real click on the close button.
+  await page
+    .getByRole("button", { name: "Close Shared model" })
+    .dispatchEvent("click");
   await page.getByRole("button", { name: "Add participant" }).click();
   await page
     .getByRole("button", { name: "Choose Aldric Vane" })
@@ -74,7 +86,9 @@ test("phone group room streams both seats from the dev harness without gate or p
   await page
     .getByRole("button", { name: "Choose Sable Nyx" })
     .dispatchEvent("click");
-  await page.getByRole("button", { name: "Close Add participant" }).click();
+  await page
+    .getByRole("button", { name: "Close Add participant" })
+    .dispatchEvent("click");
   await page.getByRole("button", { name: "Validate and save group" }).click();
   await expect(page).toHaveURL(/\/group-chat\?roomId=/, { timeout: 150_000 });
   // A bound room must never show the "no shared model" gate.

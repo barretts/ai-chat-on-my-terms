@@ -52,8 +52,16 @@ async function openSearch(page: Page) {
     const back = page.getByRole("button", {
       name: /^(Return to conversation|Back to (conversation|chat))$/,
     });
-    if (await back.first().isVisible().catch(() => false))
-      await back.first().click({ timeout: 3000 }).catch(() => {});
+    if (
+      await back
+        .first()
+        .isVisible()
+        .catch(() => false)
+    )
+      await back
+        .first()
+        .click({ timeout: 3000 })
+        .catch(() => {});
     const menu = page.getByRole("button", {
       name: "Open chat menu",
       exact: true,
@@ -67,12 +75,24 @@ async function openSearch(page: Page) {
         exact: true,
       });
       await expect
-        .poll(async () => more.first().isVisible().catch(() => false), {
-          timeout: 5_000,
-        })
+        .poll(
+          async () =>
+            more
+              .first()
+              .isVisible()
+              .catch(() => false),
+          {
+            timeout: 5_000,
+          },
+        )
         .toBeTruthy()
         .catch(() => false);
-      if (await more.first().isVisible().catch(() => false))
+      if (
+        await more
+          .first()
+          .isVisible()
+          .catch(() => false)
+      )
         await more.click();
     }
     await page
@@ -396,7 +416,10 @@ test("saved title and message search scopes, literal characters and exact older 
   const phone = testInfo.project.name === "phone";
   if (phone)
     await page.getByRole("button", { name: "Choose chat connection" }).click();
-  else await page.getByRole("button", { name: "Providers", exact: true }).click();
+  else
+    await page
+      .getByRole("button", { name: /^(Providers|Connections)$/ })
+      .click();
   await expect(
     page.getByRole("heading", { name: "Your connections", exact: true }),
   ).toBeVisible();
@@ -632,7 +655,12 @@ test("search excludes archived unselected variants, superseded base text and pri
     const back = page.getByRole("button", {
       name: /^(Return to conversation|Back to (conversation|chat))$/,
     });
-    if (await back.first().isVisible().catch(() => false))
+    if (
+      await back
+        .first()
+        .isVisible()
+        .catch(() => false)
+    )
       await back.first().click();
     const menu = page.getByRole("button", {
       name: "Open chat menu",

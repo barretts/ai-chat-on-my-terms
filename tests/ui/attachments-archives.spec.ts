@@ -189,7 +189,7 @@ test("real browser file intake and archive downloads round trip persistent bytes
   await expect(page.getByText(importText, { exact: false })).toHaveCount(0);
 
   // This is the running local server, without intercepted or fabricated responses.
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
@@ -379,7 +379,12 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
           };
         }),
     );
-  await expect.poll(managedFileCount).toBe(1);
+  // The "files" store backs the whole app filesystem on web (SQLite
+  // database, journals, and the retained original as `locallab/blobs/...`
+  // keys), so its absolute row count says nothing about this attachment.
+  // The retained-original contract is asserted via the message below and
+  // via the store shrinking again after Remove.
+  const afterAttach = await managedFileCount();
   await expect(
     page.getByText(/original file is saved|original file is retained/i).first(),
   ).toBeVisible();
@@ -393,7 +398,9 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
   await expect(
     page.getByRole("button", { name: "Remove invalid-utf8.txt", exact: true }),
   ).toHaveCount(0);
-  await expect.poll(managedFileCount).toBe(0);
+  await expect
+    .poll(managedFileCount)
+    .toBeLessThan(afterAttach); /* Remove frees the retained blob */
   await openArchives(page);
   const originalPdf = await download(
     page,
@@ -422,6 +429,7 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
       .getByText(/PDF text extraction is unavailable in this browser build/i)
       .first(),
   ).toBeVisible();
+  const afterPdf = await managedFileCount();
   await page.screenshot({
     path: testInfo.outputPath("pdf-extraction-unavailable.png"),
     fullPage: true,
@@ -429,7 +437,9 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
   await page
     .getByRole("button", { name: "Remove document-original.pdf", exact: true })
     .click();
-  await expect.poll(managedFileCount).toBe(0);
+  await expect
+    .poll(managedFileCount)
+    .toBeLessThan(afterPdf); /* Remove frees the PDF blob */
   await openArchives(page);
   await choose(page, "Import LM Studio export", {
     name: "invalid.json",
@@ -447,7 +457,9 @@ test("browser rejects malformed archives and retains an invalid UTF-8 original",
     buffer: Buffer.from("not a ZIP file"),
   });
   await expect(
-    page.getByRole("alert").filter({ hasText: "ZIP is malformed or unreadable" }),
+    page
+      .getByRole("alert")
+      .filter({ hasText: "ZIP is malformed or unreadable" }),
   ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("invalid-archive-error.png"),

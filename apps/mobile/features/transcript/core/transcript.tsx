@@ -636,15 +636,20 @@ export function Transcript({
         ]}
         initialNumToRender={12}
         windowSize={7}
-        ListEmptyComponent={
-          <>
-            {emptyContent ?? (
-              <Text style={styles.empty}>
-                Your conversation will appear here.
-              </Text>
-            )}
-          </>
-        }
+        ListEmptyComponent={function TranscriptEmpty() {
+          // Must be a component, not a raw element: VirtualizedList
+          // cloneElement()s the empty cell with onLayout, which a Fragment
+          // element rejects (React dev warning -> error-toast overlay).
+          return (
+            <>
+              {emptyContent ?? (
+                <Text style={styles.empty}>
+                  Your conversation will appear here.
+                </Text>
+              )}
+            </>
+          );
+        }}
       />
       {showLatest ? (
         phone ? (

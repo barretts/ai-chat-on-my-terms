@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -661,7 +662,9 @@ export function ChatSettingsScreen(props: ChatSettingsScreenProps) {
       <CommunitySection />
       <SupportSection />
       <AnalyticsSection />
-      <DevBenchSection />
+      {/* Native-only: the bench effect reads Paths.document, which the
+          expo-file-system web stub throws on. */}
+      {Platform.OS !== "web" ? <DevBenchSection /> : null}
       <SettingsSection
         phone={phone}
         title="Settings scope"

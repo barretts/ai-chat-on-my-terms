@@ -81,7 +81,7 @@ test("real context compaction changes only the request projection and retries th
   await expect(
     page.getByTestId("assistant-response-text").last(),
   ).toContainText("The recent work is saved.");
-  await page.getByRole("button", { name: "Providers", exact: true }).click();
+  await page.getByRole("button", { name: /^(Providers|Connections)$/ }).click();
   await page.getByRole("tab", { name: "compatible", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Provider name", exact: true })
