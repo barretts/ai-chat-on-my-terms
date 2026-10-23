@@ -18,9 +18,11 @@ test("Mac host probe targets the pinned static Tauri and Rust shells", async () 
     new URL("apps/companion/Cargo.toml", root),
     "utf8",
   );
-  assert.equal(desktop.dependencies.next, "16.1.0");
+  // The desktop is a static Tauri shell since d19ca6e: no framework
+  // runtime dependencies, and the web bundle lands in dist/desktop-bundle.
+  assert.equal(desktop.dependencies, undefined);
   assert.equal(desktop.devDependencies["@tauri-apps/cli"], "2.0.0");
-  assert.equal(tauri.build.frontendDist, "../out");
+  assert.equal(tauri.build.frontendDist, "../dist/desktop-bundle");
   assert.match(companion, /name = "locallab-companion"/);
 });
 
