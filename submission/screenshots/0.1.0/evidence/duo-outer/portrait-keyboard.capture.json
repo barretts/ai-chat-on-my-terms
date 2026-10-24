@@ -1,0 +1,8 @@
+{
+  "file": "portrait-keyboard.png",
+  "simulatorUDID": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "display": "primary",
+  "rawFramebufferSHA256": "7a20a27d3a54aa87e01654a8f69a77dfb88144ef79aa6f1e8569e8800b1d70a4",
+  "sha256": "9d55e2ac6c35e91132e647d85039b78c61651449361ff662e2fa787936eb3054",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

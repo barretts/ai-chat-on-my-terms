@@ -1,0 +1,9 @@
+{
+  "capturedAtUTC": "2026-10-24T00:44:28.366373+00:00",
+  "file": "01-conversation.png",
+  "simulatorUDID": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "display": "primary",
+  "rawFramebufferSHA256": "733ee3912739a01c22ede50b860892238bd4cdf3a286a4ee102f355f4d9667be",
+  "sha256": "0f3dc5ebfac4c4d612517ef4c610a5ce0404638285cc8c96fddee74041279a04",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

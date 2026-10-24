@@ -1,0 +1,146 @@
+[
+  {
+    "file": "en-US/iphone/01-conversation.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "daa93c2f1ec52ed6c09b4f67e6765b45563f232418f48ae8b26e61928b3f4f0f"
+  },
+  {
+    "file": "en-US/iphone/02-models.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "79296fff42b5a1ef13f864b7f370d12d18eceebaefc04cab809ac0194d7fcc7b"
+  },
+  {
+    "file": "en-US/iphone/03-connections.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "97db54f9d42f5ee9fd3e743c3180b43af66963594026f7d1639946d6444a5537"
+  },
+  {
+    "file": "en-US/iphone/04-conversations.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "d4a6615360f09acdbda989265acde206d518b9231d2443c059c02792ecc6f22c"
+  },
+  {
+    "file": "en-US/iphone/05-controls.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "0cbcb471b50396e01de55f445bd549d3c8804c39a169592c0228ca0b7515928f"
+  },
+  {
+    "file": "en-US/iphone/06-dark-conversation.png",
+    "deviceFamily": "iphone",
+    "width": 1320,
+    "height": 2868,
+    "mode": "RGB",
+    "sha256": "56dc186ee363552e93a69391cc0c2837c0f51edb4a459a9042a42fda0a54e742"
+  },
+  {
+    "file": "en-US/ipad/01-conversation.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "804b83ad1c95bfb8aa98b33797a290c34081a1e0a39a5520eb21277dd5651d36"
+  },
+  {
+    "file": "en-US/ipad/02-models.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "fa07bd5387362fcbec665182a10d1a6fd2ea28a4f592b3c312d07d44b9f2ad15"
+  },
+  {
+    "file": "en-US/ipad/03-connections.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "f4a90ab18f19f437371b1dfdc046ed6a5b85bb07affc1b881984a24abfe6899f"
+  },
+  {
+    "file": "en-US/ipad/04-conversations.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "7022dcee4e8163564fbab9def76bf7cfba63f10cd4be823f32b0cde3f8aeec32"
+  },
+  {
+    "file": "en-US/ipad/05-controls.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "b0f1b4c3fb4be987e77cb19338b873b17f3636741bb060765f6873065d476e71"
+  },
+  {
+    "file": "en-US/ipad/06-dark-conversation.png",
+    "deviceFamily": "ipad",
+    "width": 2064,
+    "height": 2752,
+    "mode": "RGB",
+    "sha256": "e5f5a1506b03c9fb316a3205561c873c8417124ad17401370eb742c4eca1bfab"
+  },
+  {
+    "file": "en-US/duo-outer/01-conversation.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "0f3dc5ebfac4c4d612517ef4c610a5ce0404638285cc8c96fddee74041279a04"
+  },
+  {
+    "file": "en-US/duo-outer/02-models.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "b0f03c897e1ee21a7e2014f2749480c8d940ec59eded72b716304fb0cee24219"
+  },
+  {
+    "file": "en-US/duo-outer/03-connections.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "473b98919e199b2d18ddddc7d410e54d2621dd147d627e7abe6519733bcb6301"
+  },
+  {
+    "file": "en-US/duo-outer/04-conversations.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "383282cb2efe307426b32942e86064b3b2708b65f981bb792d44b794358afbcd"
+  },
+  {
+    "file": "en-US/duo-outer/05-controls.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "574fc834a04f4bc4a198ef6c5d56b2f583188658b97d5b31ae952ec8ea928896"
+  },
+  {
+    "file": "en-US/duo-outer/06-dark-conversation.png",
+    "deviceFamily": "duo-outer",
+    "width": 1398,
+    "height": 2034,
+    "mode": "RGB",
+    "sha256": "856a1f02db4dfd4bf7bc5678dae13a466a227903d4f3dc84807b5bb90fc96ea8"
+  }
+]

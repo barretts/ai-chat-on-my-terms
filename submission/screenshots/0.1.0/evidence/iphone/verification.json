@@ -1,0 +1,37 @@
+{
+  "device": "971EBFFD-9D7F-44C9-B16F-F936C44EF05F",
+  "family": "iphone",
+  "result": "passed",
+  "steps": [
+    {
+      "step": "portrait-keyboard",
+      "windowSizePoints": "440.0, 956.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "landscapeLeft",
+      "windowSizePoints": "956.0, 440.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "landscapeRight",
+      "windowSizePoints": "956.0, 440.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "portrait",
+      "windowSizePoints": "440.0, 956.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    }
+  ],
+  "draftCleared": true,
+  "finalOrientation": "portrait"
+}

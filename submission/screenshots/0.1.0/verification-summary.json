@@ -1,0 +1,38 @@
+{
+  "verifiedDate": "2026-10-23",
+  "sourceCommit": "bb04869f1ae2f7478b2c5ecc6464ac0d2c5c1dfd",
+  "checks": {
+    "mobileAndImportedSharedUITypecheck": "passed: tsc --noEmit -p apps/mobile/tsconfig.json",
+    "releaseConfigurationAndSceneLifecycle": "passed: 6 tests; node --test tests/release/*.test.cjs",
+    "chatComposition": "passed: 311 tests in 40 files; repository-relative Vitest root, maxWorkers 2",
+    "sourceFormatting": "passed: Prettier on changed source files",
+    "toolingSyntax": "passed: Python compileall, Ruby -c, bash -n",
+    "whitespace": "passed: git diff --check",
+    "normalSampleImport": "passed on iPhone, iPad and Duo through native document picker",
+    "nativeReleaseLaunchWithoutMetro": "passed on iPhone, iPad and Duo",
+    "modelConnectionLibrarySettingsNavigation": "passed on all three simulator types",
+    "lightDarkAppearance": "captured on all three simulator types"
+  },
+  "evidenceReports": [
+    "evidence/iphone/verification.json",
+    "evidence/ipad/verification.json",
+    "evidence/ipad/window-resize-verification.json",
+    "evidence/duo-fold/verification.json",
+    "evidence/duo-outer/verification.json"
+  ],
+  "largerText": {
+    "setting": "simctl ui content_size extra-large; restored to large afterward",
+    "scope": "conversation rendering on iPhone, resized iPad, and Duo outer display; not an exhaustive accessibility audit",
+    "captureTiming": "Duo final larger-text evidence captured after clean launch and settled layout; immediate font-transition frames were rejected."
+  },
+  "limitations": [
+    "Native saved-chat fixtures do not establish inference or provider connectivity",
+    "No physical-device or TestFlight installation acceptance",
+    "Apple upload awaits secure app-specific-password authentication",
+    "No screenshot upload, App Review submission or public release"
+  ],
+  "automationLimitations": [
+    "Duo XCTest orientation setter did not change the actual scene bounds. Device Hub named pose and rotation controls supplied the actual landscape/portrait evidence instead.",
+    "After a physical Duo pose transition, XCTest cached geometry/hit points required refocusing and explicit orientation refresh for draft cleanup."
+  ]
+}

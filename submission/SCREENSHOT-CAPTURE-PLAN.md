@@ -1,6 +1,21 @@
-# Collect and upload simulator screenshots for AI Chat on My Terms
+# Native screenshot capture plan and October 23 results
 
-Plan agreed October 19, 2026. Saving this plan does not execute captures or uploads.
+Updated October 23, 2026. The approved prepare-and-push scope supersedes the original October 19 upload plan below. Screenshot uploads, App Review submission, and public release are outside this pass. The owner separately authorized a TestFlight binary upload.
+
+## Current results and scope
+
+- Implemented adaptive safe-area layout, stable conversation/composer identity across breakpoints, iOS scene lifecycle, and iPhone portrait/both landscape orientations. iPad includes all four orientations for native multitasking.
+- Captured six current-source native Release screenshots on each of iPhone 18 Pro Max/iOS 27.0, iPad Pro 13-inch (M5)/iOS 27.0, and iPhone Duo/iOS 27.1. Dedicated simulators preserve existing simulator data.
+- All sample chats were imported through the normal system document picker. The package is `screenshots/0.1.0/`; see its README, manifest, image validation, contact sheets, and separate layout evidence.
+- Source checkpoint `bb04869f1ae2f7478b2c5ecc6464ac0d2c5c1dfd`, simulator build 29. These screenshots do **not** represent production build 23. Store build 32 uses the same UI source with its automatic build counter increment.
+- Rotation, keyboard, selected conversation and draft retention were exercised. iPad resizing crossed the wide/phone breakpoint while preserving its draft. Duo evidence covers Closed, Open and Partially Open poses and both inner-display aspects.
+- Mobile/shared UI typecheck passed; release configuration/scene tests: 6 passed; chat composition suite: 311 passed across 40 files. Changed-source formatting and whitespace checks passed.
+- Store-signed 0.1.0 (32) was built locally. Apple requested an app-specific password; upload/processing/install availability is not yet verified. See `../docs/builds/ios-production-32.md`.
+- No screenshot assets were uploaded to Apple. Physical-device inference, privacy/export declarations, signing acceptance by Apple and TestFlight installation remain separate release gates.
+
+## Original October 19 procedure (historical)
+
+The procedure below records the original intent. Its build-23 and screenshot-upload instructions are superseded by the current scope above.
 
 ## Objective
 
@@ -37,14 +52,14 @@ No shipping screenshot mode, fake provider, or new public API is needed.
 
 ### 3. Capture this ordered set on both devices
 
-| Order | Screenshot | Required state |
-| --- | --- | --- |
-| 01 | Main conversation | “Weekend in Kyoto,” showing a readable request and formatted answer with the normal composer |
-| 02 | Phone models | Existing model catalog with names and download information; no fabricated installed or running status |
-| 03 | Connection choices | Real connection setup showing supported local/cloud choices, with no entered secrets or private development defaults |
-| 04 | Saved conversations | The three imported conversations, showing useful titles and navigation |
-| 05 | Chat controls | Existing settings for model/context/generation controls, with readable labels and no unavailable service presented as active |
-| 06 | Dark conversation | “A clearer project update,” showing the same real conversation UI in dark appearance |
+| Order | Screenshot          | Required state                                                                                                               |
+| ----- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 01    | Main conversation   | “Weekend in Kyoto,” showing a readable request and formatted answer with the normal composer                                 |
+| 02    | Phone models        | Existing model catalog with names and download information; no fabricated installed or running status                        |
+| 03    | Connection choices  | Real connection setup showing supported local/cloud choices, with no entered secrets or private development defaults         |
+| 04    | Saved conversations | The three imported conversations, showing useful titles and navigation                                                       |
+| 05    | Chat controls       | Existing settings for model/context/generation controls, with readable labels and no unavailable service presented as active |
+| 06    | Dark conversation   | “A clearer project update,” showing the same real conversation UI in dark appearance                                         |
 
 - Navigate through the native app using accessibility identifiers and labels.
 - Use a connected native simulator interaction tool when available. If none is connected, use a small XCUITest runner in the generated capture workspace; do not substitute browser screenshots.

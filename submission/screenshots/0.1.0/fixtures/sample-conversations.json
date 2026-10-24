@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "conversations": [
+    {
+      "id": "screenshot-kyoto",
+      "title": "Weekend in Kyoto",
+      "messages": [
+        {
+          "id": "kyoto-user",
+          "role": "user",
+          "content": "Help me plan a relaxed weekend in Kyoto with time for food and quiet walks."
+        },
+        {
+          "id": "kyoto-assistant",
+          "role": "assistant",
+          "content": "## A weekend at your own pace\n\n**Saturday**\nStart with the gardens at Nanzen-ji, then walk the Philosopher’s Path. Stop for lunch whenever a small café catches your eye.\n\n**Sunday**\nVisit Arashiyama early, stroll along the river, and leave the afternoon open for Nishiki Market.\n\n### Before you go\n- Save your hotel address offline\n- Pack comfortable walking shoes\n- Leave room for one unplanned stop"
+        }
+      ]
+    },
+    {
+      "id": "screenshot-update",
+      "title": "A clearer project update",
+      "messages": [
+        {
+          "id": "update-user",
+          "role": "user",
+          "content": "Make this project update clearer: We finished the first version and are checking the details. Feedback next week."
+        },
+        {
+          "id": "update-assistant",
+          "role": "assistant",
+          "content": "## A clearer update\n\nThe first version is ready. We’re checking the remaining details and will share it for feedback next week.\n\n**Next steps**\n- Finish the final checks\n- Gather feedback\n- Prioritize the next improvements"
+        }
+      ]
+    },
+    {
+      "id": "screenshot-learn",
+      "title": "Learn something new",
+      "messages": [
+        {
+          "id": "learn-user",
+          "role": "user",
+          "content": "Why does the sky change color at sunset?"
+        },
+        {
+          "id": "learn-assistant",
+          "role": "assistant",
+          "content": "At sunset, sunlight travels through more of the atmosphere before reaching your eyes. More blue light scatters out of the direct path, leaving warmer reds and oranges.\n\nClouds and tiny particles can change the colors you see.\n\nWould you like to explore why the sky is blue during the day?"
+        }
+      ]
+    }
+  ]
+}

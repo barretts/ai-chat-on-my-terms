@@ -1,0 +1,37 @@
+{
+  "device": "717A7314-6643-46F9-A8D4-4ED4B28530C7",
+  "family": "ipad",
+  "result": "passed",
+  "steps": [
+    {
+      "step": "portrait-keyboard",
+      "windowSizePoints": "1032.0, 1376.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "landscapeLeft",
+      "windowSizePoints": "1376.0, 1032.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "landscapeRight",
+      "windowSizePoints": "1376.0, 1032.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "portrait",
+      "windowSizePoints": "1032.0, 1376.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    }
+  ],
+  "draftCleared": true,
+  "finalOrientation": "portrait"
+}

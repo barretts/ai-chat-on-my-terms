@@ -1,0 +1,41 @@
+{
+  "device": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "family": "duo-outer",
+  "result": "partial",
+  "steps": [
+    {
+      "step": "portrait-keyboard",
+      "windowSizePoints": "466.0, 678.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    },
+    {
+      "step": "requested-landscapeLeft",
+      "windowSizePoints": "466.0, 678.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true,
+      "orientationRequestApplied": false
+    },
+    {
+      "step": "requested-landscapeRight",
+      "windowSizePoints": "466.0, 678.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true,
+      "orientationRequestApplied": false
+    },
+    {
+      "step": "portrait",
+      "windowSizePoints": "466.0, 678.0",
+      "draftRetained": true,
+      "keyboardPresent": true,
+      "savedResponsePresent": true
+    }
+  ],
+  "draftCleared": true,
+  "finalOrientation": "portrait",
+  "rotationVerified": false,
+  "note": "XCTest orientation requests retained the draft and keyboard but did not rotate this Duo scene (all reported bounds remained 466 x 678). Actual portrait/landscape and display-pose evidence is recorded separately in evidence/duo-fold/verification.json using Device Hub named controls."
+}

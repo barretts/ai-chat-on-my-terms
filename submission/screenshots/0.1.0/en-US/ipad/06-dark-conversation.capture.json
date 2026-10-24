@@ -1,0 +1,9 @@
+{
+  "capturedAtUTC": "2026-10-24T00:10:45.943402+00:00",
+  "file": "06-dark-conversation.png",
+  "simulatorUDID": "717A7314-6643-46F9-A8D4-4ED4B28530C7",
+  "display": "primary",
+  "rawFramebufferSHA256": "95ed1d4f63bd830485b7852d0b3ff1ce2ae0bb64b6ddd83bff65aae95b90fa3e",
+  "sha256": "e5f5a1506b03c9fb316a3205561c873c8417124ad17401370eb742c4eca1bfab",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

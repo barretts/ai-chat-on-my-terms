@@ -1,0 +1,9 @@
+{
+  "capturedAtUTC": "2026-10-24T00:13:07.783555+00:00",
+  "file": "portrait-keyboard.png",
+  "simulatorUDID": "971EBFFD-9D7F-44C9-B16F-F936C44EF05F",
+  "display": "primary",
+  "rawFramebufferSHA256": "97b7dbd72d0d56c91b1cb9562b6f8c7f1010daa5afa1c4466a4691ff6224b182",
+  "sha256": "970ec051d2ceaf32f74f970d04bbc808daca345c5e5816ab274a3172c8356357",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

@@ -1,0 +1,75 @@
+{
+  "device": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "result": "passed",
+  "steps": [
+    {
+      "pose": "outer-before-opening",
+      "framebufferPixels": [
+        1398,
+        2034
+      ],
+      "display": "primary",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "17496a36ad9435aa0645134ad9368cfd1e58947f5f1fb47d052fb6e4f5985207"
+    },
+    {
+      "pose": "inner-open-default",
+      "framebufferPixels": [
+        2853,
+        2007
+      ],
+      "display": "primary-1",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "657d275d96c7042feb3070c6b893075ef34687602b84154091442cee62865221"
+    },
+    {
+      "pose": "inner-open-rotated",
+      "framebufferPixels": [
+        2007,
+        2853
+      ],
+      "display": "primary-1",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "159c3dead73f0bc206e9376ccf05188eff8f4a13ead069ddb3d13dfe1516bacc"
+    },
+    {
+      "pose": "half-open-rotated",
+      "framebufferPixels": [
+        2007,
+        2853
+      ],
+      "display": "primary-1",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "159c3dead73f0bc206e9376ccf05188eff8f4a13ead069ddb3d13dfe1516bacc"
+    },
+    {
+      "pose": "half-open-default",
+      "framebufferPixels": [
+        2853,
+        2007
+      ],
+      "display": "primary-1",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "b978d3f2c2ec5c5aa5718f223c3631259b2327bb7af9d8087cb34af056e92cde"
+    },
+    {
+      "pose": "outer-after-closing",
+      "framebufferPixels": [
+        2034,
+        1398
+      ],
+      "display": "primary",
+      "draftRetained": true,
+      "savedResponsePresent": true,
+      "imageSHA256": "5f506ee6b1c39dea5eb25b7bc9516790d4f3c4991bfd7711c09bc98820b70663"
+    }
+  ],
+  "draftCleared": true,
+  "controlMethod": "Device Hub named accessibility pose controls; no screenConfig power/geometry mutation",
+  "harnessNote": "All six capture assertions passed. The cleanup loop encountered stale XCTest geometry/snapshots after the physical pose transition. Native delete taps cleared the draft; explicit rotation refreshed the tree and empty composer was verified separately."
+}

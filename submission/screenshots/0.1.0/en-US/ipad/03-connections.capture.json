@@ -1,0 +1,9 @@
+{
+  "capturedAtUTC": "2026-10-24T00:09:28.403311+00:00",
+  "file": "03-connections.png",
+  "simulatorUDID": "717A7314-6643-46F9-A8D4-4ED4B28530C7",
+  "display": "primary",
+  "rawFramebufferSHA256": "a9adc03745f59e60240cc04fe659bb51783ef60630556c809992486ff28b2d5a",
+  "sha256": "f4a90ab18f19f437371b1dfdc046ed6a5b85bb07affc1b881984a24abfe6899f",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

@@ -2,6 +2,16 @@
 
 Prepared October 19, 2026. No Apple review submission or public release has been performed.
 
+## October 23 update: Duo support, native captures and TestFlight
+
+The current UI source is `bb04869f1ae2f7478b2c5ecc6464ac0d2c5c1dfd`. It adds Duo-compatible scene lifecycle, adaptive safe areas, stable draft/navigation state through resizing, and iPhone rotation. iPad multitasking retains all four required orientations. Bundle ID, EAS identity, marketing version and saved-chat formats are preserved.
+
+The local screenshot package at `screenshots/0.1.0/` contains 18 native Release PNGs, three contact sheets, fictional import fixtures, capture tooling, per-image provenance, a manifest and separate keyboard/rotation/folding/window-resize evidence. The iPhone, iPad and Duo dimensions match Apple's current published screenshot sizes. No screenshot has been uploaded to Apple. These current-source simulator captures supersede the old build-23 capture brief; they must never be described as build-23 screenshots.
+
+The owner separately authorized TestFlight delivery. **Store-signed 0.1.0 (32) has been built locally**, with embedded JavaScript, iPhone/iPad support, Xcode/iOS SDK 27.1 and validated distribution entitlements. See `../docs/builds/ios-production-32.md` for artifact hash and provenance. Apple rejected a cached upload credential and requested an app-specific password; the secure local Terminal prompt is awaiting that authentication. **No accepted upload, processed build, or TestFlight install availability has been verified.** No credentials belong in this handoff or chat.
+
+Keep build 23 as historical evidence only. Qualify build 32 on a physical iPhone after Apple accepts/processes it. Export compliance remains unset; do not infer an exemption. Existing privacy, provider-consent, public-link and real inference acceptance items below remain open unless independently verified. The owner has not authorized App Review submission or public release.
+
 ## Files ready for review
 
 - `en-US/metadata.json`: copy-ready field values, subject to URL verification and release acceptance.
@@ -28,20 +38,20 @@ Prepared October 19, 2026. No Apple review submission or public release has been
 
 Record the exact app version/build, device and OS, test date, tester, result, and evidence for each row:
 
-| Check | Result |
-| --- | --- |
-| Clean install opens without Metro, developer credentials, or home LAN | Pending |
-| Supported model download/import finishes and reports errors usefully | Pending |
-| On-device chat works in airplane mode | Pending |
-| Cancel, background/resume, relaunch and saved history | Pending |
+| Check                                                                                                 | Result  |
+| ----------------------------------------------------------------------------------------------------- | ------- |
+| Clean install opens without Metro, developer credentials, or home LAN                                 | Pending |
+| Supported model download/import finishes and reports errors usefully                                  | Pending |
+| On-device chat works in airplane mode                                                                 | Pending |
+| Cancel, background/resume, relaunch and saved history                                                 | Pending |
 | Cloud destination/data disclosure and explicit consent before content upload; decline prevents upload | Pending |
-| Provider changes and Persona bindings cannot bypass consent | Pending |
-| Photos/camera, microphone/speech, Files and denied permissions | Pending |
-| Conversation deletion, exported copies and credentials behavior | Pending |
-| Every reachable feature is functional or honestly unavailable | Pending |
-| iPad layout, keyboard, accessibility and large text | Pending |
-| Public privacy/support links work from inside the app | Pending |
-| Native privacy manifest/SDK inventory and encryption assessment | Pending |
+| Provider changes and Persona bindings cannot bypass consent                                           | Pending |
+| Photos/camera, microphone/speech, Files and denied permissions                                        | Pending |
+| Conversation deletion, exported copies and credentials behavior                                       | Pending |
+| Every reachable feature is functional or honestly unavailable                                         | Pending |
+| iPad layout, keyboard, accessibility and large text                                                   | Pending |
+| Public privacy/support links work from inside the app                                                 | Pending |
+| Native privacy manifest/SDK inventory and encryption assessment                                       | Pending |
 
 ## Screenshot brief
 
@@ -71,7 +81,7 @@ The production submit profile now pins this app ID and Apple team, avoiding crea
 
 Verified iOS draft version: changed the newly created default `1.0` draft to match the configured candidate version `0.1.0`; release type is `MANUAL`, state `PREPARE_FOR_SUBMISSION`, version record `a0785cdf-0e39-4bf6-aa2c-2b152bbf4387`. This is draft setup only, not an App Review submission.
 
-## Successful store candidate
+## Historical store candidate (superseded by local build 32)
 
 Use **0.1.0 (23)**, Expo build `9bd18bf0-3b54-4af5-8221-643bec7f8145`; build 22 failed and must not be used. [Download IPA](https://expo.dev/artifacts/eas/6zUZ85Ne_e-ptGd6ChFemTihUQKcgUQKR6Kqqb_qtKk.ipa?download=1). Local copy: `.logs/app-store-production-23/AI-Chat-on-My-Terms-0.1.0-23.ipa` from repository root. SHA-256 `a2c8d599f9d40afc4d342512bfeb5bb4c3e101110f766c6ab41b7d81ba4c9d6f`. App identity, iOS 26.5 SDK and required memory entitlements were inspected in the downloaded artifact. Upload to the existing Apple app `6824682448`, wait for processing, and qualify this exact candidate through TestFlight before review submission. No binary upload has occurred in this preparation.
 

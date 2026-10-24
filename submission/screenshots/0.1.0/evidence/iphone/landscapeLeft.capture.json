@@ -1,0 +1,9 @@
+{
+  "capturedAtUTC": "2026-10-24T00:13:10.763636+00:00",
+  "file": "landscapeLeft.png",
+  "simulatorUDID": "971EBFFD-9D7F-44C9-B16F-F936C44EF05F",
+  "display": "primary",
+  "rawFramebufferSHA256": "8011b198265c4cb6017989170a227d2740729521cc13f83b559d36e90f8bd885",
+  "sha256": "8dc3d299d1fea93d9ad4b1a0e14558f8d1d699884f91f4f1adf3d7b3917e24ba",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

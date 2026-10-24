@@ -1,0 +1,8 @@
+{
+  "file": "requested-landscapeLeft.png",
+  "simulatorUDID": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "display": "primary",
+  "rawFramebufferSHA256": "9d5c4dfc2e65ae12d87312b66d7c8cc1852ddcca0f9f3a3a47fdac65fa1fab44",
+  "sha256": "a8ef59be461247d66b6a749612242a4dd6eee4c0ec04ef8176f290be33443297",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}

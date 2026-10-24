@@ -1,0 +1,8 @@
+{
+  "file": "requested-landscapeRight.png",
+  "simulatorUDID": "236ACA1C-9015-4880-8520-15F755AC3110",
+  "display": "primary",
+  "rawFramebufferSHA256": "d322c116e148ab89915629395b1295a49ab6f2095851956730bcd427003c06fe",
+  "sha256": "00e1880cdef01b92b408a8b4f3474f64f1c7ff725073b97c9ffe168dab046be3",
+  "conversion": "Removed entirely opaque alpha channel; RGB pixels unchanged"
+}
