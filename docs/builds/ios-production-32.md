@@ -16,11 +16,13 @@ Prepared October 23, 2026 for the owner's requested TestFlight upload.
 
 ## Upload state
 
-The local build succeeded. **Apple upload and TestFlight processing are not yet verified.** Apple's direct uploader rejected a cached credential with error `-22910`, requesting an app-specific password. A local Terminal upload command now requests that password through hidden input; credentials are not stored in this repository or chat.
+**Apple accepted build 32 and completed processing successfully.** Fresh App Store Connect readback on October 23, 2026 reports build ID `951d2d6d-2609-4849-b3d1-c951e9b5462c`, processing state `VALID`, and internal TestFlight state `MISSING_EXPORT_COMPLIANCE`. Apple's recorded upload time is `2026-10-23T17:52:55-07:00`. The secure local uploader completed with exit code 0 after the owner supplied authentication. The earlier cached-credential error `-22910` is resolved.
+
+The screenshot upload receipt at `submission/screenshots/0.1.0/apple-upload-receipt.json` includes this fresh build readback. TestFlight install availability is **not** established while export compliance remains missing.
 
 The owner authorized TestFlight delivery. App Review submission and public release remain separate steps. The upload command uses local Fastlane and Apple's uploader, waits for processing, and skips distribution/submission changes. No source or binary upload to Expo was used: automatic approval review rejected Expo source export, so the build ran locally and retrieved only the existing managed signing credentials.
 
-`ITSAppUsesNonExemptEncryption` remains unset. No export-compliance answer was invented. Once Apple accepts the upload, read back the build's processing and TestFlight state and resolve any actual Apple declaration gate before claiming install availability.
+`ITSAppUsesNonExemptEncryption` remains unset. No export-compliance answer was invented. Apple confirms `usesNonExemptEncryption: null`; the actual export-compliance declaration must be resolved before claiming TestFlight install availability.
 
 ## Verification boundaries
 

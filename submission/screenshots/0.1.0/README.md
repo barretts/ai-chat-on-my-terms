@@ -16,6 +16,12 @@ Order: conversation, model catalog, connection choices, saved conversations, res
 
 The dimensions were checked against [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) on October 23, 2026. Apple's specifications explicitly accept Duo outer and inner display sizes. Additional inner-display, folding, rotation, keyboard and iPad window-resize captures live under `evidence/` and are kept out of the upload sets.
 
+## Apple upload results
+
+All **18 English screenshots** are uploaded, processed, and ordered in the existing App Store Connect 0.1.0 draft for app `6824682448`. Fresh readback verifies native dimensions, image identity, processing states and the six-screen sequence in each device group. See `apple-upload-receipt.json` for Apple image/placement IDs, source hashes and the verification timestamp. The iPhone/iPad source MD5 checksums also match Apple's readback. Duo images were uploaded and placed through the current Asset Library API using the runtime-discovered `IPHONE_DUO_PROFILE` and the matching 1398 × 2034 specification.
+
+Only the 18 upload candidates were placed on the product page; keyboard, rotation, fold-transition and resized-window evidence remain in the separate `evidence/` package. The app remains `PREPARE_FOR_SUBMISSION`. No App Review submission or public release occurred. Store build 32 is processed as `VALID`; TestFlight currently reports `MISSING_EXPORT_COMPLIANCE`.
+
 ## Sample content and appearance
 
 `fixtures/sample-conversations.json` contains three fictional conversations: **Weekend in Kyoto**, **A clearer project update**, and **Learn something new**. All three simulators imported this file through the app's normal **Import & export → Import LM Studio export** flow and the system document picker. No database seeding, fake provider, shipping screenshot mode, or live paid AI request was used.

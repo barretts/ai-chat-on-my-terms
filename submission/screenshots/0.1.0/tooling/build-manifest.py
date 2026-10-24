@@ -71,5 +71,24 @@ manifest = {
     'limits': ['No screenshot uploaded to Apple', 'TestFlight upload/processing/install availability not verified',
                'No physical-device inference or provider-connectivity acceptance', 'No App Review submission or public release'],
 }
+receipt_path = root / 'apple-upload-receipt.json'
+if receipt_path.exists():
+    receipt = json.loads(receipt_path.read_text())
+    manifest['appleDelivery'] = {
+        'receipt': receipt_path.name,
+        'verifiedAtUTC': receipt['verifiedAtUTC'],
+        'totalScreenshots': receipt['totalScreenshots'],
+        'allProcessingVerified': receipt['allProcessingVerified'],
+        'appStoreState': receipt['appStoreState'],
+    }
+    manifest['storeArtifact']['appleUploadVerified'] = True
+    manifest['storeArtifact']['processingState'] = receipt['build32'][0]['processingState']
+    manifest['storeArtifact']['internalTestFlightState'] = receipt['build32'][0]['internalState']
+    manifest['storeArtifact']['note'] = 'Apple accepted and processed the signed artifact; export-compliance declaration remains missing.'
+    manifest['limits'] = [
+        'TestFlight install availability blocked by missing export compliance',
+        'No physical-device inference or provider-connectivity acceptance',
+        'No App Review submission or public release',
+    ]
 (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print(f'Recorded {len(images)} native images; 18 upload candidates')

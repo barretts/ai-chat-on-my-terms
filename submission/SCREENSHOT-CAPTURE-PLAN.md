@@ -1,6 +1,6 @@
 # Native screenshot capture plan and October 23 results
 
-Updated October 23, 2026. The approved prepare-and-push scope supersedes the original October 19 upload plan below. Screenshot uploads, App Review submission, and public release are outside this pass. The owner separately authorized a TestFlight binary upload.
+Updated October 23, 2026. The approved prepare-and-push scope supersedes the original October 19 upload plan below. The owner subsequently authorized uploading all prepared screenshots. Screenshot uploads are complete; App Review submission and public release remain outside scope. The owner also authorized the TestFlight binary upload.
 
 ## Current results and scope
 
@@ -10,8 +10,8 @@ Updated October 23, 2026. The approved prepare-and-push scope supersedes the ori
 - Source checkpoint `bb04869f1ae2f7478b2c5ecc6464ac0d2c5c1dfd`, simulator build 29. These screenshots do **not** represent production build 23. Store build 32 uses the same UI source with its automatic build counter increment.
 - Rotation, keyboard, selected conversation and draft retention were exercised. iPad resizing crossed the wide/phone breakpoint while preserving its draft. Duo evidence covers Closed, Open and Partially Open poses and both inner-display aspects.
 - Mobile/shared UI typecheck passed; release configuration/scene tests: 6 passed; chat composition suite: 311 passed across 40 files. Changed-source formatting and whitespace checks passed.
-- Store-signed 0.1.0 (32) was built locally. Apple requested an app-specific password; upload/processing/install availability is not yet verified. See `../docs/builds/ios-production-32.md`.
-- No screenshot assets were uploaded to Apple. Physical-device inference, privacy/export declarations, signing acceptance by Apple and TestFlight installation remain separate release gates.
+- Store-signed 0.1.0 (32) was built locally and Apple processed it as `VALID`. Internal TestFlight state is `MISSING_EXPORT_COMPLIANCE`; installation availability remains blocked by that declaration. See `../docs/builds/ios-production-32.md`.
+- All 18 prepared screenshots were uploaded to the existing English 0.1.0 draft and verified through fresh Apple readback. iPhone and iPad use the compatible screenshot-set API; Duo uses the current Asset Library API and its discovered `IPHONE_DUO_PROFILE`. Native dimensions, source identity, processing and order were verified. See `screenshots/0.1.0/apple-upload-receipt.json`. Physical-device inference, privacy/export declarations and TestFlight installation remain separate release gates.
 
 ## Original October 19 procedure (historical)
 

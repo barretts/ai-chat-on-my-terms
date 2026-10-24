@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUTC": "2026-10-24T00:49:10.742940+00:00",
+  "generatedAtUTC": "2026-10-24T03:03:09.333693+00:00",
   "app": {
     "name": "AI Chat on My Terms",
     "bundleIdentifier": "app.locallab.mobile",
@@ -41,8 +41,10 @@
     "platform": "iphoneos",
     "sha256": "f0e53f5ea72f40d57bd82d5e5bd372b7adbbd2ceb0d44aadb0311e7ac6937aa1",
     "record": "../../../docs/builds/ios-production-32.md",
-    "appleUploadVerified": false,
-    "note": "Separate signed artifact; Apple requested secure app-specific-password authentication."
+    "appleUploadVerified": true,
+    "note": "Apple accepted and processed the signed artifact; export-compliance declaration remains missing.",
+    "processingState": "VALID",
+    "internalTestFlightState": "MISSING_EXPORT_COMPLIANCE"
   },
   "devices": {
     "iphone": {
@@ -701,9 +703,15 @@
     "evidence/iphone/verification.json"
   ],
   "limits": [
-    "No screenshot uploaded to Apple",
-    "TestFlight upload/processing/install availability not verified",
+    "TestFlight install availability blocked by missing export compliance",
     "No physical-device inference or provider-connectivity acceptance",
     "No App Review submission or public release"
-  ]
+  ],
+  "appleDelivery": {
+    "receipt": "apple-upload-receipt.json",
+    "verifiedAtUTC": "2026-10-24T03:01:54Z",
+    "totalScreenshots": 18,
+    "allProcessingVerified": true,
+    "appStoreState": "PREPARE_FOR_SUBMISSION"
+  }
 }
