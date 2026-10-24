@@ -12,7 +12,8 @@
     "nativeReleaseLaunchWithoutMetro": "passed on iPhone, iPad and Duo",
     "modelConnectionLibrarySettingsNavigation": "passed on all three simulator types",
     "lightDarkAppearance": "captured on all three simulator types",
-    "appleScreenshotUpload": "passed: 18 processed images in source order across iPhone, iPad and Duo placements"
+    "appleScreenshotUpload": "passed: 18 processed images in source order across iPhone, iPad and Duo placements",
+    "ownerTestFlight": "passed: Apple state IN_BETA_TESTING; build 32 assigned to internal Owner group with one owner tester"
   },
   "evidenceReports": [
     "evidence/iphone/verification.json",
@@ -29,12 +30,12 @@
   "limitations": [
     "Native saved-chat fixtures do not establish inference or provider connectivity",
     "No physical-device or TestFlight installation acceptance",
-    "No App Review submission or public release",
-    "Apple build 32 is VALID; internal TestFlight state MISSING_EXPORT_COMPLIANCE"
+    "No App Review submission or public release"
   ],
   "automationLimitations": [
     "Duo XCTest orientation setter did not change the actual scene bounds. Device Hub named pose and rotation controls supplied the actual landscape/portrait evidence instead.",
     "After a physical Duo pose transition, XCTest cached geometry/hit points required refocusing and explicit orientation refresh for draft cleanup."
   ],
-  "appleUploadReceipt": "apple-upload-receipt.json"
+  "appleUploadReceipt": "apple-upload-receipt.json",
+  "ownerTestFlightReceipt": "../../../docs/builds/ios-production-32-owner-testflight.json"
 }

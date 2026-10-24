@@ -20,7 +20,7 @@ The dimensions were checked against [Apple's screenshot specifications](https://
 
 All **18 English screenshots** are uploaded, processed, and ordered in the existing App Store Connect 0.1.0 draft for app `6824682448`. Fresh readback verifies native dimensions, image identity, processing states and the six-screen sequence in each device group. See `apple-upload-receipt.json` for Apple image/placement IDs, source hashes and the verification timestamp. The iPhone/iPad source MD5 checksums also match Apple's readback. Duo images were uploaded and placed through the current Asset Library API using the runtime-discovered `IPHONE_DUO_PROFILE` and the matching 1398 × 2034 specification.
 
-Only the 18 upload candidates were placed on the product page; keyboard, rotation, fold-transition and resized-window evidence remain in the separate `evidence/` package. The app remains `PREPARE_FOR_SUBMISSION`. No App Review submission or public release occurred. Store build 32 is processed as `VALID`; TestFlight currently reports `MISSING_EXPORT_COMPLIANCE`.
+Only the 18 upload candidates were placed on the product page; keyboard, rotation, fold-transition and resized-window evidence remain in the separate `evidence/` package. The app remains `PREPARE_FOR_SUBMISSION`. No App Review submission or public release occurred. Store build 32 is processed as `VALID`; TestFlight now reports `IN_BETA_TESTING`, with build 32 assigned to the internal Owner group and the owner tester account. See `../../../docs/builds/ios-production-32-owner-testflight.json` for the current readback; the earlier screenshot-upload receipt preserves the compliance status observed at that earlier time.
 
 ## Sample content and appearance
 

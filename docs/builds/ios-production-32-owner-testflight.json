@@ -1,0 +1,21 @@
+{
+  "verifiedAtUTC": "2026-10-24T04:12:00Z",
+  "appId": "6824682448",
+  "version": "0.1.0",
+  "build": "32",
+  "buildId": "951d2d6d-2609-4849-b3d1-c951e9b5462c",
+  "processingState": "VALID",
+  "usesNonExemptEncryption": false,
+  "internalState": "IN_BETA_TESTING",
+  "ownerGroup": {
+    "id": "cb4b5541-320a-4836-bf78-35976f8a33a3",
+    "name": "Owner",
+    "internal": true,
+    "buildAssigned": true,
+    "testerCount": 1,
+    "ownerTesterAssigned": true
+  },
+  "physicalInstallationVerified": false,
+  "appReviewSubmitted": false,
+  "publicReleasePerformed": false
+}

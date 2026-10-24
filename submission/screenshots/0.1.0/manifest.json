@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAtUTC": "2026-10-24T03:03:09.333693+00:00",
+  "generatedAtUTC": "2026-10-24T04:12:50.458944+00:00",
   "app": {
     "name": "AI Chat on My Terms",
     "bundleIdentifier": "app.locallab.mobile",
@@ -42,9 +42,19 @@
     "sha256": "f0e53f5ea72f40d57bd82d5e5bd372b7adbbd2ceb0d44aadb0311e7ac6937aa1",
     "record": "../../../docs/builds/ios-production-32.md",
     "appleUploadVerified": true,
-    "note": "Apple accepted and processed the signed artifact; export-compliance declaration remains missing.",
+    "note": "Apple state IN_BETA_TESTING; assigned to internal Owner group with owner tester; build-specific OS-encryption exemption assessed and accepted.",
     "processingState": "VALID",
-    "internalTestFlightState": "MISSING_EXPORT_COMPLIANCE"
+    "internalTestFlightState": "IN_BETA_TESTING",
+    "usesNonExemptEncryption": false,
+    "ownerGroup": {
+      "id": "cb4b5541-320a-4836-bf78-35976f8a33a3",
+      "name": "Owner",
+      "internal": true,
+      "buildAssigned": true,
+      "testerCount": 1,
+      "ownerTesterAssigned": true
+    },
+    "ownerTestFlightReceipt": "../../../docs/builds/ios-production-32-owner-testflight.json"
   },
   "devices": {
     "iphone": {
@@ -703,7 +713,7 @@
     "evidence/iphone/verification.json"
   ],
   "limits": [
-    "TestFlight install availability blocked by missing export compliance",
+    "Physical TestFlight installation not yet verified",
     "No physical-device inference or provider-connectivity acceptance",
     "No App Review submission or public release"
   ],

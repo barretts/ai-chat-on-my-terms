@@ -16,13 +16,13 @@ Prepared October 23, 2026 for the owner's requested TestFlight upload.
 
 ## Upload state
 
-**Apple accepted build 32 and completed processing successfully.** Fresh App Store Connect readback on October 23, 2026 reports build ID `951d2d6d-2609-4849-b3d1-c951e9b5462c`, processing state `VALID`, and internal TestFlight state `MISSING_EXPORT_COMPLIANCE`. Apple's recorded upload time is `2026-10-23T17:52:55-07:00`. The secure local uploader completed with exit code 0 after the owner supplied authentication. The earlier cached-credential error `-22910` is resolved.
+**Build 0.1.0 (32) is now `IN_BETA_TESTING` in the internal Owner group.** Fresh Apple readback verifies the build assignment and one tester: the owner's existing Apple account. Processing is `VALID`; build ID is `951d2d6d-2609-4849-b3d1-c951e9b5462c`. See `ios-production-32-owner-testflight.json` for the provider receipt.
 
-The screenshot upload receipt at `submission/screenshots/0.1.0/apple-upload-receipt.json` includes this fresh build readback. TestFlight install availability is **not** established while export compliance remains missing.
+The earlier `MISSING_EXPORT_COMPLIANCE` state is resolved. The owner authorized completion; the build-specific source/native-artifact assessment supports exempt Apple OS encryption, and Apple accepted `usesNonExemptEncryption: false`. See `ios-production-32-encryption-assessment.md` for artifact hashes, composition evidence and Apple references. The signed IPA was not changed or rebuilt. The prior secure-authentication error is also resolved.
 
 The owner authorized TestFlight delivery. App Review submission and public release remain separate steps. The upload command uses local Fastlane and Apple's uploader, waits for processing, and skips distribution/submission changes. No source or binary upload to Expo was used: automatic approval review rejected Expo source export, so the build ran locally and retrieved only the existing managed signing credentials.
 
-`ITSAppUsesNonExemptEncryption` remains unset. No export-compliance answer was invented. Apple confirms `usesNonExemptEncryption: null`; the actual export-compliance declaration must be resolved before claiming TestFlight install availability.
+The signed IPA's `ITSAppUsesNonExemptEncryption` key remains unset; the exemption was applied to this specific build's App Store Connect metadata. Reassess before enabling native backup encryption, adding a cipher implementation or shipping the custom remote encryption engine. Future artifacts require their own matching declaration.
 
 ## Verification boundaries
 

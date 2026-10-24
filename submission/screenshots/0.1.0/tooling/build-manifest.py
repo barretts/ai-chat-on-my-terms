@@ -90,5 +90,19 @@ if receipt_path.exists():
         'No physical-device inference or provider-connectivity acceptance',
         'No App Review submission or public release',
     ]
+owner_path = repo / 'docs/builds/ios-production-32-owner-testflight.json'
+if owner_path.exists():
+    owner = json.loads(owner_path.read_text())
+    assert owner['build'] == manifest['storeArtifact']['build']
+    manifest['storeArtifact']['internalTestFlightState'] = owner['internalState']
+    manifest['storeArtifact']['usesNonExemptEncryption'] = owner['usesNonExemptEncryption']
+    manifest['storeArtifact']['ownerGroup'] = owner['ownerGroup']
+    manifest['storeArtifact']['ownerTestFlightReceipt'] = '../../../docs/builds/' + owner_path.name
+    manifest['storeArtifact']['note'] = 'Apple state IN_BETA_TESTING; assigned to internal Owner group with owner tester; build-specific OS-encryption exemption assessed and accepted.'
+    manifest['limits'] = [
+        'Physical TestFlight installation not yet verified',
+        'No physical-device inference or provider-connectivity acceptance',
+        'No App Review submission or public release',
+    ]
 (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print(f'Recorded {len(images)} native images; 18 upload candidates')
