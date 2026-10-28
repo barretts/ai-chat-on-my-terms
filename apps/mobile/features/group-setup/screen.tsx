@@ -36,7 +36,6 @@ export interface GroupSetupPanelProps {
   store: SQLiteGroupConfigStore;
   library: PersonaLibraryPort;
   connections: readonly PersonaModelConnectionOption[];
-  conversationId: string;
   createId: () => string;
   /** "Add to group" pressed in the Personas panel; seats the Persona once. */
   pendingSeat: PersonaGroupIntent | null;
@@ -75,8 +74,10 @@ const REPLY_DISPLAY_OPTIONS: readonly {
 
 export function GroupSetupPanel(props: GroupSetupPanelProps) {
   const { phone } = useWorkspaceLayout();
+  // A new room is its own chat: the draft conversation is minted here and
+  // saveRoom creates the row. It never rides the currently open solo chat.
   const [draft, setDraft] = useState<GroupRoomDraft>(() =>
-    newGroupRoomDraft(props.conversationId),
+    newGroupRoomDraft(props.createId()),
   );
   const [personas, setPersonas] = useState<PersonaRecord[]>([]);
   const [roomChoices, setRoomChoices] = useState<

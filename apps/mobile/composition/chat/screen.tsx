@@ -2259,6 +2259,18 @@ export default function CompleteChatScreen() {
       conversationId !== runtime.conversationId &&
       drafts.has(runtime.conversationId);
     await runtime.identities.memoryExtraction.cancelPending();
+    // A group chat is a chat with a style: any open request (history list,
+    // library search) lands on the room screen instead of the solo engine.
+    const room = groupConfigStore
+      ? await groupConfigStore.roomForConversation(conversationId)
+      : null;
+    if (room) {
+      setPanel(null);
+      setError("");
+      setPendingLeave(null);
+      router.push({ pathname: "/group-chat", params: { roomId: room.id } });
+      return;
+    }
     await saveActiveChat(runtime.db, conversationId);
     const selected = await runtime.registry.selected(conversationId);
     const fallback = selected
@@ -3591,7 +3603,6 @@ export default function CompleteChatScreen() {
           store={groupConfigStore}
           library={runtime.identities.personas}
           connections={personaConnections}
-          conversationId={runtime.conversationId}
           createId={createChatId}
           pendingSeat={pendingGroupSeat}
           onOpenRoom={(roomId) =>
