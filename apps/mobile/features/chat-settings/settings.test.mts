@@ -90,6 +90,19 @@ describe("per-chat parameter settings", () => {
       penalty_repeat: 1.1,
     });
     expect(catalogPublisherDefaults("qwen/qwen3.5-2b-q4_k_m")).toBeUndefined();
+    expect(catalogPublisherDefaults("liquid/lfm3-1.7b-q4_k_m")).toEqual({
+      temperature: 0.1,
+      top_k: 50,
+      penalty_repeat: 1.1,
+    });
+    expect(catalogPublisherDefaults("liquid/lfm3-vl-2b-q4_k_m")).toEqual({
+      temperature: 0.1,
+      top_k: 50,
+      penalty_repeat: 1.1,
+    });
+    expect(catalogPublisherDefaults("liquid/lfm3-omni-2b-q4_k_m")).toEqual({
+      temperature: 0,
+    });
     let presets = updateScopeValue(EMPTY_PRESETS, "model", "top_k", 20);
     presets = updateScopeValue(presets, "chat", "temperature", 0.9);
     const result = resolveSettings({

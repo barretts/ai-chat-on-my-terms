@@ -217,6 +217,19 @@ const publisherSamplingDefaults: Readonly<Record<string, ParameterValues>> = {
     top_k: 50,
     penalty_repeat: 1.1,
   },
+  "liquid/lfm3-1.7b-q4_k_m": {
+    temperature: 0.1,
+    top_k: 50,
+    penalty_repeat: 1.1,
+  },
+  "liquid/lfm3-vl-2b-q4_k_m": {
+    temperature: 0.1,
+    top_k: 50,
+    penalty_repeat: 1.1,
+  },
+  "liquid/lfm3-omni-2b-q4_k_m": {
+    temperature: 0,
+  },
 };
 
 export function catalogPublisherDefaults(

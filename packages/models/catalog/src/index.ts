@@ -93,7 +93,7 @@ const phoneModels = [
 /** Artifacts are pinned to the publisher revision and exact LFS digest. */
 export const curatedCatalog: ModelCatalog = ModelCatalogSchema.parse({
   schemaVersion: 1,
-  revision: "2026-10-20.1",
+  revision: "2026-10-28.1",
   models: [
     ...phoneModels.map((model) => {
       const repository = `unsloth/Qwen3.5-${model.size}-GGUF`;
@@ -156,6 +156,119 @@ export const curatedCatalog: ModelCatalog = ModelCatalogSchema.parse({
         sha256:
           "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
         sizeBytes: 1674455040,
+        tier: "balanced",
+        contextWindow: 4096,
+      },
+    },
+    {
+      id: "liquid/lfm3-1.7b-q4_k_m",
+      name: "Liquid AI LFM3 1.7B Q4_K_M",
+      publisher: "Liquid AI",
+      description:
+        "Fast 1.7B text model from the LFM3 family; selectable, not the " +
+        "default. Publisher sampling (temperature 0.1, top_k 50, " +
+        "penalty_repeat 1.1) rides the model-scope defaults. Loading needs a " +
+        "runtime build that understands the LFM3 architecture; the app " +
+        "reports incompatibility instead of swapping to another model.",
+      tags: ["chat", "offline", "iphone", "balanced"],
+      languages: ["en", "multilingual"],
+      formats: ["gguf"],
+      quants: ["Q4_K_M"],
+      capabilities: { tools: "unknown", vision: "no", reasoning: "yes" },
+      license: {
+        id: "lfm-open-1.0",
+        name: "LFM Open License v1.0",
+        url: "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/blob/bad5729bba61d076fff20d2548e62526665af215/LICENSE",
+        commercialUse: "restricted",
+      },
+      source: {
+        repository: "LiquidAI/LFM3-1.7B-GGUF",
+        revision: "bad5729bba61d076fff20d2548e62526665af215",
+      },
+      sizeBytes: 1099627808,
+      artifact: {
+        fileName: "LFM3-1.7B-Q4_K_M.gguf",
+        url: "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/resolve/bad5729bba61d076fff20d2548e62526665af215/LFM3-1.7B-Q4_K_M.gguf",
+        sha256:
+          "3793e1e6e2266919d6e015287221b41100175a98eddaba92e111aed3b05c93c4",
+        sizeBytes: 1099627808,
+        tier: "balanced",
+        contextWindow: 4096,
+      },
+    },
+    {
+      id: "liquid/lfm3-vl-2b-q4_k_m",
+      name: "Liquid AI LFM3-VL 2B Q4_K_M",
+      publisher: "Liquid AI",
+      description:
+        "Vision-language LFM3; image and video understanding are verified on " +
+        "the publisher's runtime only. On-device image attachments stay " +
+        "blocked until this app verifies them, and the vision companion " +
+        "(mmproj) is not part of this download, so on-device use is text " +
+        "conversations. Publisher sampling (temperature 0.1, top_k 50, " +
+        "penalty_repeat 1.1).",
+      tags: ["chat", "offline", "iphone", "balanced", "vision"],
+      languages: ["en", "multilingual"],
+      formats: ["gguf"],
+      quants: ["Q4_K_M"],
+      capabilities: { tools: "unknown", vision: "unknown", reasoning: "yes" },
+      license: {
+        id: "lfm-open-1.0",
+        name: "LFM Open License v1.0",
+        url: "https://huggingface.co/LiquidAI/LFM3-VL-2B-GGUF/blob/b36554cfd35854b06429900131730cd80f092cdb/LICENSE",
+        commercialUse: "restricted",
+      },
+      source: {
+        repository: "LiquidAI/LFM3-VL-2B-GGUF",
+        revision: "b36554cfd35854b06429900131730cd80f092cdb",
+      },
+      sizeBytes: 1099627808,
+      artifact: {
+        fileName: "LFM3-VL-2B-Q4_K_M.gguf",
+        url: "https://huggingface.co/LiquidAI/LFM3-VL-2B-GGUF/resolve/b36554cfd35854b06429900131730cd80f092cdb/LFM3-VL-2B-Q4_K_M.gguf",
+        sha256:
+          "56dac2e192ff0d9ab8507f4f1aeb4aed0463449bbbefaac79497f041c95f21eb",
+        sizeBytes: 1099627808,
+        tier: "balanced",
+        contextWindow: 4096,
+      },
+    },
+    {
+      id: "liquid/lfm3-omni-2b-q4_k_m",
+      name: "Liquid AI LFM3-Omni 2B Q4_K_M",
+      publisher: "Liquid AI",
+      description:
+        "Omni LFM3 with vision, audio, and language on the publisher's " +
+        "runtime; on-device this download covers text conversations only — " +
+        "image and audio input are unverified here, and speech output is not " +
+        "wired. Publisher sampling is greedy decoding (temperature 0) for " +
+        "text output.",
+      tags: ["chat", "offline", "iphone", "balanced", "vision", "audio"],
+      languages: ["en", "multilingual"],
+      formats: ["gguf"],
+      quants: ["Q4_K_M"],
+      capabilities: {
+        tools: "unknown",
+        vision: "unknown",
+        reasoning: "unknown",
+      },
+      license: {
+        id: "lfm-open-1.0",
+        name: "LFM Open License v1.0",
+        url: "https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF/blob/2918dd47cfceb4f260cd1734cd1aac1b22bbe4b6/LICENSE",
+        commercialUse: "restricted",
+      },
+      source: {
+        repository: "LiquidAI/LFM3-Omni-2B-GGUF",
+        revision: "2918dd47cfceb4f260cd1734cd1aac1b22bbe4b6",
+      },
+      sizeBytes: 1099630080,
+      artifact: {
+        fileName: "LFM3-Omni-2B-Q4_K_M.gguf",
+        url: "https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF/resolve/2918dd47cfceb4f260cd1734cd1aac1b22bbe4b6/LFM3-Omni-2B-Q4_K_M.gguf",
+        sha256:
+          "9f8d30e9d4fd7a9349d586e077988229b3ca0a0e4ad730897563d1eccc9893e2",
+        sizeBytes: 1099630080,
         tier: "balanced",
         contextWindow: 4096,
       },
