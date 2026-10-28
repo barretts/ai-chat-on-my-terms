@@ -32,6 +32,11 @@ import {
 import { SQLiteChatProviderRegistry } from "./providers";
 import { readActiveChat, saveActiveChat } from "./selection";
 import { SQLiteChatSettingsStore } from "./settings-store";
+import {
+  SQLiteGroupConfigStore,
+  defaultGroupRoomSettings,
+  emptyGroupParticipant,
+} from "@locallab/groups-config";
 
 const uuid = (n: number) =>
   `0195c000-0000-7000-8000-${n.toString().padStart(12, "0")}`;
@@ -586,6 +591,64 @@ describe("conversation delete", () => {
       );
       assert.equal(pendingCleanups(f), 0);
       assert.equal(await readActiveChat(f.db), A);
+    } finally {
+      f.native.close();
+    }
+  });
+
+  it("deleting a group room's chat deletes the room, never an orphan", async () => {
+    const f = await fixture();
+    try {
+      await seed(f);
+      await SQLiteGroupConfigStore.initialize(f.db);
+      const config = new SQLiteGroupConfigStore(f.db);
+      let minted = 30;
+      const createId = () => uuid(minted++);
+      const conversationId = uuid(20);
+      const roomId = await config.saveRoom(
+        {
+          id: null,
+          name: "War room",
+          scenario: "Ship-day standup",
+          userDisplayName: "Barrett",
+          conversationId,
+          settings: defaultGroupRoomSettings(),
+          participants: [
+            { ...emptyGroupParticipant(), displayName: "Ada" },
+          ],
+        },
+        createId,
+      );
+      const library = new SQLiteConversationLibrary(f.db);
+      const listed = await library.listHistory();
+      const roomRow = listed.find((entry) => entry.id === conversationId);
+      assert.equal(roomRow?.kind, "group");
+      assert.equal(roomRow?.title, "War room");
+      assert.deepEqual(await config.roomForConversation(conversationId), {
+        id: roomId,
+        name: "War room",
+      });
+
+      assert.equal(await deleteConversation(f.db, conversationId), true);
+      assert.equal(
+        (f.native.prepare("SELECT COUNT(*) AS n FROM group_rooms").get() as { n: number }).n,
+        0,
+      );
+      assert.equal(
+        (
+          f.native
+            .prepare("SELECT COUNT(*) AS n FROM group_room_conversations")
+            .get() as { n: number }
+        ).n,
+        0,
+      );
+      assert.equal(await config.roomForConversation(conversationId), null);
+      assert.ok(
+        !(await library.listHistory()).some((entry) => entry.id === conversationId),
+      );
+      // The untouched solo chats still read as solo.
+      const kept = (await library.listHistory()).find((entry) => entry.id === B);
+      assert.equal(kept?.kind, "solo");
     } finally {
       f.native.close();
     }

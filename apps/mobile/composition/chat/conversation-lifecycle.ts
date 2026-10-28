@@ -165,6 +165,41 @@ export async function deleteConversation(
       }
       await run("DELETE FROM chat_history_allocations WHERE conversation_id=?", conversationId);
     }
+    // A group room IS its conversation: deleting the chat deletes the room.
+    // Children are cleared by hand because drivers do not always enforce FKs.
+    if (has("group_rooms")) {
+      const rooms = await tx.getAllAsync<{ id: string }>(
+        "SELECT id FROM group_rooms WHERE conversation_id=?",
+        conversationId,
+      );
+      for (const room of rooms) {
+        if (has("group_runs"))
+          await run(
+            "DELETE FROM group_runs WHERE group_round_id IN (SELECT id FROM group_rounds WHERE group_room_id=?)",
+            room.id,
+          );
+        if (has("group_rounds"))
+          await run("DELETE FROM group_rounds WHERE group_room_id=?", room.id);
+        if (has("group_participant_prefs"))
+          await run(
+            "DELETE FROM group_participant_prefs WHERE participant_id IN (SELECT id FROM group_participants WHERE group_room_id=?)",
+            room.id,
+          );
+        if (has("group_participants"))
+          await run(
+            "DELETE FROM group_participants WHERE group_room_id=?",
+            room.id,
+          );
+        if (has("group_room_settings"))
+          await run("DELETE FROM group_room_settings WHERE room_id=?", room.id);
+      }
+      if (has("group_room_conversations"))
+        await run(
+          "DELETE FROM group_room_conversations WHERE conversation_id=?",
+          conversationId,
+        );
+      await run("DELETE FROM group_rooms WHERE conversation_id=?", conversationId);
+    }
     for (const table of [
       "chat_history_metadata",
       "chat_appearance",
