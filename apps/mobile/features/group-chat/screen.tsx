@@ -55,6 +55,8 @@ export interface GroupChatScreenProps {
   seatAvatars?: readonly (string | undefined)[];
   /** Custom photo stored for this room's conversation (GR-13). */
   roomAvatarUri?: string;
+  /** Return to the chats the room was opened from (Recent chats or setup). */
+  onBack?: () => void;
 }
 
 export function GroupChatScreen(props: GroupChatScreenProps) {
@@ -141,6 +143,24 @@ export function GroupChatScreen(props: GroupChatScreenProps) {
         style={{ padding: 16, gap: 12 }}
       >
         {error ? <ErrorNotice message={error} /> : null}
+        {props.onBack ? (
+          <View
+            style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+          >
+            <NativeButton
+              accessibilityLabel="Back to Recent chats"
+              icon="arrow-left"
+              mode="text"
+              onPress={props.onBack}
+            >
+              Chats
+            </NativeButton>
+            {/* Reopening a room must say which room this is. */}
+            <Text variant="titleMedium" accessibilityRole="header">
+              {props.room.name?.trim() || "Group chat"}
+            </Text>
+          </View>
+        ) : null}
         {props.room.scenario ? (
           <Text variant="titleMedium">{props.room.scenario}</Text>
         ) : null}

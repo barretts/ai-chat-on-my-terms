@@ -92,6 +92,8 @@ export function historyRowLabel(
   const date = formatHistoryDate(historyRowDate(conversation), options.now);
   return [
     historyDisplayTitle(conversation),
+    // The visible group icon is decorative; VoiceOver learns the kind here.
+    conversation.kind === "group" ? "group chat" : null,
     options.current ? "open now" : null,
     date || null,
     conversation.preview ?? "no messages yet",

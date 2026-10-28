@@ -69,6 +69,16 @@ describe("history rows", () => {
     );
   });
 
+  it("says group chat in the row sentence for room conversations", () => {
+    assert.equal(
+      historyRowLabel(
+        conversation({ kind: "group", title: "Fog Horns", lastUsedAt: null }),
+        { current: false, now },
+      ),
+      "Fog Horns, group chat, Sep 1, Who cooks for you",
+    );
+  });
+
   it("opens actions for one row at a time and confirms before delete", () => {
     let state = historyRowReducer(IDLE_ROW, {
       type: "toggle-actions",

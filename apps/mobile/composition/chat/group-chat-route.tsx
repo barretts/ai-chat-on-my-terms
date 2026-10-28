@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
 import { AdvancedChatEngine } from "@locallab/chat-engine-advanced";
 import { SQLiteGroupConfigStore } from "@locallab/groups-config";
@@ -205,6 +205,7 @@ export default function GroupChatRoute() {
   const roomId = Array.isArray(params.roomId)
     ? params.roomId[0]
     : params.roomId;
+  const router = useRouter();
 
   const [room, setRoom] = useState<GroupRoomDraft | null>(null);
   const [entries, setEntries] = useState<GroupTranscriptEntry[]>([]);
@@ -545,6 +546,7 @@ export default function GroupChatRoute() {
       {modelProblem ? <ErrorNotice message={modelProblem} /> : null}
       <GroupChatScreen
         room={room}
+        onBack={() => (router.canGoBack() ? router.back() : router.navigate("/"))}
         entries={entries}
         speech={roomSpeech}
         controller={controller}
