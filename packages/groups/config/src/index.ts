@@ -298,6 +298,30 @@ export class SQLiteGroupConfigStore {
         EntityIdSchema.parse(participant.providerConnectionId);
     }
     await dbTransaction(this.db, async (transaction) => {
+      const roomName = draft.name.trim() || "Group chat";
+      // A room IS a chat: its conversation exists, wears the room's name,
+      // and carries the group marker, so the shared chat list shows it and
+      // can reopen it. Callers never allocate the conversation themselves.
+      const hasConversations = !!(await transaction.getFirstAsync(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='conversations'",
+      ));
+      if (hasConversations) {
+        await transaction.runAsync(
+          `INSERT INTO conversations(id,title) VALUES(?,?)
+           ON CONFLICT(id) DO UPDATE SET title=excluded.title`,
+          conversationId,
+          roomName,
+        );
+        if (
+          await transaction.getFirstAsync(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_history_metadata'",
+          )
+        )
+          await transaction.runAsync(
+            "INSERT OR IGNORE INTO chat_history_metadata(conversation_id) VALUES(?)",
+            conversationId,
+          );
+      }
       await transaction.runAsync(
         `INSERT INTO group_rooms(id,name,conversation_id,scenario,user_display_name)
          VALUES(?,?,?,?,?)
@@ -305,11 +329,17 @@ export class SQLiteGroupConfigStore {
          name=excluded.name,conversation_id=excluded.conversation_id,
          scenario=excluded.scenario,user_display_name=excluded.user_display_name`,
         roomId,
-        draft.name.trim() || "Group chat",
+        roomName,
         conversationId,
         draft.scenario,
         draft.userDisplayName,
       );
+      if (hasConversations)
+        await transaction.runAsync(
+          "INSERT OR IGNORE INTO group_room_conversations(conversation_id,group_room_id) VALUES(?,?)",
+          conversationId,
+          roomId,
+        );
       await transaction.runAsync(
         `INSERT INTO group_room_settings(
            room_id,conversation_mode,speaker_order,reply_display,
@@ -576,6 +606,20 @@ export class SQLiteGroupConfigStore {
       EntityIdSchema.parse(conversationId),
       EntityIdSchema.parse(roomId),
     );
+  }
+
+  /** Reverse mapping for the shared chat list: the room owning this conversation. */
+  async roomForConversation(
+    conversationId: string,
+  ): Promise<{ id: string; name: string } | null> {
+    const row = await this.db.getFirstAsync<{ id: string; name: string }>(
+      `SELECT r.id,r.name FROM group_rooms r
+       JOIN group_room_conversations m ON m.group_room_id=r.id
+       WHERE m.conversation_id=?`,
+      EntityIdSchema.parse(conversationId),
+    );
+    // Fresh object: driver rows may carry a null prototype.
+    return row ? { id: row.id, name: row.name } : null;
   }
 }
 

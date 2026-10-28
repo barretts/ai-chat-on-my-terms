@@ -472,22 +472,28 @@ test("rounds and speaker runs persist trigger, frozen order and status", async (
   database.close();
 });
 
-test("a dedicated conversation is marked group exactly once", async () => {
+test("a saved room is a chat: conversation row, marker and lookup", async () => {
   const { database, config } = await store();
   // The mapping has a real foreign key to core conversations; the store
   // never runs on a database without the migrated core schema.
   database.exec(
     "CREATE TABLE conversations(id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL DEFAULT '')",
   );
-  database.prepare("INSERT INTO conversations(id) VALUES (?)").run(id(6001));
   const roomId = await config.saveRoom(
     room([
       { ...emptyGroupParticipant(), personaId: id(5301), displayName: "Ada" },
     ]),
     createId,
   );
-  await config.markGroupConversation(id(6001), roomId);
-  await config.markGroupConversation(id(6001), roomId);
+  const titleOf = (): string | undefined =>
+    (
+      database
+        .prepare("SELECT title FROM conversations WHERE id=?")
+        .get(id(4001)) as { title: string } | undefined
+    )?.title;
+  assert.equal(titleOf(), "War room");
+  // Backfilling an already-marked conversation stays idempotent.
+  await config.markGroupConversation(id(4001), roomId);
   const rows = database
     .prepare(
       "SELECT conversation_id, group_room_id FROM group_room_conversations",
@@ -495,7 +501,17 @@ test("a dedicated conversation is marked group exactly once", async () => {
     .all()
     .map((row) => ({ ...row }));
   assert.deepEqual(rows, [
-    { conversation_id: id(6001), group_room_id: roomId },
+    { conversation_id: id(4001), group_room_id: roomId },
   ]);
+  assert.deepEqual(await config.roomForConversation(id(4001)), {
+    id: roomId,
+    name: "War room",
+  });
+  assert.equal(await config.roomForConversation(id(6001)), null);
+  // Renaming the room renames the chat row the history list shows.
+  const saved = await config.loadRoom(roomId);
+  assert.ok(saved);
+  await config.saveRoom({ ...saved, name: "War room two" }, createId);
+  assert.equal(titleOf(), "War room two");
   database.close();
 });
